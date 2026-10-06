@@ -38,10 +38,11 @@ func asUsage(err error) error {
 func ExitCode(err error) int {
 	var usage *usageError
 	var invalid *service.InvalidValueError
+	var ambiguous *service.AmbiguousError
 	switch {
 	case err == nil:
 		return exitOK
-	case errors.As(err, &usage), errors.As(err, &invalid):
+	case errors.As(err, &usage), errors.As(err, &invalid), errors.As(err, &ambiguous):
 		return exitUsage
 	case errors.Is(err, mantis.ErrUnauthorized):
 		return exitAuth

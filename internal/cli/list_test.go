@@ -52,6 +52,7 @@ func TestListUsesConfigDefaultsAndSelect(t *testing.T) {
 func TestListFlagsOverrideDefaults(t *testing.T) {
 	fm := newFakeMantis(t)
 	fm.on("GET", "/issues", 200, mantisFixture(t, "issues_list"))
+	fm.on("GET", "/projects", 200, mantisFixture(t, "projects")) // --project ids are validated
 	cfg := fakeHostConfig(t, fm, "")
 
 	if _, _, err := runCLI(t, "--config", cfg, "list", "--filter", "reported", "--page", "3", "--page-size", "10", "--project", "7"); err != nil {

@@ -51,7 +51,7 @@ The full task details are in `tasks/todo.md`.
 - [x] `mantis-tui list --host williamhleucka` and `show <id> --json` work against the real wh host (and chainlogic, read-only)
 
 ### Phase 2: CLI write path and service layer
-- [ ] Task 5: Metadata cache and name→id resolution
+- [x] Task 5: Metadata cache and name→id resolution
 - [ ] Task 6: Client write endpoints, including the unmonitor step
 - [ ] Task 7: CLI `update`, `assign`, `monitor`, `unmonitor` and `open`, plus the batch runner
 - [ ] Task 8: Editor package and CLI `note` / `note delete`

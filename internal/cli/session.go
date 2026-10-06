@@ -10,13 +10,17 @@ import (
 
 	"github.com/whleucka/mantis-tui/internal/config"
 	"github.com/whleucka/mantis-tui/internal/mantis"
+	"github.com/whleucka/mantis-tui/internal/meta"
+	"github.com/whleucka/mantis-tui/internal/service"
 )
 
 // session is everything a subcommand needs to talk to the selected host.
 type session struct {
-	cfg    *config.Config
-	host   config.Host
-	client *mantis.Client
+	cfg     *config.Config
+	host    config.Host
+	client  *mantis.Client
+	meta    *meta.Cache
+	resolve *service.Resolver
 }
 
 // openSession loads config and picks a host. The CLI reads the last-used
@@ -43,7 +47,9 @@ func (o *globalOpts) openSession(cmd *cobra.Command) (*session, error) {
 		}
 		return nil, asUsage(err)
 	}
-	return &session{cfg: cfg, host: host, client: mantis.NewClient(host.URL, host.Token)}, nil
+	client := mantis.NewClient(host.URL, host.Token)
+	m := meta.New(client)
+	return &session{cfg: cfg, host: host, client: client, meta: m, resolve: service.NewResolver(m)}, nil
 }
 
 // ctx returns a context bounded by --timeout.

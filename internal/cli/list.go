@@ -10,7 +10,6 @@ import (
 
 	"github.com/whleucka/mantis-tui/internal/config"
 	"github.com/whleucka/mantis-tui/internal/mantis"
-	"github.com/whleucka/mantis-tui/internal/service"
 )
 
 func newListCmd(opts *globalOpts) *cobra.Command {
@@ -47,9 +46,11 @@ func newListCmd(opts *globalOpts) *cobra.Command {
 
 			listOpts := mantis.ListOptions{Filter: filter, Page: page, PageSize: pageSize, Select: mantis.ListFields}
 			if project != "" {
-				if listOpts.ProjectID, err = service.ResolveProject(ctx, s.client, project); err != nil {
+				p, err := s.resolve.Project(ctx, project)
+				if err != nil {
 					return err
 				}
+				listOpts.ProjectID = p.ID
 			}
 			res, err := s.client.ListIssues(ctx, listOpts)
 			if err != nil {

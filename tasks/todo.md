@@ -89,9 +89,9 @@ for each host, with concurrent loads safe. `internal/service` resolves names
 to refs case-insensitively. An invalid value is an error listing the valid
 ones, and an ambiguous user name is an error listing the candidates.
 **Acceptance criteria:**
-- [ ] Each metadata call is made once per host per session, verified with a counting fake
-- [ ] Users resolve by username, real name or id, and ambiguity is an error that lists the candidates
-- [ ] Enum resolution error messages list the server's values
+- [x] Each metadata call is made once per host per session, verified with a counting fake
+- [x] Users resolve by username, real name or id, and ambiguity is an error that lists the candidates
+- [x] Enum resolution error messages list the server's values
 **Verification:** `go test -race ./internal/meta/... ./internal/service/...`
 **Dependencies:** 3
 **Files:** `internal/meta/meta.go`, `internal/meta/meta_test.go`, `internal/service/resolve.go`, `internal/service/resolve_test.go`

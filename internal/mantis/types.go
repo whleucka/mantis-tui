@@ -50,6 +50,7 @@ type Project struct {
 	Enabled     bool       `json:"enabled"`
 	Status      EnumValue  `json:"status"`
 	Categories  []Category `json:"categories,omitempty"`
+	SubProjects []Project  `json:"subProjects,omitempty"`
 }
 
 // Issue is a Mantis issue. Optional collections are omitted by the server
