@@ -33,6 +33,7 @@ const (
 	actAddNote        action = "add-note"
 	actDeleteNote     action = "delete-note"
 	actSearch         action = "search"
+	actClearSearch    action = "clear-search"
 	actNextTab        action = "next-tab"
 	actToggleSelect   action = "toggle-select"
 	actSelectAll      action = "select-all"
@@ -86,6 +87,7 @@ func defaultKeymap() keymap {
 		binding{actDelete, []string{"D"}, "delete issue"},
 		binding{actFilter, []string{"F"}, "filter"},
 		binding{actSearch, []string{"/"}, "search this page"},
+		binding{actClearSearch, []string{"esc"}, "clear search"},
 		binding{actToggleGroup, []string{"ctrl+g"}, "group by project"},
 		binding{actNextPage, []string{"L"}, "next page"},
 		binding{actPrevPage, []string{"H"}, "previous page"},

@@ -26,11 +26,13 @@ type listModel struct {
 	page     int
 	pageSize int
 
-	issues []mantis.Issue
-	cursor int
-	offset int // first visible row
-	loaded bool
-	req    int // latest load request; older responses are ignored
+	issues  []mantis.Issue
+	cursor  int // index into rows()
+	offset  int // first visible row
+	grouped bool
+	search  string
+	loaded  bool
+	req     int // latest load request; older responses are ignored
 
 	meID   int
 	colors map[string]string
@@ -62,6 +64,7 @@ func newListModel(cfg *config.Config, sess *Session) *listModel {
 		cfg:      cfg.List,
 		icons:    cfg.Icons,
 		filter:   cfg.List.DefaultFilter,
+		grouped:  cfg.List.GroupByProject,
 		page:     1,
 		pageSize: cfg.List.PageSize,
 	}
@@ -114,10 +117,11 @@ func (l *listModel) context() string {
 }
 
 func (l *listModel) currentID() int {
-	if l.cursor < 0 || l.cursor >= len(l.issues) {
+	rs := l.rows()
+	if l.cursor < 0 || l.cursor >= len(rs) || rs[l.cursor].idx < 0 {
 		return 0
 	}
-	return l.issues[l.cursor].ID
+	return l.issues[rs[l.cursor].idx].ID
 }
 
 func (l *listModel) handleMsg(m *Model, msg tea.Msg) tea.Cmd {
@@ -134,13 +138,7 @@ func (l *listModel) handleMsg(m *Model, msg tea.Msg) tea.Cmd {
 			return infoCmd(l.host(), "no more issues")
 		}
 		l.page, l.issues, l.loaded = msg.page, msg.issues, true
-		l.cursor = 0
-		for i, is := range l.issues {
-			if is.ID == msg.keepID {
-				l.cursor = i
-			}
-		}
-		l.scrollToCursor(m)
+		l.cursorTo(m, msg.keepID)
 	case listMetaMsg:
 		if msg.err != nil {
 			return errCmd(l.host(), msg.err)
@@ -162,6 +160,16 @@ func (l *listModel) handleAction(m *Model, a action) tea.Cmd {
 		l.move(m, -len(l.issues))
 	case actBottom:
 		l.move(m, len(l.issues))
+	case actToggleGroup:
+		id := l.currentID()
+		l.grouped = !l.grouped
+		l.cursorTo(m, id)
+	case actSearch:
+		m.modal = &searchInput{l: l, m: m}
+	case actClearSearch:
+		if l.search != "" {
+			l.setSearch(m, "")
+		}
 	case actRefresh:
 		return l.load(m, l.page, l.currentID())
 	case actNextPage:
@@ -206,11 +214,45 @@ func (l *listModel) setFilter(m *Model, f string) tea.Cmd {
 	return l.load(m, 1, 0)
 }
 
+// move steps the cursor over issue rows, skipping group headers.
 func (l *listModel) move(m *Model, delta int) {
-	if len(l.issues) == 0 {
+	rs := l.rows()
+	var issueRows []int
+	pos := 0
+	for i, r := range rs {
+		if r.idx >= 0 {
+			if i == l.cursor {
+				pos = len(issueRows)
+			}
+			issueRows = append(issueRows, i)
+		}
+	}
+	if len(issueRows) == 0 {
 		return
 	}
-	l.cursor = min(max(l.cursor+delta, 0), len(l.issues)-1)
+	l.cursor = issueRows[min(max(pos+delta, 0), len(issueRows)-1)]
+	l.scrollToCursor(m)
+}
+
+// cursorTo puts the cursor on issue id, or the first issue row if it is not shown.
+func (l *listModel) cursorTo(m *Model, id int) {
+	rs := l.rows()
+	l.cursor = 0
+	first := -1
+	for i, r := range rs {
+		if r.idx < 0 {
+			continue
+		}
+		if first < 0 {
+			first = i
+		}
+		if l.issues[r.idx].ID == id {
+			l.cursor = i
+			l.scrollToCursor(m)
+			return
+		}
+	}
+	l.cursor = max(first, 0)
 	l.scrollToCursor(m)
 }
 
@@ -225,7 +267,7 @@ func (l *listModel) scrollToCursor(m *Model) {
 	if l.cursor >= l.offset+rows {
 		l.offset = l.cursor - rows + 1
 	}
-	l.offset = max(min(l.offset, len(l.issues)-rows), 0)
+	l.offset = max(min(l.offset, len(l.rows())-rows), 0)
 }
 
 // column is one list column; width 0 means "fill the rest" (summary).
@@ -296,12 +338,20 @@ func dateOf(t time.Time) string {
 	return t.Local().Format("2006-01-02")
 }
 
-func (l *listModel) view(_ *Model, width, height int) string {
+func (l *listModel) view(m *Model, width, height int) string {
+	searchLine := ""
+	if _, typing := m.modal.(*searchInput); typing || l.search != "" {
+		searchLine = styleTitle.Render("/"+l.search) + "\n"
+		height--
+	}
 	if !l.loaded {
 		return styleMuted.Render("  Loading issues…")
 	}
 	if len(l.issues) == 0 {
 		return styleMuted.Render(fmt.Sprintf("  No issues (filter: %s, page %d). F changes the filter.", l.filter, l.page))
+	}
+	if len(l.rows()) == 0 {
+		return searchLine + styleMuted.Render("  No issues on this page match the search. esc clears it.")
 	}
 
 	cols := columnsFor(width)
@@ -313,6 +363,7 @@ func (l *listModel) view(_ *Model, width, height int) string {
 	summary := max(width-fixed, 10)
 
 	var b strings.Builder
+	b.WriteString(searchLine)
 	header := strings.Repeat(" ", marker)
 	for _, c := range cols {
 		w := c.width
@@ -323,9 +374,14 @@ func (l *listModel) view(_ *Model, width, height int) string {
 	}
 	b.WriteString(styleHeader.Render(ansi.Truncate(header, width, "")) + "\n")
 
-	rows := max(height-1, 1)
-	for i := l.offset; i < len(l.issues) && i < l.offset+rows; i++ {
-		is := l.issues[i]
+	rs := l.rows()
+	visible := max(height-1, 1)
+	for i := l.offset; i < len(rs) && i < l.offset+visible; i++ {
+		if rs[i].idx < 0 {
+			b.WriteString(styleGroup.Render(ansi.Truncate(fmt.Sprintf("── %s (%d) ", rs[i].header, rs[i].count), width, "")) + "\n")
+			continue
+		}
+		is := l.issues[rs[i].idx]
 		var cells []string
 		plain := ""
 		for _, c := range cols {

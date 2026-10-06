@@ -290,8 +290,9 @@ func (m *Model) View() tea.View {
 	content := body + "\n" + m.statusView()
 
 	if m.modal != nil {
-		box := m.modal.view(m.width, m.height)
-		content = overlay(content, box, m.width, m.height)
+		if box := m.modal.view(m.width, m.height); box != "" {
+			content = overlay(content, box, m.width, m.height)
+		}
 	}
 	v := tea.NewView(content)
 	v.AltScreen = true

@@ -72,7 +72,7 @@ The full task details are in `tasks/todo.md`.
 ### Phase 3: TUI read path
 - [x] Task 10: TUI root, keymap and chord helper, status bar, host picker and host switching
 - [x] Task 11: Issue list with filters, pagination, spinner, icons and status colours
-- [ ] Task 12: List extras: group by project and the `/` search
+- [x] Task 12: List extras: group by project and the `/` search
 - [ ] Task 13: Issue view with header, body, Notes/History tabs and scrolling
 - [ ] Task 14: Auto-refresh for the list and the issue view
 

@@ -201,8 +201,8 @@ config.
 movement skips the headers). `/` opens a fuzzy filter over id, summary,
 category and handler on the loaded page, and `esc` clears it.
 **Acceptance criteria:**
-- [ ] When grouping is toggled, the cursor stays on the same issue id
-- [ ] The search narrows the rows, and `esc` restores them with the cursor on the same issue
+- [x] When grouping is toggled, the cursor stays on the same issue id
+- [x] The search narrows the rows, and `esc` restores them with the cursor on the same issue
 **Verification:** `go test ./internal/tui/issuelist/...`
 **Dependencies:** 11
 **Files:** `internal/tui/issuelist/group.go`, `internal/tui/issuelist/search.go`, `internal/tui/issuelist/extras_test.go`
