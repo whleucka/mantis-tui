@@ -66,8 +66,8 @@ The full task details are in `tasks/todo.md`.
 - [x] Task 9: CLI `create` and `delete`, with the TTY and `--yes` guard
 
 ### Checkpoint B: CLI complete
-- [ ] All of the CLI surface in the spec works. Tests are green and the race detector is clean.
-- [ ] One manual write round trip on wh (create, update, note, delete), **only after the user approves it**
+- [x] All of the CLI surface in the spec works. Tests are green and the race detector is clean.
+- [x] One manual write round trip on wh (create, update, note, delete), **only after the user approves it** (approved; done in `ideas`)
 
 ### Phase 3: TUI read path
 - [x] Task 10: TUI root, keymap and chord helper, status bar, host picker and host switching
