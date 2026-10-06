@@ -82,7 +82,7 @@ The full task details are in `tasks/todo.md`.
 ### Phase 4: TUI write path
 - [x] Task 15: Picker and confirm modals, plus the single-issue actions in the list and the issue view
 - [x] Task 16: Add and delete notes from the TUI, using `$EDITOR`
-- [ ] Task 17: Selection and batch operations
+- [x] Task 17: Selection and batch operations
 - [ ] Task 18: Create-issue form
 
 ### Checkpoint D: parity

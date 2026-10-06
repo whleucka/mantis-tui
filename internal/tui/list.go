@@ -3,6 +3,7 @@ package tui
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -12,6 +13,7 @@ import (
 
 	"github.com/whleucka/mantis-tui/internal/config"
 	"github.com/whleucka/mantis-tui/internal/mantis"
+	"github.com/whleucka/mantis-tui/internal/meta"
 	"github.com/whleucka/mantis-tui/internal/service"
 )
 
@@ -26,13 +28,14 @@ type listModel struct {
 	page     int
 	pageSize int
 
-	issues  []mantis.Issue
-	cursor  int // index into rows()
-	offset  int // first visible row
-	grouped bool
-	search  string
-	loaded  bool
-	req     int // latest load request; older responses are ignored
+	issues   []mantis.Issue
+	cursor   int // index into rows()
+	offset   int // first visible row
+	grouped  bool
+	search   string
+	selected map[int]mantis.Issue // by id; survives paging and refresh
+	loaded   bool
+	req      int // latest load request; older responses are ignored
 
 	meID   int
 	colors map[string]string
@@ -82,6 +85,7 @@ func newListModel(cfg *config.Config, sess *Session) *listModel {
 		page:     1,
 		pageSize: cfg.List.PageSize,
 		interval: cfg.List.AutoRefresh.Duration,
+		selected: map[int]mantis.Issue{},
 	}
 }
 
@@ -157,6 +161,9 @@ func (l *listModel) context() string {
 	if l.loaded {
 		s += fmt.Sprintf(" · %d issues", len(l.issues))
 	}
+	if n := len(l.selected); n > 0 {
+		s += fmt.Sprintf(" · %d selected", n)
+	}
 	return s
 }
 
@@ -185,6 +192,11 @@ func (l *listModel) handleMsg(m *Model, msg tea.Msg) tea.Cmd {
 			return infoCmd(l.host(), "no more issues")
 		}
 		l.page, l.issues, l.loaded = msg.page, msg.issues, true
+		for _, is := range l.issues { // keep selection snapshots fresh
+			if _, ok := l.selected[is.ID]; ok {
+				l.selected[is.ID] = is
+			}
+		}
 		l.cursorTo(m, msg.keepID)
 	case listMetaMsg:
 		if msg.err != nil {
@@ -238,14 +250,79 @@ func (l *listModel) handleAction(m *Model, a action) tea.Cmd {
 		if is := m.currentIssue(); is != nil {
 			m.confirmDelete([]mantis.Issue{*is})
 		}
+	case actToggleSelect:
+		if is := m.currentIssue(); is != nil {
+			if _, ok := l.selected[is.ID]; ok {
+				delete(l.selected, is.ID)
+			} else {
+				l.selected[is.ID] = *is
+			}
+			l.move(m, 1)
+		}
+	case actSelectAll:
+		for _, r := range l.rows() {
+			if r.idx >= 0 {
+				l.selected[l.issues[r.idx].ID] = l.issues[r.idx]
+			}
+		}
+	case actClearSelection:
+		l.selected = map[int]mantis.Issue{}
+	case actBatchStatus, actBatchPriority, actBatchSeverity, actBatchCategory, actBatchAssign, actBatchDelete:
+		return l.batch(m, a)
 	default:
 		return m.issueAction(a)
 	}
 	return nil
 }
 
-// applyPatched swaps in updated issues and reports the outcome.
+// targets are the selected issues (in list order, newest first), or the
+// issue under the cursor when nothing is selected.
+func (l *listModel) targets(m *Model) []mantis.Issue {
+	if len(l.selected) == 0 {
+		if is := m.currentIssue(); is != nil {
+			return []mantis.Issue{*is}
+		}
+		return nil
+	}
+	out := make([]mantis.Issue, 0, len(l.selected))
+	for _, is := range l.selected {
+		out = append(out, is)
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].ID > out[j].ID })
+	return out
+}
+
+func (l *listModel) batch(m *Model, a action) tea.Cmd {
+	targets := l.targets(m)
+	if len(targets) == 0 {
+		return nil
+	}
+	switch a {
+	case actBatchStatus:
+		return m.pickEnum(meta.Status, targets)
+	case actBatchPriority:
+		return m.pickEnum(meta.Priority, targets)
+	case actBatchSeverity:
+		return m.pickEnum(meta.Severity, targets)
+	case actBatchCategory:
+		return m.pickCategory(targets)
+	case actBatchAssign:
+		return m.pickUser(targets)
+	case actBatchDelete:
+		m.confirmDelete(targets)
+	}
+	return nil
+}
+
+// applyPatched swaps in updated issues and reports the outcome. Issues that
+// succeeded leave the selection, so a partial failure leaves only the
+// failures selected for a retry.
 func (l *listModel) applyPatched(_ *Model, msg patchedMsg) tea.Cmd {
+	for _, r := range msg.results {
+		if r.Err == nil {
+			delete(l.selected, r.ID)
+		}
+	}
 	for i, is := range l.issues {
 		if fresh, ok := msg.updated[is.ID]; ok && fresh != nil && fresh.ID != 0 {
 			fresh.Notes, fresh.History = nil, nil // the list never shows them
@@ -265,6 +342,7 @@ func (l *listModel) removeDeleted(m *Model, msg deletedMsg) tea.Cmd {
 	for _, r := range msg.results {
 		if r.Err == nil {
 			gone[r.ID] = true
+			delete(l.selected, r.ID)
 		}
 	}
 	// The issue that will occupy the cursor's row once the deleted ones go.
@@ -503,9 +581,17 @@ func (l *listModel) view(m *Model, width, height int) string {
 			}
 			cells = append(cells, text)
 		}
-		line := "  " + strings.Join(cells, " ")
+		mark := " "
+		if _, ok := l.selected[is.ID]; ok {
+			mark = styleGroup.Render("●")
+		}
+		line := " " + mark + strings.Join(cells, " ")
 		if i == l.cursor {
-			line = styleSelected.Render(ansi.Truncate("▸ "+plain, width, ""))
+			sel := " "
+			if _, ok := l.selected[is.ID]; ok {
+				sel = "●"
+			}
+			line = styleSelected.Render(ansi.Truncate("▸"+sel+plain, width, ""))
 		}
 		b.WriteString(ansi.Truncate(line, width, "") + "\n")
 	}

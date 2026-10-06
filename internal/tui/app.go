@@ -59,6 +59,9 @@ func (hv *hostView) handleMsg(m *Model, msg tea.Msg) tea.Cmd {
 		}
 		return hv.issue.handleMsg(m, msg)
 	case patchedMsg:
+		if msg.batch == m.batchID {
+			m.batchID = 0
+		}
 		cmds := []tea.Cmd{hv.list.applyPatched(m, msg)}
 		if hv.issue != nil {
 			if _, ok := msg.updated[hv.issue.id]; ok {
@@ -103,6 +106,9 @@ type Model struct {
 	status     status
 	spin       spinner.Model
 	loading    int
+
+	batchSeq int // last batch started
+	batchID  int // batch whose progress is shown; 0 when none
 }
 
 // Messages. Anything tied to a host carries its name so responses that
@@ -181,6 +187,13 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, m.onNoteAdded(msg)
 	case noteDeletedMsg:
 		return m, m.onNoteDeleted(msg)
+
+	case batchProgressMsg:
+		if msg.batch != m.batchID || !m.isCurrent(msg.host) {
+			return m, nil
+		}
+		m.status.info(fmt.Sprintf("%s… %d/%d", msg.label, msg.done, msg.total))
+		return m, msg.next
 
 	case modalReadyMsg:
 		if m.isCurrent(msg.host) && m.modal == nil {

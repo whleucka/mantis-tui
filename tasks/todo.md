@@ -283,9 +283,9 @@ page and `ctrl+x` clears the selection. The chords `bs`, `bp`, `bv`, `bc`,
 selected) through `service.Batch`. Progress shows in the status bar. A
 partial failure leaves only the failed issues selected.
 **Acceptance criteria:**
-- [ ] A batch with 10 issues and 1 injected failure reports 9 OK and 1 failed, and only the failed issue stays selected
-- [ ] `bD` asks for confirmation and shows the count
-- [ ] The selection survives paging and auto-refresh, because it's keyed by id
+- [x] A batch with 10 issues and 1 injected failure reports 9 OK and 1 failed, and only the failed issue stays selected
+- [x] `bD` asks for confirmation and shows the count
+- [x] The selection survives paging and auto-refresh, because it's keyed by id
 **Verification:** `go test -race ./internal/tui/...`
 **Dependencies:** 15
 **Files:** `internal/tui/issuelist/selection.go`, `internal/tui/batch.go`, `internal/tui/batch_test.go`

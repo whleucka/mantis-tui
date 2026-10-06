@@ -27,9 +27,19 @@ type (
 	// patchedMsg reports a (possibly batch) update.
 	patchedMsg struct {
 		host    string
+		batch   int
 		label   string
 		results []service.Result
 		updated map[int]*mantis.Issue
+	}
+
+	// batchProgressMsg reports one finished operation of a running batch.
+	batchProgressMsg struct {
+		host        string
+		batch       int
+		label       string
+		done, total int
+		next        tea.Cmd
 	}
 
 	// deletedMsg reports deleted issues.
@@ -156,7 +166,7 @@ func (m *Model) pickEnum(kind string, targets []mantis.Issue) tea.Cmd {
 			case meta.Severity:
 				patch.Severity = ref
 			}
-			return m.applyPatch(ids(targets), func(mantis.Issue) mantis.IssuePatch { return patch }, kind+" → "+v.Label)
+			return m.applyPatch(targets, func(mantis.Issue) mantis.IssuePatch { return patch }, kind+" → "+v.Label)
 		})}
 	})
 }
@@ -178,8 +188,14 @@ func (m *Model) pickCategory(targets []mantis.Issue) tea.Cmd {
 		}
 		return modalReadyMsg{host: host, modal: newPicker("Category for "+targetLabel(targets), opts, func(o pickerOption) tea.Cmd {
 			c := o.value.(mantis.Category)
-			patch := mantis.IssuePatch{Category: &mantis.Ref{ID: c.ID, Name: c.Name}}
-			return m.applyPatch(ids(targets), func(mantis.Issue) mantis.IssuePatch { return patch }, "category → "+c.Name)
+			// Category ids belong to a project; issues elsewhere get the
+			// name and the server resolves it in their own project.
+			return m.applyPatch(targets, func(is mantis.Issue) mantis.IssuePatch {
+				if is.Project.ID == projectID {
+					return mantis.IssuePatch{Category: &mantis.Ref{ID: c.ID, Name: c.Name}}
+				}
+				return mantis.IssuePatch{Category: &mantis.Ref{Name: c.Name}}
+			}, "category → "+c.Name)
 		})}
 	})
 }
@@ -203,7 +219,7 @@ func (m *Model) pickUser(targets []mantis.Issue) tea.Cmd {
 		return modalReadyMsg{host: host, modal: newPicker("Assign "+targetLabel(targets), opts, func(o pickerOption) tea.Cmd {
 			u := o.value.(mantis.User)
 			patch := mantis.IssuePatch{Handler: &mantis.Ref{ID: u.ID}}
-			return m.applyPatch(ids(targets), func(mantis.Issue) mantis.IssuePatch { return patch }, "assigned to "+u.Display())
+			return m.applyPatch(targets, func(mantis.Issue) mantis.IssuePatch { return patch }, "assigned to "+u.Display())
 		})}
 	})
 }
@@ -217,29 +233,54 @@ func (m *Model) summaryPrompt(is mantis.Issue) *textPrompt {
 			return nil, ""
 		}
 		patch := mantis.IssuePatch{Summary: &v}
-		return m.applyPatch([]int{is.ID}, func(mantis.Issue) mantis.IssuePatch { return patch }, "summary updated"), ""
+		return m.applyPatch([]mantis.Issue{is}, func(mantis.Issue) mantis.IssuePatch { return patch }, "summary updated"), ""
 	})
 }
 
-// applyPatch updates every id (at most service.MaxInFlight at once).
-func (m *Model) applyPatch(targets []int, patchFor func(mantis.Issue) mantis.IssuePatch, label string) tea.Cmd {
+// applyPatch updates every target (at most service.MaxInFlight at once),
+// streaming progress to the status bar for batches.
+func (m *Model) applyPatch(targets []mantis.Issue, patchFor func(mantis.Issue) mantis.IssuePatch, label string) tea.Cmd {
 	host, api := m.cur.sess.Host.Name, m.cur.sess.API
-	return m.call(func(ctx context.Context) tea.Msg {
+	byID := make(map[int]mantis.Issue, len(targets))
+	for _, is := range targets {
+		byID[is.ID] = is
+	}
+	m.batchSeq++
+	batch := m.batchSeq
+	m.batchID = batch
+	progress := make(chan struct{}, len(targets))
+
+	run := m.call(func(ctx context.Context) tea.Msg {
+		defer close(progress)
 		var mu sync.Mutex
 		updated := make(map[int]*mantis.Issue, len(targets))
-		results := service.Batch(ctx, targets, func(ctx context.Context, id int) error {
+		results := service.Batch(ctx, ids(targets), func(ctx context.Context, id int) error {
 			ctx, cancel := timed(ctx)
 			defer cancel()
-			is, err := api.UpdateIssue(ctx, id, patchFor(mantis.Issue{ID: id}))
+			is, err := api.UpdateIssue(ctx, id, patchFor(byID[id]))
 			if err == nil {
 				mu.Lock()
 				updated[id] = is
 				mu.Unlock()
 			}
+			progress <- struct{}{}
 			return err
 		})
-		return patchedMsg{host: host, label: label, results: results, updated: updated}
+		return patchedMsg{host: host, batch: batch, label: label, results: results, updated: updated}
 	})
+	if len(targets) == 1 {
+		return run
+	}
+	done := 0
+	var listen tea.Cmd
+	listen = func() tea.Msg {
+		if _, ok := <-progress; !ok {
+			return nil
+		}
+		done++
+		return batchProgressMsg{host: host, batch: batch, label: label, done: done, total: len(targets), next: listen}
+	}
+	return tea.Batch(run, listen)
 }
 
 // toggleMonitor monitors or unmonitors is for the current user, then
