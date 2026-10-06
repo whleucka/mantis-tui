@@ -73,7 +73,7 @@ func newRootCmd(d deps) *cobra.Command {
 		newHostsCmd(opts), newListCmd(opts), newShowCmd(opts),
 		newUpdateCmd(opts), newAssignCmd(opts),
 		newMonitorCmd(opts), newUnmonitorCmd(opts), newOpenCmd(opts),
-		newNoteCmd(opts),
+		newNoteCmd(opts), newCreateCmd(opts), newDeleteCmd(opts),
 	)
 	return root
 }

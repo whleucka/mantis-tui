@@ -55,7 +55,7 @@ The full task details are in `tasks/todo.md`.
 - [x] Task 6: Client write endpoints, including the unmonitor step
 - [x] Task 7: CLI `update`, `assign`, `monitor`, `unmonitor` and `open`, plus the batch runner
 - [x] Task 8: Editor package and CLI `note` / `note delete`
-- [ ] Task 9: CLI `create` and `delete`, with the TTY and `--yes` guard
+- [x] Task 9: CLI `create` and `delete`, with the TTY and `--yes` guard
 
 ### Checkpoint B: CLI complete
 - [ ] All of the CLI surface in the spec works. Tests are green and the race detector is clean.

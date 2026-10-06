@@ -147,16 +147,16 @@ assignee, then takes the description from `-d` or `--edit`. `delete`
 accepts several ids (it uses the batch runner) and reuses the confirmation
 guard.
 **Acceptance criteria:**
-- [ ] The `create` request body contains the resolved ids and refs, checked in a test
-- [ ] Without `--project` or `--summary`, it exits with code 2
-- [ ] `delete 1 2 3` on a TTY prompts once, showing the count
+- [x] The `create` request body contains the resolved ids and refs, checked in a test
+- [x] Without `--project` or `--summary`, it exits with code 2
+- [x] `delete 1 2 3` on a TTY prompts once, showing the count
 **Verification:** `go test ./internal/cli/...`
 **Dependencies:** 7, 8
 **Files:** `internal/cli/create.go`, `internal/cli/delete.go`, `internal/cli/create_test.go`
 **Scope:** S
 
 ### ✅ Checkpoint B: CLI complete
-- [ ] `make race && make lint` are clean, and `config`, `mantis` and `service` coverage is ≥ 85%
+- [x] `make race && make lint` are clean, and `config`, `mantis` and `service` coverage is ≥ 85%
 - [ ] **Ask the user** before doing one manual write round trip on wh: create → update → note → monitor/unmonitor → delete
 - [ ] Review with the user before Phase 3
 
