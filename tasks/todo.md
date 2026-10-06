@@ -173,9 +173,9 @@ host selection reaches the picker step. `ctrl+h` switches host and keeps
 per-host view state in memory. Selecting a host writes the state file.
 Running with no subcommand launches the TUI.
 **Acceptance criteria:**
-- [ ] Chord tests cover `gg`, `dn` and `bs` resolving, a lone `g` timing out, and an unknown second key falling through
-- [ ] Host picker → host chosen → state file written. On the next launch the last-used host is selected without the picker (when no host is marked `default`).
-- [ ] An error message from any view shows in the status bar and never contains the token
+- [x] Chord tests cover `gg`, `dn` and `bs` resolving, a lone `g` timing out, and an unknown second key falling through
+- [x] Host picker → host chosen → state file written. On the next launch the last-used host is selected without the picker (when no host is marked `default`).
+- [x] An error message from any view shows in the status bar and never contains the token
 **Verification:** `go test ./internal/tui/...`. Manual: `go run ./cmd/mantis-tui`
 **Dependencies:** 2, 5
 **Files:** `internal/tui/app.go`, `internal/tui/keymap.go`, `internal/tui/chord.go`, `internal/tui/statusbar.go`, `internal/tui/hostpicker/model.go`

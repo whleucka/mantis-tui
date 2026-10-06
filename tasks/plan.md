@@ -33,6 +33,14 @@ path, and finally polish.
   drives it with `herdr pane send-keys` / `run`, and reads the screen with
   `herdr pane read`. This replaces asking the user to try things by hand,
   and is especially useful for the nvim `$EDITOR` round trips.
+- **The TUI is one flat `internal/tui` package** with a file per view,
+  instead of the planned sub-packages. Views have to send actions to the
+  root (open issue, act on the selection), and sub-packages would need an
+  extra shared-messages package just for that.
+- **The issue list is rendered by hand** rather than with the bubbles
+  `table`. The table can't color cells per row, show selection markers or
+  draw group headers, and its default keys clash with `space`, `ctrl+a`
+  and `g`.
 - **Chords are handled at the TUI root.** One small chord state machine
   (with a 1-second timeout) sits in front of the view routing, so `gg`, `dn`
   and `b*` behave the same in every view.
@@ -62,7 +70,7 @@ The full task details are in `tasks/todo.md`.
 - [ ] One manual write round trip on wh (create, update, note, delete), **only after the user approves it**
 
 ### Phase 3: TUI read path
-- [ ] Task 10: TUI root, keymap and chord helper, status bar, host picker and host switching
+- [x] Task 10: TUI root, keymap and chord helper, status bar, host picker and host switching
 - [ ] Task 11: Issue list with filters, pagination, spinner, icons and status colours
 - [ ] Task 12: List extras: group by project and the `/` search
 - [ ] Task 13: Issue view with header, body, Notes/History tabs and scrolling

@@ -55,9 +55,8 @@ func newRootCmd(d deps) *cobra.Command {
 			}
 			return nil
 		},
-		// Launching the TUI lands in Task 10; until then show help.
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			return cmd.Help()
+			return opts.runTUI(cmd)
 		},
 	}
 

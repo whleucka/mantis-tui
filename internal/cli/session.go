@@ -30,9 +30,22 @@ func (o *globalOpts) openSession(cmd *cobra.Command) (*session, error) {
 	if err != nil {
 		return nil, asUsage(err)
 	}
+	host, err := o.selectHost(res)
+	if err != nil {
+		return nil, err
+	}
+	client := mantis.NewClient(host.URL, host.Token)
+	m := meta.New(client)
+	return &session{cfg: cfg, host: host, client: client, meta: m, resolve: service.NewResolver(m)}, nil
+}
+
+// selectHost applies the selection order (--host, MANTIS_TUI_HOST, default,
+// only host, last used). A config.ErrNeedPicker error is returned unwrapped
+// so the TUI can show its picker; every other failure is a usage error.
+func (o *globalOpts) selectHost(res config.Resolution) (config.Host, error) {
 	for _, d := range res.Dropped {
 		if o.host != "" && strings.EqualFold(d.Name, o.host) {
-			return nil, usageErrorf("host %q is unavailable: %s", d.Name, d.Reason)
+			return config.Host{}, usageErrorf("host %q is unavailable: %s", d.Name, d.Reason)
 		}
 	}
 	st, _ := config.LoadState(config.DefaultStatePath(os.Getenv))
@@ -41,15 +54,13 @@ func (o *globalOpts) openSession(cmd *cobra.Command) (*session, error) {
 		EnvHost:  os.Getenv("MANTIS_TUI_HOST"),
 		LastUsed: st.LastHost,
 	})
-	if err != nil {
-		if len(res.Hosts) == 0 && len(res.Dropped) > 0 {
-			return nil, usageErrorf("%w: every host was dropped (%s: %s)", err, res.Dropped[0].Name, res.Dropped[0].Reason)
-		}
-		return nil, asUsage(err)
+	switch {
+	case err == nil:
+		return host, nil
+	case len(res.Hosts) == 0 && len(res.Dropped) > 0:
+		return config.Host{}, usageErrorf("%w: every host was dropped (%s: %s)", err, res.Dropped[0].Name, res.Dropped[0].Reason)
 	}
-	client := mantis.NewClient(host.URL, host.Token)
-	m := meta.New(client)
-	return &session{cfg: cfg, host: host, client: client, meta: m, resolve: service.NewResolver(m)}, nil
+	return config.Host{}, asUsage(err)
 }
 
 // ctx returns a context bounded by --timeout.
