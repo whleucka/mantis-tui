@@ -45,10 +45,10 @@ The full task details are in `tasks/todo.md`.
 - [x] Task 1: Scaffold the module, Makefile and lint config, with a cobra root that runs
 - [x] Task 2: Config loading and host selection, plus `mantis-tui hosts`
 - [x] Task 3: API client core and the read endpoints, with scrubbed fixtures
-- [ ] Task 4: CLI `list` and `show` with table and JSON output, and exit codes
+- [x] Task 4: CLI `list` and `show` with table and JSON output, and exit codes
 
 ### Checkpoint A: tracer bullet
-- [ ] `mantis-tui list --host williamhleucka` and `show <id> --json` work against the real wh host
+- [x] `mantis-tui list --host williamhleucka` and `show <id> --json` work against the real wh host (and chainlogic, read-only)
 
 ### Phase 2: CLI write path and service layer
 - [ ] Task 5: Metadata cache and name→id resolution

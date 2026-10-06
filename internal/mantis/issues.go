@@ -79,3 +79,11 @@ func (c *Client) GetIssue(ctx context.Context, id int) (*IssueResult, error) {
 type issuesEnvelope struct {
 	Issues []Issue `json:"issues"`
 }
+
+// ListFields are the fields requested for issue lists. Omitting history and
+// notes makes list responses 10-20x smaller.
+var ListFields = []string{
+	"id", "summary", "project", "category", "status", "resolution", "priority",
+	"severity", "reproducibility", "view_state", "handler", "reporter",
+	"created_at", "updated_at", "monitors", "tags",
+}

@@ -64,18 +64,18 @@ makes read-only calls against wh and scrubs emails and names.
 `--history`. The default output is an aligned table; `--json` prints the
 server's JSON unchanged. Map errors to exit codes 1, 2, 3 and 4.
 **Acceptance criteria:**
-- [ ] In-process cobra tests against `httptest` cover table output, `--json` passthrough and every exit code
-- [ ] `--project` accepts a project name or an id
-- [ ] Works against real wh: `mantis-tui list --host williamhleucka --filter assigned`
+- [x] In-process cobra tests against `httptest` cover table output, `--json` passthrough and every exit code
+- [x] `--project` accepts a project name or an id
+- [x] Works against real wh: `mantis-tui list --host williamhleucka --filter assigned`
 **Verification:** `go test ./internal/cli/...`. Manual read-only run against wh, plus a read-only `list --page-size 5` against chainlogic as a version smoke test
 **Dependencies:** 2, 3
 **Files:** `internal/cli/list.go`, `internal/cli/show.go`, `internal/cli/output.go`, `internal/cli/exit.go`, `internal/cli/cli_test.go`
 **Scope:** M
 
 ### ✅ Checkpoint A: tracer bullet
-- [ ] All tests pass, `make lint` is clean
-- [ ] Real read path works on wh and chainlogic
-- [ ] Review with the user before Phase 2
+- [x] All tests pass, `make lint` is clean
+- [x] Real read path works on wh and chainlogic
+- [x] Review with the user before Phase 2
 
 ---
 

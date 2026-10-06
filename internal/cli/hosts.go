@@ -24,7 +24,7 @@ func newHostsCmd(opts *globalOpts) *cobra.Command {
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			cfg, res, err := opts.loadConfig(cmd.ErrOrStderr())
 			if err != nil {
-				return err
+				return asUsage(err)
 			}
 
 			dropped := map[string]string{}

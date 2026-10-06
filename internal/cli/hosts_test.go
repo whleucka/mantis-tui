@@ -97,8 +97,8 @@ func TestHostsJSON(t *testing.T) {
 
 func TestHostsMissingExplicitConfig(t *testing.T) {
 	_, _, err := runCLI(t, "--config", filepath.Join(t.TempDir(), "nope.toml"), "hosts")
-	if err == nil {
-		t.Fatal("expected error for missing --config file")
+	if ExitCode(err) != 2 {
+		t.Fatalf("exit code = %d (err %v), want 2 for a missing --config file", ExitCode(err), err)
 	}
 }
 

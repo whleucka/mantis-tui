@@ -25,6 +25,12 @@ func NewRootCmd() *cobra.Command {
 		Short:         "A terminal UI and CLI for the MantisBT bug tracker",
 		SilenceUsage:  true,
 		SilenceErrors: true,
+		Args: func(_ *cobra.Command, args []string) error {
+			if len(args) > 0 {
+				return usageErrorf("unknown command %q (see --help)", args[0])
+			}
+			return nil
+		},
 		// Launching the TUI lands in Task 10; until then show help.
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			return cmd.Help()
@@ -37,6 +43,7 @@ func NewRootCmd() *cobra.Command {
 	flags.BoolVar(&opts.json, "json", false, "print raw API JSON instead of a table")
 	flags.DurationVar(&opts.timeout, "timeout", 30*time.Second, "timeout for each API request")
 
-	root.AddCommand(newHostsCmd(opts))
+	root.SetFlagErrorFunc(func(_ *cobra.Command, err error) error { return asUsage(err) })
+	root.AddCommand(newHostsCmd(opts), newListCmd(opts), newShowCmd(opts))
 	return root
 }
