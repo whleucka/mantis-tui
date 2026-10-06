@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"strings"
 	"testing"
 
 	tea "charm.land/bubbletea/v2"
@@ -130,5 +131,17 @@ func TestPickerRanksPrefixMatchesFirst(t *testing.T) {
 	msg, _ := pick(t, p, "a", "c", "k", "enter")
 	if msg.(pickedMsg).value != 30 {
 		t.Errorf("'ack' should pick acknowledged (prefix) over feedback, got %v", msg)
+	}
+}
+
+func TestPickerRowsDoNotWrap(t *testing.T) {
+	p := newPicker("Select a host", []pickerOption{
+		{label: "williamhleucka", detail: "https://mantis.williamhleucka.com/with/a/long/path", value: 1},
+		{label: "chainlogic", detail: "https://mantis.chainlogic.it", value: 2},
+	}, func(pickerOption) tea.Cmd { return nil })
+	out := p.view(73, 40)
+	// border(2) + title + 2 rows + footer = 6 lines; wrapping would add more.
+	if n := strings.Count(out, "\n") + 1; n != 6 {
+		t.Errorf("picker is %d lines, want 6 (rows must truncate, not wrap):\n%s", n, out)
 	}
 }

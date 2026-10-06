@@ -340,13 +340,26 @@ reference, the keymap tables and troubleshooting.
 asserts the token never appears. Raise coverage to the spec targets. Walk
 through the 11 success criteria in SPEC.md and tick them off.
 **Acceptance criteria:**
-- [ ] The token-leak test passes across all commands and error paths
-- [ ] Coverage: `config`, `mantis` and `service` at ≥ 85%, and `tui` at ≥ 60%
-- [ ] Each success criterion in SPEC.md is ticked off with the evidence noted
+- [x] The token-leak test passes across all commands and error paths
+- [x] Coverage: `config`, `mantis` and `service` at ≥ 85%, and `tui` at ≥ 60%
+- [x] Each success criterion in SPEC.md is ticked off with the evidence noted
 **Verification:** `make race && make lint && go test -cover ./...`
 **Dependencies:** 19
 **Files:** `internal/cli/leak_test.go`, plus test files where coverage is missing
 **Scope:** S
 
 ### ✅ Checkpoint E: complete
-- [ ] All success criteria are met, the race detector and lint are clean, and the work is ready for review
+- [x] All success criteria are met, the race detector and lint are clean, and the work is ready for review
+
+**Success criteria evidence (SPEC.md):**
+1. **Host picker:** with the real two-host config and no default, the TUI shows the picker (herdr check). With `MANTIS_CL` unset, it goes straight to wh. `TestStartsWithPickerWhenNoInitialHost`, `TestInitialHostSkipsPicker` and the `config` selection tests cover it too.
+2. **Load time:** real `list` takes 287 ms on wh (assigned, 50) and 331 ms on chainlogic (assigned, 50). 500 issues on chainlogic take 1.1 s (with `select=`). The spinner and `L`/`H` paging are covered by `TestPaging` and `TestLoadErrorGoesToStatusBar`.
+3. **Keymap parity:** audited key by key at Checkpoint D. `?` is now implemented. `<C-s>` is nvim's layout toggle and doesn't apply.
+4. **In-place updates:** the row updates after a 2xx with no list reload, and a failure leaves the row unchanged with the error in the status bar (`TestEnumActionsPatchTheCurrentIssue`, `TestFailedUpdateLeavesRowAndReports`; checked against the dev server).
+5. **Notes in nvim:** round trip with real nvim from the CLI and the TUI (herdr). An empty buffer sends nothing (`TestEmptyEditorDiscardsNote`, the CLI check). Time `0:45` arrives in the request body at the dev server. On wh, time tracking is disabled server-side, so `--time` is rejected up front.
+6. **Create:** `TestCreateFullFlowMatchesCLIRequest` shows TUI and CLI build identical requests. A real `create` on wh worked at Checkpoint B.
+7. **Batch partial failure:** `TestBatchPartialFailureKeepsOnlyFailedSelected` (10 issues, 1 rejected → "1 of 10 failed (9 ok)", only #7 still selected). The CLI equivalent is `TestBatchReportsPerIDResultsInOrder`.
+8. **Auto-refresh:** `TestAutoRefreshFollowsIssueWhenRowsReorder`, plus a live check where the cursor followed #32 to the top.
+9. **JSON and exit codes:** `show 33 --json | jq .issues[0].id` printed `33` on wh. Exit codes are tested in `TestShowExitCodes`, `TestExitCodeUsage` and the others.
+10. **No token leaks:** a search of the repo and scratchpad for the real token values matches 0 files. `TestErrorsNeverContainToken`, `TestNetworkErrorNeverContainsToken`, `TestNoTokenLeakWhenServerEchoesIt` (every command; a mutation check caught 36 leaks with scrubbing off) and `TestNoTokenLeakOnSuccess` all pass.
+11. **Clean build:** race tests and lint are clean. Coverage: config 96.5%, mantis 92.9%, service 88.7% (target 85%), tui 92.9% (target 60%), cli 86.3%.

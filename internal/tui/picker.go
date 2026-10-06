@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	tea "charm.land/bubbletea/v2"
+	"github.com/charmbracelet/x/ansi"
 )
 
 // pickerOption is one choice in a picker.
@@ -88,6 +89,8 @@ func (p *picker) update(msg tea.KeyPressMsg) (cmd tea.Cmd, done bool) {
 }
 
 func (p *picker) view(width, height int) string {
+	boxW := min(max(width/2, 40), width-2)
+	inner := max(boxW-4, 10) // border and padding
 	var b strings.Builder
 	b.WriteString(styleTitle.Render(p.title))
 	if p.filter != "" {
@@ -120,11 +123,11 @@ func (p *picker) view(width, height int) string {
 				line += styleMuted.Render("  " + o.detail)
 			}
 		}
-		b.WriteString(line + "\n")
+		b.WriteString(ansi.Truncate(line, inner, "…") + "\n")
 	}
 	if len(vis) == 0 {
 		b.WriteString(styleMuted.Render("  no matches") + "\n")
 	}
-	b.WriteString(styleMuted.Render(fmt.Sprintf("%d/%d · type to filter · esc cancel", len(vis), len(p.options))))
-	return styleModal.Width(min(max(width/2, 40), width-2)).Render(b.String())
+	b.WriteString(styleMuted.Render(ansi.Truncate(fmt.Sprintf("%d/%d · type to filter · esc cancel", len(vis), len(p.options)), inner, "…")))
+	return styleModal.Width(boxW).Render(b.String())
 }

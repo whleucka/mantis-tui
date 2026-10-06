@@ -90,10 +90,10 @@ The full task details are in `tasks/todo.md`.
 
 ### Phase 5: Polish
 - [x] Task 19: Help overlay, polished error display, README
-- [ ] Task 20: Success-criteria audit: token-leak test, coverage targets, lint
+- [x] Task 20: Success-criteria audit: token-leak test, coverage targets, lint
 
 ### Checkpoint E: complete
-- [ ] All 11 success criteria in SPEC.md are met. Ready for review.
+- [x] All 11 success criteria in SPEC.md are met. Ready for review. Evidence is in `tasks/todo.md`.
 
 ## Findings During Build
 
