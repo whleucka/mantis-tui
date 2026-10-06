@@ -103,9 +103,9 @@ with pointer fields), `DeleteIssue`, `AddNote` (text, private flag,
 `time_tracking.duration`), `DeleteNote` and `Monitor`. `service.Unmonitor`
 does the GET of the monitor list and the PATCH back without the current user.
 **Acceptance criteria:**
-- [ ] Every write endpoint's request body matches the Mantis REST shape, checked in tests
-- [ ] The unmonitor test proves other users' monitors are kept in the PATCH body
-- [ ] `IssuePatch` sends only the fields that were set (nil fields are left out)
+- [x] Every write endpoint's request body matches the Mantis REST shape, checked in tests
+- [x] The unmonitor test proves other users' monitors are kept in the PATCH body
+- [x] `IssuePatch` sends only the fields that were set (nil fields are left out)
 **Verification:** `go test ./internal/mantis/... ./internal/service/...`
 **Dependencies:** 3, 5
 **Files:** `internal/mantis/write.go`, `internal/mantis/write_test.go`, `internal/service/monitor.go`, `internal/service/monitor_test.go`

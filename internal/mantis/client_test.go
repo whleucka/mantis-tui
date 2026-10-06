@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -27,7 +28,8 @@ func fixture(t *testing.T, name string) []byte {
 // fakeServer serves a fixed status/body and records the last request.
 type fakeServer struct {
 	*httptest.Server
-	last *http.Request
+	last     *http.Request
+	lastBody []byte
 }
 
 func newFakeServer(t *testing.T, status int, body []byte) *fakeServer {
@@ -35,6 +37,7 @@ func newFakeServer(t *testing.T, status int, body []byte) *fakeServer {
 	fs := &fakeServer{}
 	fs.Server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fs.last = r.Clone(context.Background())
+		fs.lastBody, _ = io.ReadAll(r.Body)
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(status)
 		_, _ = w.Write(body)

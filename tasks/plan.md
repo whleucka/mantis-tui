@@ -52,7 +52,7 @@ The full task details are in `tasks/todo.md`.
 
 ### Phase 2: CLI write path and service layer
 - [x] Task 5: Metadata cache and name→id resolution
-- [ ] Task 6: Client write endpoints, including the unmonitor step
+- [x] Task 6: Client write endpoints, including the unmonitor step
 - [ ] Task 7: CLI `update`, `assign`, `monitor`, `unmonitor` and `open`, plus the batch runner
 - [ ] Task 8: Editor package and CLI `note` / `note delete`
 - [ ] Task 9: CLI `create` and `delete`, with the TTY and `--yes` guard
