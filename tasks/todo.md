@@ -133,9 +133,9 @@ It exposes a plain `Run` (for the CLI) and a `tea.ExecProcess`-ready
 `Cmd`. The CLI `note` takes `-m`, `--edit` or `-` (stdin), plus `--time`
 and `--private`. `note delete` has the TTY and `--yes` guard.
 **Acceptance criteria:**
-- [ ] Editor tests use a fake `$EDITOR` script to cover stripping, the empty/unchanged abort and 0600 permissions
-- [ ] `note 1 --time 0:30` sends `time_tracking.duration = "0:30"`, and a malformed time exits with code 2
-- [ ] `note delete` with no TTY and no `--yes` refuses and exits with code 2
+- [x] Editor tests use a fake `$EDITOR` script to cover stripping, the empty/unchanged abort and 0600 permissions
+- [x] `note 1 --time 0:30` sends `time_tracking.duration = "0:30"`, and a malformed time exits with code 2
+- [x] `note delete` with no TTY and no `--yes` refuses and exits with code 2
 **Verification:** `go test ./internal/editor/... ./internal/cli/...`. Manual: `--edit` with nvim against an `httptest`-backed dev server, or against wh after approval
 **Dependencies:** 6
 **Files:** `internal/editor/editor.go`, `internal/editor/editor_test.go`, `internal/cli/note.go`, `internal/cli/confirm.go`

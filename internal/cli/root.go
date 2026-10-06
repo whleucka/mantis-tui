@@ -3,6 +3,8 @@
 package cli
 
 import (
+	"io"
+	"os"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -22,11 +24,18 @@ type globalOpts struct {
 
 // deps are the side effects the command tree needs; tests replace them.
 type deps struct {
-	openURL func(url string) error
+	openURL    func(url string) error
+	stdin      io.Reader
+	isTerminal func() bool // is stdin an interactive terminal?
 }
 
 func defaultDeps() deps {
-	return deps{openURL: service.OpenBrowser}
+	return deps{openURL: service.OpenBrowser, stdin: os.Stdin, isTerminal: stdinIsTerminal}
+}
+
+func stdinIsTerminal() bool {
+	info, err := os.Stdin.Stat()
+	return err == nil && info.Mode()&os.ModeCharDevice != 0
 }
 
 // NewRootCmd builds the mantis-tui command tree.
@@ -58,11 +67,13 @@ func newRootCmd(d deps) *cobra.Command {
 	flags.BoolVar(&opts.json, "json", false, "print raw API JSON instead of a table")
 	flags.DurationVar(&opts.timeout, "timeout", 30*time.Second, "timeout for each API request")
 
+	root.SetIn(d.stdin)
 	root.SetFlagErrorFunc(func(_ *cobra.Command, err error) error { return asUsage(err) })
 	root.AddCommand(
 		newHostsCmd(opts), newListCmd(opts), newShowCmd(opts),
 		newUpdateCmd(opts), newAssignCmd(opts),
 		newMonitorCmd(opts), newUnmonitorCmd(opts), newOpenCmd(opts),
+		newNoteCmd(opts),
 	)
 	return root
 }

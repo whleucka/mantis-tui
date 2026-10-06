@@ -3,6 +3,7 @@ package cli
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -12,12 +13,32 @@ import (
 // runCLI executes the root command in-process and returns stdout, stderr and the error.
 func runCLI(t *testing.T, args ...string) (string, string, error) {
 	t.Helper()
-	return runCLIWith(t, defaultDeps(), args...)
+	return runCLIWith(t, testDeps(), args...)
+}
+
+// testDeps never touch the real terminal: stdin is empty and not a TTY, and
+// opening a browser fails the test.
+func testDeps() deps {
+	return deps{
+		openURL:    func(u string) error { return fmt.Errorf("test tried to open a browser: %s", u) },
+		stdin:      strings.NewReader(""),
+		isTerminal: func() bool { return false },
+	}
 }
 
 // runCLIWith is runCLI with injected dependencies.
 func runCLIWith(t *testing.T, d deps, args ...string) (string, string, error) {
 	t.Helper()
+	def := testDeps()
+	if d.openURL == nil {
+		d.openURL = def.openURL
+	}
+	if d.stdin == nil {
+		d.stdin = def.stdin
+	}
+	if d.isTerminal == nil {
+		d.isTerminal = def.isTerminal
+	}
 	var stdout, stderr bytes.Buffer
 	cmd := newRootCmd(d)
 	cmd.SetOut(&stdout)

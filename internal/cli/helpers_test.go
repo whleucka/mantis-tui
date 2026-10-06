@@ -19,6 +19,10 @@ func isolateEnv(t *testing.T) {
 	t.Setenv("MANTIS_TUI_HOST", "")
 	t.Setenv("XDG_STATE_HOME", t.TempDir())
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	// A test that reaches the editor without its own fake fails fast instead
+	// of opening the developer's real editor.
+	t.Setenv("VISUAL", "false")
+	t.Setenv("EDITOR", "false")
 }
 
 func mantisFixture(t *testing.T, name string) []byte {
