@@ -25,6 +25,9 @@ type Fake struct {
 	// ErrFor fails a call for one issue id only: ErrFor["UpdateIssue"][7].
 	ErrFor map[string]map[int]error
 
+	// ListCalls records every ListIssues request.
+	ListCalls []mantis.ListOptions
+
 	// Recorded writes, in call order.
 	Created      []mantis.NewIssue
 	Patches      []Patch
@@ -85,20 +88,38 @@ func (f *Fake) Me(context.Context) (*mantis.User, error) {
 	return &u, nil
 }
 
-// ListIssues implements mantis.API, returning all issues ordered by id descending.
-func (f *Fake) ListIssues(context.Context, mantis.ListOptions) (*mantis.IssueList, error) {
+// ListIssues implements mantis.API: issues ordered by id descending, paged
+// by Page/PageSize (filters are recorded but not applied).
+func (f *Fake) ListIssues(_ context.Context, opts mantis.ListOptions) (*mantis.IssueList, error) {
 	if err := f.enter("ListIssues"); err != nil {
 		return nil, err
 	}
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	out := make([]mantis.Issue, 0, len(f.Issues))
+	f.ListCalls = append(f.ListCalls, opts)
+	all := make([]mantis.Issue, 0, len(f.Issues))
 	for _, is := range f.Issues {
-		out = append(out, is)
+		all = append(all, is)
 	}
-	sort.Slice(out, func(i, j int) bool { return out[i].ID > out[j].ID })
+	sort.Slice(all, func(i, j int) bool { return all[i].ID > all[j].ID })
+	out := all
+	if opts.PageSize > 0 {
+		page := max(opts.Page, 1)
+		start := min((page-1)*opts.PageSize, len(all))
+		out = all[start:min(start+opts.PageSize, len(all))]
+	}
 	raw, _ := json.Marshal(map[string]any{"issues": out})
 	return &mantis.IssueList{Issues: out, Raw: raw}, nil
+}
+
+// LastList returns the most recent ListIssues options.
+func (f *Fake) LastList() mantis.ListOptions {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if len(f.ListCalls) == 0 {
+		return mantis.ListOptions{}
+	}
+	return f.ListCalls[len(f.ListCalls)-1]
 }
 
 // GetIssue implements mantis.API.

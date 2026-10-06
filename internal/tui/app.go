@@ -141,10 +141,20 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.status.info(msg.text)
 		}
 		return m, nil
+
+	case filterChosenMsg:
+		if hv := m.hosts[msg.host]; hv != nil {
+			return m, hv.list.setFilter(m, msg.filter)
+		}
+		return m, nil
 	}
 
-	if m.cur != nil {
-		return m, m.cur.list.handleMsg(m, msg)
+	// Host-scoped results go to the host that asked for them, even if the
+	// user has switched away since.
+	if hm, ok := msg.(interface{ hostName() string }); ok {
+		if hv := m.hosts[hm.hostName()]; hv != nil {
+			return m, hv.list.handleMsg(m, msg)
+		}
 	}
 	return m, nil
 }
@@ -219,7 +229,8 @@ func (m *Model) selectHost(name string) tea.Cmd {
 	var cmds []tea.Cmd
 	hv, ok := m.hosts[name]
 	if !ok {
-		hv = &hostView{sess: m.opts.NewSession(*host), list: newListModel(m.opts.Config)}
+		sess := m.opts.NewSession(*host)
+		hv = &hostView{sess: sess, list: newListModel(m.opts.Config, sess)}
 		m.hosts[name] = hv
 		m.cur = hv
 		cmds = append(cmds, hv.list.init(m))
@@ -237,6 +248,26 @@ func (m *Model) selectHost(name string) tea.Cmd {
 		})
 	}
 	return tea.Batch(cmds...)
+}
+
+// startLoading shows the spinner until the matching stopLoading.
+func (m *Model) startLoading() tea.Cmd {
+	m.loading++
+	if m.loading == 1 {
+		return m.spin.Tick
+	}
+	return nil
+}
+
+func (m *Model) stopLoading() {
+	if m.loading > 0 {
+		m.loading--
+	}
+}
+
+// openIssue shows one issue (the issue view lands in Task 13).
+func (m *Model) openIssue(id int) tea.Cmd {
+	return infoCmd(m.cur.sess.Host.Name, fmt.Sprintf("#%d", id))
 }
 
 // redact removes every configured token from text shown on screen.

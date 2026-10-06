@@ -33,6 +33,13 @@ func testHosts() []config.Host {
 
 func newHarness(t *testing.T, initial *config.Host, setup func(host string, f *mantistest.Fake)) *harness {
 	t.Helper()
+	return newHarnessWith(t, initial, setup, nil)
+}
+
+func winSize(w, h int) tea.WindowSizeMsg { return tea.WindowSizeMsg{Width: w, Height: h} }
+
+func newHarnessWith(t *testing.T, initial *config.Host, setup func(host string, f *mantistest.Fake), tweak func(*config.Config)) *harness {
+	t.Helper()
 	h := &harness{t: t, fakes: map[string]*mantistest.Fake{}}
 	for _, host := range testHosts() {
 		f := &mantistest.Fake{
@@ -48,6 +55,9 @@ func newHarness(t *testing.T, initial *config.Host, setup func(host string, f *m
 	cfg := config.Defaults()
 	cfg.List.AutoRefresh.Duration = 0
 	cfg.Issue.AutoRefresh.Duration = 0
+	if tweak != nil {
+		tweak(cfg)
+	}
 	m := New(Options{
 		Config:  cfg,
 		Hosts:   testHosts(),

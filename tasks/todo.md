@@ -188,9 +188,9 @@ width), updated and the monitor icon. `F` opens a filter picker, `L` / `H`
 page, `r` refreshes, `enter` opens the issue. Icons can be changed in the
 config.
 **Acceptance criteria:**
-- [ ] Message tests: a filter change reloads page 1, paging past the last page is a no-op, and a load error goes to the status bar
-- [ ] Column widths recalculate on resize, and summary fills the remaining width (golden at 120×40 and 80×24)
-- [ ] The default filter and page size come from the config
+- [x] Message tests: a filter change reloads page 1, paging past the last page is a no-op, and a load error goes to the status bar
+- [x] Column widths recalculate on resize, and summary fills the remaining width (golden at 120×40 and 80×24)
+- [x] The default filter and page size come from the config
 **Verification:** `go test ./internal/tui/issuelist/...`. Manual against wh
 **Dependencies:** 10
 **Files:** `internal/tui/issuelist/model.go`, `internal/tui/issuelist/columns.go`, `internal/tui/issuelist/model_test.go`, `internal/tui/styles.go`
