@@ -86,7 +86,7 @@ The full task details are in `tasks/todo.md`.
 - [x] Task 18: Create-issue form
 
 ### Checkpoint D: parity
-- [ ] Every key in mantis.nvim's README keymap tables has a working equivalent (spec success criterion 3)
+- [x] Every key in mantis.nvim's README keymap tables has a working equivalent (spec success criterion 3). The exceptions are `?`, which lands in Task 19, and nvim's `<C-s>` layout toggle, which doesn't apply.
 
 ### Phase 5: Polish
 - [ ] Task 19: Help overlay, polished error display, README

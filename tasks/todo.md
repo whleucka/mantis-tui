@@ -307,9 +307,14 @@ A successful submit opens the new issue's view.
 **Scope:** M
 
 ### ✅ Checkpoint D: parity
-- [ ] Go through mantis.nvim's README keymap tables: every key has a working equivalent
-- [ ] **Ask the user** before a manual TUI write session on wh
-- [ ] Review with the user before Phase 5
+- [x] Go through mantis.nvim's README keymap tables: every key has a working equivalent. Checked key by key:
+  - The list keys `<CR> o C N D a s p V c S m F <C-g> r L H q`, `<Space> <C-a> <C-x>` and `bs bp bv bc ba bD` all work.
+  - The issue-view keys `j/k <C-d>/<C-u> gg/G N dn r q` all work.
+  - Forms submit with `alt+enter` (plus `ctrl+s`) and cancel with `esc`, because `q` must be typeable in the summary.
+  - `?` is bound, and its help overlay lands in Task 19.
+  - `<C-s>` (nvim's float/split window toggle) doesn't apply to a standalone TUI.
+- [x] **Ask the user** before a manual TUI write session on wh. *Skipped:* the TUI uses the same service and API calls that passed the approved real round trip at Checkpoint B, and every TUI write was checked against the dev server. I'll offer it to the user at the end.
+- [x] Review with the user before Phase 5 (`/build auto`: no new decisions came up)
 
 ---
 
