@@ -74,10 +74,10 @@ The full task details are in `tasks/todo.md`.
 - [x] Task 11: Issue list with filters, pagination, spinner, icons and status colours
 - [x] Task 12: List extras: group by project and the `/` search
 - [x] Task 13: Issue view with header, body, Notes/History tabs and scrolling
-- [ ] Task 14: Auto-refresh for the list and the issue view
+- [x] Task 14: Auto-refresh for the list and the issue view
 
 ### Checkpoint C: TUI browse
-- [ ] I can launch the TUI, pick a host, filter and page the list, open an issue, read notes and history, switch hosts, and auto-refresh keeps the cursor in place
+- [x] I can launch the TUI, pick a host, filter and page the list, open an issue, read notes and history, switch hosts, and auto-refresh keeps the cursor in place
 
 ### Phase 4: TUI write path
 - [ ] Task 15: Picker and confirm modals, plus the single-issue actions in the list and the issue view

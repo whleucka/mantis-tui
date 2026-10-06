@@ -229,17 +229,17 @@ disables it). The list keeps the cursor by issue id and keeps the
 selection. The issue view keeps its scroll offset. A refresh is skipped
 while a modal or `$EDITOR` is open, or while a request is in flight.
 **Acceptance criteria:**
-- [ ] A test where the rows are reordered between refreshes: the cursor follows the issue id
-- [ ] A test where the selected issue disappears: the cursor clamps to a valid row and the selection drops that id
-- [ ] With the interval set to `0`, no tick is ever scheduled
+- [x] A test where the rows are reordered between refreshes: the cursor follows the issue id
+- [x] A test where the selected issue disappears: the cursor clamps to a valid row and the selection drops that id
+- [x] With the interval set to `0`, no tick is ever scheduled
 **Verification:** `go test ./internal/tui/...`
 **Dependencies:** 12, 13
 **Files:** `internal/tui/issuelist/refresh.go`, `internal/tui/issueview/refresh.go`, `internal/tui/refresh_test.go`
 **Scope:** S
 
 ### ✅ Checkpoint C: TUI browse
-- [ ] The full browse flow works against wh: pick a host, filter, page, search, group, open an issue, read notes and history, switch hosts, and let auto-refresh run
-- [ ] Review with the user before Phase 4
+- [x] The full browse flow works against wh: pick a host, filter, page, search, group, open an issue, read notes and history, switch hosts, and let auto-refresh run
+- [x] Review with the user before Phase 4
 
 ---
 

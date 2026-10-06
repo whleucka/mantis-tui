@@ -29,42 +29,77 @@ type issueModel struct {
 	width  int
 	req    int
 	loaded bool
+
+	interval time.Duration
+	tickGen  int
+	inFlight bool
 }
 
 type issueLoadedMsg struct {
-	host  string
-	id    int
-	req   int
-	issue *mantis.Issue
-	err   error
+	host   string
+	id     int
+	req    int
+	silent bool
+	issue  *mantis.Issue
+	err    error
 }
 
 func (msg issueLoadedMsg) hostName() string { return msg.host }
 
-func newIssueModel(sess *Session, id int) *issueModel {
-	return &issueModel{sess: sess, id: id, vp: viewport.New()}
+func newIssueModel(sess *Session, id int, interval time.Duration) *issueModel {
+	return &issueModel{sess: sess, id: id, vp: viewport.New(), interval: interval}
 }
 
 func (iv *issueModel) load(m *Model) tea.Cmd {
+	return tea.Batch(m.startLoading(), iv.fetch(false))
+}
+
+func (iv *issueModel) fetch(silent bool) tea.Cmd {
 	iv.req++
+	iv.inFlight = true
 	req, id, host, api := iv.req, iv.id, iv.sess.Host.Name, iv.sess.API
-	return tea.Batch(m.startLoading(), func() tea.Msg {
+	return func() tea.Msg {
 		ctx, cancel := context.WithTimeout(context.Background(), requestTimeout)
 		defer cancel()
 		res, err := api.GetIssue(ctx, id)
-		msg := issueLoadedMsg{host: host, id: id, req: req, err: err}
+		msg := issueLoadedMsg{host: host, id: id, req: req, silent: silent, err: err}
 		if err == nil {
 			msg.issue = &res.Issue
 		}
 		return msg
-	})
+	}
+}
+
+func (iv *issueModel) scheduleRefresh() tea.Cmd {
+	if iv.interval <= 0 {
+		return nil
+	}
+	iv.tickGen++
+	msg := refreshTickMsg{host: iv.sess.Host.Name, target: "issue", gen: iv.tickGen}
+	return tea.Tick(iv.interval, func(time.Time) tea.Msg { return msg })
+}
+
+// onTick reloads the issue silently; the chain ends once the view closes.
+func (iv *issueModel) onTick(m *Model, msg refreshTickMsg) tea.Cmd {
+	hv := m.hosts[iv.sess.Host.Name]
+	if msg.gen != iv.tickGen || hv == nil || hv.issue != iv {
+		return nil
+	}
+	next := iv.scheduleRefresh()
+	if m.cur != hv || m.busy() || iv.inFlight {
+		return next
+	}
+	return tea.Batch(next, iv.fetch(true))
 }
 
 func (iv *issueModel) handleMsg(m *Model, msg issueLoadedMsg) tea.Cmd {
-	m.stopLoading()
+	if !msg.silent {
+		m.stopLoading()
+	}
 	if msg.req != iv.req || msg.id != iv.id {
 		return nil
 	}
+	iv.inFlight = false
 	if msg.err != nil {
 		iv.err = msg.err
 		iv.render(m)

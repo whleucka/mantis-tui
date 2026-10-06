@@ -47,12 +47,23 @@ func (hv *hostView) context() string {
 
 // handleMsg routes a host-scoped result to the part of the UI that asked.
 func (hv *hostView) handleMsg(m *Model, msg tea.Msg) tea.Cmd {
-	if msg, ok := msg.(issueLoadedMsg); ok {
+	switch msg := msg.(type) {
+	case issueLoadedMsg:
 		if hv.issue == nil {
-			m.stopLoading()
+			if !msg.silent {
+				m.stopLoading()
+			}
 			return nil
 		}
 		return hv.issue.handleMsg(m, msg)
+	case refreshTickMsg:
+		if msg.target == "issue" {
+			if hv.issue == nil {
+				return nil
+			}
+			return hv.issue.onTick(m, msg)
+		}
+		return hv.list.onTick(m, msg)
 	}
 	return hv.list.handleMsg(m, msg)
 }
@@ -74,6 +85,7 @@ type Model struct {
 	cur   *hostView
 
 	modal   modal
+	editing bool // an external $EDITOR owns the terminal
 	chord   chord
 	status  status
 	spin    spinner.Model
@@ -174,6 +186,10 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 	return m, nil
 }
+
+// busy reports that the user is in the middle of something an auto-refresh
+// must not disturb.
+func (m *Model) busy() bool { return m.modal != nil || m.editing }
 
 func (m *Model) isCurrent(host string) bool { return m.cur != nil && m.cur.sess.Host.Name == host }
 
@@ -286,10 +302,10 @@ func (m *Model) stopLoading() {
 
 // openIssue switches the current host to the issue view for id.
 func (m *Model) openIssue(id int) tea.Cmd {
-	iv := newIssueModel(m.cur.sess, id)
+	iv := newIssueModel(m.cur.sess, id, m.opts.Config.Issue.AutoRefresh.Duration)
 	m.cur.issue, m.cur.screen = iv, screenIssue
 	iv.render(m)
-	return iv.load(m)
+	return tea.Batch(iv.load(m), iv.scheduleRefresh())
 }
 
 // redact removes every configured token from text shown on screen.

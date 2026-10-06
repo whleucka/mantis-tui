@@ -36,6 +36,10 @@ type listModel struct {
 
 	meID   int
 	colors map[string]string
+
+	interval time.Duration // auto-refresh; 0 disables
+	tickGen  int           // current auto-refresh chain
+	inFlight bool
 }
 
 type (
@@ -44,6 +48,7 @@ type (
 		req    int
 		page   int
 		keepID int // issue to keep the cursor on, 0 for the first row
+		silent bool
 		issues []mantis.Issue
 		err    error
 	}
@@ -58,6 +63,15 @@ type (
 func (msg issuesLoadedMsg) hostName() string { return msg.host }
 func (msg listMetaMsg) hostName() string     { return msg.host }
 
+// refreshTickMsg fires an auto-refresh for target ("list" or "issue").
+type refreshTickMsg struct {
+	host   string
+	target string
+	gen    int
+}
+
+func (msg refreshTickMsg) hostName() string { return msg.host }
+
 func newListModel(cfg *config.Config, sess *Session) *listModel {
 	return &listModel{
 		sess:     sess,
@@ -67,31 +81,61 @@ func newListModel(cfg *config.Config, sess *Session) *listModel {
 		grouped:  cfg.List.GroupByProject,
 		page:     1,
 		pageSize: cfg.List.PageSize,
+		interval: cfg.List.AutoRefresh.Duration,
 	}
 }
 
 func (l *listModel) init(m *Model) tea.Cmd {
-	return tea.Batch(l.load(m, 1, 0), l.loadMeta())
+	return tea.Batch(l.load(m, 1, 0), l.loadMeta(), l.scheduleRefresh())
 }
 
 func (l *listModel) host() string { return l.sess.Host.Name }
 
 // load fetches a page, keeping the cursor on keepID when it is still there.
 func (l *listModel) load(m *Model, page, keepID int) tea.Cmd {
+	return tea.Batch(m.startLoading(), l.fetch(page, keepID, false))
+}
+
+// fetch requests a page; silent requests (auto-refresh) show no spinner.
+func (l *listModel) fetch(page, keepID int, silent bool) tea.Cmd {
 	l.req++
+	l.inFlight = true
 	req, host, api := l.req, l.host(), l.sess.API
 	opts := mantis.ListOptions{Filter: l.filter, Page: page, PageSize: l.pageSize, Select: mantis.ListFields}
 	fetch := func() tea.Msg {
 		ctx, cancel := context.WithTimeout(context.Background(), requestTimeout)
 		defer cancel()
 		res, err := api.ListIssues(ctx, opts)
-		msg := issuesLoadedMsg{host: host, req: req, page: page, keepID: keepID, err: err}
+		msg := issuesLoadedMsg{host: host, req: req, page: page, keepID: keepID, silent: silent, err: err}
 		if err == nil {
 			msg.issues = res.Issues
 		}
 		return msg
 	}
-	return tea.Batch(m.startLoading(), fetch)
+	return fetch
+}
+
+// scheduleRefresh starts the next auto-refresh tick, replacing any earlier chain.
+func (l *listModel) scheduleRefresh() tea.Cmd {
+	if l.interval <= 0 {
+		return nil
+	}
+	l.tickGen++
+	msg := refreshTickMsg{host: l.host(), target: "list", gen: l.tickGen}
+	return tea.Tick(l.interval, func(time.Time) tea.Msg { return msg })
+}
+
+// onTick re-fetches the page silently unless the user is busy elsewhere.
+func (l *listModel) onTick(m *Model, msg refreshTickMsg) tea.Cmd {
+	if msg.gen != l.tickGen {
+		return nil
+	}
+	next := l.scheduleRefresh()
+	hv := m.hosts[l.host()]
+	if m.cur != hv || hv.screen != screenList || m.busy() || l.inFlight {
+		return next
+	}
+	return tea.Batch(next, l.fetch(l.page, l.currentID(), true))
 }
 
 func (l *listModel) loadMeta() tea.Cmd {
@@ -127,10 +171,13 @@ func (l *listModel) currentID() int {
 func (l *listModel) handleMsg(m *Model, msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case issuesLoadedMsg:
-		m.stopLoading()
+		if !msg.silent {
+			m.stopLoading()
+		}
 		if msg.req != l.req {
 			return nil // superseded by a newer request
 		}
+		l.inFlight = false
 		if msg.err != nil {
 			return errCmd(l.host(), msg.err)
 		}
