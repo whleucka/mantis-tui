@@ -253,9 +253,9 @@ and the same keys apart from `D` in the issue view. A successful update
 patches the row in place, and a failure leaves the row unchanged and
 reports the error.
 **Acceptance criteria:**
-- [ ] Each action sends the right service call, checked with the fake service
-- [ ] Optimistic updates are not used: the row changes only after the server returns 2xx
-- [ ] `D` → confirm → the issue is removed from the list, and the cursor moves to the next row
+- [x] Each action sends the right service call, checked with the fake service
+- [x] Optimistic updates are not used: the row changes only after the server returns 2xx
+- [x] `D` → confirm → the issue is removed from the list, and the cursor moves to the next row
 **Verification:** `go test ./internal/tui/...`. Manual against an `httptest` dev server
 **Dependencies:** 14
 **Files:** `internal/tui/picker/model.go`, `internal/tui/confirm/model.go`, `internal/tui/actions.go`, `internal/tui/actions_test.go`

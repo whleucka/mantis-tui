@@ -134,6 +134,8 @@ func (iv *issueModel) handleAction(m *Model, a action) tea.Cmd {
 		iv.render(m)
 	case actRefresh:
 		return iv.load(m)
+	default:
+		return m.issueAction(a)
 	}
 	return nil
 }

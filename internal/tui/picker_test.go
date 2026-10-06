@@ -121,3 +121,14 @@ func TestPickerViewMarksCursorAndCurrent(t *testing.T) {
 		}
 	}
 }
+
+func TestPickerRanksPrefixMatchesFirst(t *testing.T) {
+	p := newPicker("Status", []pickerOption{
+		{label: "feedback", value: 20},
+		{label: "acknowledged", value: 30},
+	}, func(o pickerOption) tea.Cmd { return func() tea.Msg { return pickedMsg{o.value} } })
+	msg, _ := pick(t, p, "a", "c", "k", "enter")
+	if msg.(pickedMsg).value != 30 {
+		t.Errorf("'ack' should pick acknowledged (prefix) over feedback, got %v", msg)
+	}
+}

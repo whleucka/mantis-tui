@@ -34,16 +34,28 @@ func newPicker(title string, opts []pickerOption, onSelect func(pickerOption) te
 	return p
 }
 
-// visible returns indexes of options matching the filter.
+// visible returns indexes of options matching the filter: labels starting
+// with it first, then other matches, each in their original order.
 func (p *picker) visible() []int {
-	var out []int
 	f := strings.ToLower(p.filter)
+	if f == "" {
+		out := make([]int, len(p.options))
+		for i := range out {
+			out[i] = i
+		}
+		return out
+	}
+	var prefix, rest []int
 	for i, o := range p.options {
-		if f == "" || strings.Contains(strings.ToLower(o.label+" "+o.detail), f) {
-			out = append(out, i)
+		label := strings.ToLower(o.label)
+		switch {
+		case strings.HasPrefix(label, f):
+			prefix = append(prefix, i)
+		case strings.Contains(label+" "+strings.ToLower(o.detail), f):
+			rest = append(rest, i)
 		}
 	}
-	return out
+	return append(prefix, rest...)
 }
 
 // update handles a key; done reports that the picker should close.

@@ -234,8 +234,66 @@ func (l *listModel) handleAction(m *Model, a action) tea.Cmd {
 		if id := l.currentID(); id != 0 {
 			return m.openIssue(id)
 		}
+	case actDelete:
+		if is := m.currentIssue(); is != nil {
+			m.confirmDelete([]mantis.Issue{*is})
+		}
+	default:
+		return m.issueAction(a)
 	}
 	return nil
+}
+
+// applyPatched swaps in updated issues and reports the outcome.
+func (l *listModel) applyPatched(_ *Model, msg patchedMsg) tea.Cmd {
+	for i, is := range l.issues {
+		if fresh, ok := msg.updated[is.ID]; ok && fresh != nil && fresh.ID != 0 {
+			fresh.Notes, fresh.History = nil, nil // the list never shows them
+			l.issues[i] = *fresh
+		}
+	}
+	text, err := summarize(msg.label, msg.results)
+	if err != nil {
+		return errCmd(l.host(), err)
+	}
+	return infoCmd(l.host(), text)
+}
+
+// removeDeleted drops deleted rows, keeping the cursor at the same position.
+func (l *listModel) removeDeleted(m *Model, msg deletedMsg) tea.Cmd {
+	gone := map[int]bool{}
+	for _, r := range msg.results {
+		if r.Err == nil {
+			gone[r.ID] = true
+		}
+	}
+	// The issue that will occupy the cursor's row once the deleted ones go.
+	next := 0
+	rs := l.rows()
+	for i := l.cursor; i < len(rs) && next == 0; i++ {
+		if rs[i].idx >= 0 && !gone[l.issues[rs[i].idx].ID] {
+			next = l.issues[rs[i].idx].ID
+		}
+	}
+	for i := l.cursor; i >= 0 && next == 0 && i < len(rs); i-- {
+		if rs[i].idx >= 0 && !gone[l.issues[rs[i].idx].ID] {
+			next = l.issues[rs[i].idx].ID
+		}
+	}
+	kept := l.issues[:0]
+	for _, is := range l.issues {
+		if !gone[is.ID] {
+			kept = append(kept, is)
+		}
+	}
+	l.issues = kept
+	l.cursorTo(m, next)
+
+	text, err := summarize("deleted", msg.results)
+	if err != nil {
+		return errCmd(l.host(), err)
+	}
+	return infoCmd(l.host(), text)
 }
 
 func (l *listModel) filterPicker() *picker {

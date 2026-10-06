@@ -80,7 +80,7 @@ The full task details are in `tasks/todo.md`.
 - [x] I can launch the TUI, pick a host, filter and page the list, open an issue, read notes and history, switch hosts, and auto-refresh keeps the cursor in place
 
 ### Phase 4: TUI write path
-- [ ] Task 15: Picker and confirm modals, plus the single-issue actions in the list and the issue view
+- [x] Task 15: Picker and confirm modals, plus the single-issue actions in the list and the issue view
 - [ ] Task 16: Add and delete notes from the TUI, using `$EDITOR`
 - [ ] Task 17: Selection and batch operations
 - [ ] Task 18: Create-issue form

@@ -19,6 +19,7 @@ type Options struct {
 	Initial      *config.Host // nil shows the host picker first
 	NewSession   func(config.Host) *Session
 	SaveLastHost func(name string) error
+	OpenURL      func(url string) error
 }
 
 // screen is what fills the main area for the current host.
@@ -56,6 +57,16 @@ func (hv *hostView) handleMsg(m *Model, msg tea.Msg) tea.Cmd {
 			return nil
 		}
 		return hv.issue.handleMsg(m, msg)
+	case patchedMsg:
+		cmds := []tea.Cmd{hv.list.applyPatched(m, msg)}
+		if hv.issue != nil {
+			if _, ok := msg.updated[hv.issue.id]; ok {
+				cmds = append(cmds, hv.issue.fetch(true))
+			}
+		}
+		return tea.Batch(cmds...)
+	case deletedMsg:
+		return hv.list.removeDeleted(m, msg)
 	case refreshTickMsg:
 		if msg.target == "issue" {
 			if hv.issue == nil {
@@ -153,6 +164,19 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case hostChosenMsg:
 		return m, m.selectHost(msg.name)
+
+	case doneMsg:
+		m.stopLoading()
+		if msg.inner == nil {
+			return m, nil
+		}
+		return m.Update(msg.inner)
+
+	case modalReadyMsg:
+		if m.isCurrent(msg.host) && m.modal == nil {
+			m.modal = msg.modal
+		}
+		return m, nil
 
 	case saveHostFailedMsg:
 		m.status.err("could not remember last host: " + msg.err.Error())
