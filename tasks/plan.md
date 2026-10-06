@@ -96,6 +96,15 @@ The full task details are in `tasks/todo.md`.
   `message`s that can contain personal data. The fixture scrubber handles
   both.
 
+- wh has **time tracking disabled**, and Mantis answers a note with
+  `time_tracking` with `403 time tracking disabled`. `meta` now reads
+  `time_tracking_enabled` in the same `/config` call. The CLI rejects
+  `--time` up front with a usage error. The TUI note form (Task 16) must
+  hide the time field when it's disabled.
+- Checkpoint B real writes (approved, `ideas` project on wh): create,
+  update, private note, monitor, unmonitor and delete all worked. Test
+  issues #34 and #35 were deleted afterwards.
+
 ## Parallelization
 
 After Task 5, the CLI tasks (6–9) and the TUI read path (10–14) touch

@@ -62,6 +62,17 @@ func newNoteCmd(opts *globalOpts) *cobra.Command {
 			if err != nil {
 				return err
 			}
+			if timeLog != "" {
+				ctx, cancel := opts.ctx(cmd)
+				enabled, err := s.meta.TimeTrackingEnabled(ctx)
+				cancel()
+				if err != nil {
+					return err
+				}
+				if !enabled {
+					return usageErrorf("time tracking is disabled on %s; drop --time", s.host.Name)
+				}
+			}
 
 			text := strings.TrimSpace(message)
 			var ed *editor.Session

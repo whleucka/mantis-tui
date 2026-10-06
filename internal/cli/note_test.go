@@ -11,6 +11,7 @@ import (
 func setupNoteFake(t *testing.T) (*fakeMantis, string) {
 	fm := newFakeMantis(t)
 	fm.on("POST", "/issues/33/notes", 201, []byte(`{"note":{"id":61,"text":"x"}}`))
+	fm.on("GET", "/config", 200, []byte(`{"configs":[{"option":"time_tracking_enabled","value":1}]}`))
 	fm.on("DELETE", "/issues/33/notes/61", 200, []byte(`{"issue":{"id":33}}`))
 	return fm, fakeHostConfig(t, fm, "")
 }
@@ -162,5 +163,18 @@ func TestNoteDeleteConfirmsOnTTY(t *testing.T) {
 		if !wantDelete && err == nil {
 			t.Errorf("answer %q: declining should return an error", answer)
 		}
+	}
+}
+
+func TestNoteTimeRejectedWhenTimeTrackingDisabled(t *testing.T) {
+	fm, cfg := setupNoteFake(t)
+	fm.on("GET", "/config", 200, []byte(`{"configs":[{"option":"time_tracking_enabled","value":0}]}`))
+
+	_, _, err := runCLI(t, "--config", cfg, "note", "33", "-m", "x", "--time", "0:30")
+	if ExitCode(err) != 2 || !strings.Contains(err.Error(), "time tracking is disabled") {
+		t.Fatalf("exit %d err %v, want 2 explaining time tracking is disabled", ExitCode(err), err)
+	}
+	if fm.lastRequest("POST", "/issues/33/notes") != nil {
+		t.Error("note must not be sent")
 	}
 }

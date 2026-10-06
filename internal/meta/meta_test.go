@@ -146,3 +146,21 @@ func TestConcurrentLoadsCallOnce(t *testing.T) {
 			fake.Calls("Config"), fake.Calls("Projects"), fake.Calls("ProjectUsers"))
 	}
 }
+
+func TestTimeTrackingEnabled(t *testing.T) {
+	for raw, want := range map[string]bool{"1": true, "0": false, `"ON"`: true, `"OFF"`: false} {
+		fake := newFake()
+		fake.ConfigValues["time_tracking_enabled"] = []byte(raw)
+		got, err := New(fake).TimeTrackingEnabled(context.Background())
+		if err != nil || got != want {
+			t.Errorf("time_tracking_enabled=%s: got %v, err %v; want %v", raw, got, err, want)
+		}
+		if fake.Calls("Config") != 1 {
+			t.Errorf("time tracking should share the enums /config call")
+		}
+	}
+	fake := newFake() // option missing from the response
+	if got, _ := New(fake).TimeTrackingEnabled(context.Background()); got {
+		t.Error("missing option should mean disabled")
+	}
+}

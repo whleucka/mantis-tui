@@ -157,8 +157,8 @@ guard.
 
 ### ✅ Checkpoint B: CLI complete
 - [x] `make race && make lint` are clean, and `config`, `mantis` and `service` coverage is ≥ 85%
-- [ ] **Ask the user** before doing one manual write round trip on wh: create → update → note → monitor/unmonitor → delete
-- [ ] Review with the user before Phase 3
+- [x] **Ask the user** before doing one manual write round trip on wh: create → update → note → monitor/unmonitor → delete (approved for `ideas` and done; found time tracking disabled)
+- [x] Review with the user before Phase 3 (`/build auto`: the only gate was the real-write approval)
 
 ---
 
@@ -269,6 +269,7 @@ asks for confirmation.
 **Acceptance criteria:**
 - [ ] Using `$EDITOR`=nvim, the TUI suspends and resumes cleanly with no rendering glitches (manual check)
 - [ ] Saving an empty buffer sends nothing and shows "note discarded"
+- [ ] The time-tracking field is hidden when the server has time tracking disabled (`meta.TimeTrackingEnabled`)
 - [ ] If the submit fails, the status bar shows the path of the saved temp file
 **Verification:** `go test ./internal/tui/...`. Manual with nvim
 **Dependencies:** 8, 15

@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"slices"
+	"strings"
 	"sync"
 
 	"github.com/whleucka/mantis-tui/internal/mantis"
@@ -24,7 +25,10 @@ const (
 // Kinds lists every enum kind the cache loads.
 var Kinds = []string{Status, Priority, Severity, Reproducibility, Resolution}
 
-const statusColorsOption = "status_colors"
+const (
+	statusColorsOption = "status_colors"
+	timeTrackingOption = "time_tracking_enabled"
+)
 
 // Cache lazily loads and caches metadata for one host. It is safe for
 // concurrent use; each item is fetched at most once unless the fetch fails.
@@ -41,8 +45,9 @@ type Cache struct {
 }
 
 type enumSet struct {
-	values map[string][]mantis.EnumValue
-	colors map[string]string
+	values       map[string][]mantis.EnumValue
+	colors       map[string]string
+	timeTracking bool
 }
 
 // New returns an empty cache backed by api.
@@ -78,13 +83,36 @@ func (c *Cache) StatusColors(ctx context.Context) (map[string]string, error) {
 	return set.colors, nil
 }
 
+// TimeTrackingEnabled reports whether the server accepts time tracking on
+// notes (Mantis rejects it with 403 when disabled).
+func (c *Cache) TimeTrackingEnabled(ctx context.Context) (bool, error) {
+	set, err := c.loadEnums(ctx)
+	if err != nil {
+		return false, err
+	}
+	return set.timeTracking, nil
+}
+
+// truthy decodes Mantis ON/OFF config values, which arrive as 0/1 or "ON"/"OFF".
+func truthy(raw json.RawMessage) bool {
+	var n int
+	if json.Unmarshal(raw, &n) == nil {
+		return n != 0
+	}
+	var s string
+	if json.Unmarshal(raw, &s) == nil {
+		return s == "1" || strings.EqualFold(s, "on")
+	}
+	return false
+}
+
 func (c *Cache) loadEnums(ctx context.Context) (enumSet, error) {
 	return c.enums.get(func() (enumSet, error) {
 		options := make([]string, 0, len(Kinds)+1)
 		for _, k := range Kinds {
 			options = append(options, k+"_enum_string")
 		}
-		raw, err := c.api.Config(ctx, append(options, statusColorsOption)...)
+		raw, err := c.api.Config(ctx, append(options, statusColorsOption, timeTrackingOption)...)
 		if err != nil {
 			return enumSet{}, err
 		}
@@ -101,6 +129,7 @@ func (c *Cache) loadEnums(ctx context.Context) (enumSet, error) {
 		if v, ok := raw[statusColorsOption]; ok {
 			_ = json.Unmarshal(v, &set.colors) // colors are cosmetic; ignore odd shapes
 		}
+		set.timeTracking = truthy(raw[timeTrackingOption])
 		return set, nil
 	})
 }

@@ -70,6 +70,13 @@ func New(dir string, logger *log.Logger) (*Server, error) {
 	}
 	_ = json.Unmarshal(s.static["/users/me"], &s.me)
 
+	// Advertise time tracking so the TUI's time field can be exercised.
+	var cfgEnv map[string][]json.RawMessage
+	if json.Unmarshal(s.static["/config"], &cfgEnv) == nil {
+		cfgEnv["configs"] = append(cfgEnv["configs"], json.RawMessage(`{"option":"time_tracking_enabled","value":1}`))
+		s.static["/config"], _ = json.Marshal(cfgEnv)
+	}
+
 	var cfg struct {
 		Configs []struct {
 			Option string
