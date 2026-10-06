@@ -300,6 +300,13 @@ func (m *Model) handleKey(msg tea.KeyPressMsg) tea.Cmd {
 	case actSwitchHost:
 		m.modal = m.hostPicker()
 		return nil
+	case actHelp:
+		title := "Keys: issue list"
+		if m.cur.screen == screenIssue {
+			title = "Keys: issue view"
+		}
+		m.modal = newHelp(title, m.bindings())
+		return nil
 	}
 	if m.cur.screen == screenIssue && m.cur.issue != nil {
 		return m.cur.issue.handleAction(m, a)

@@ -89,7 +89,7 @@ The full task details are in `tasks/todo.md`.
 - [x] Every key in mantis.nvim's README keymap tables has a working equivalent (spec success criterion 3). The exceptions are `?`, which lands in Task 19, and nvim's `<C-s>` layout toggle, which doesn't apply.
 
 ### Phase 5: Polish
-- [ ] Task 19: Help overlay, polished error display, README
+- [x] Task 19: Help overlay, polished error display, README
 - [ ] Task 20: Success-criteria audit: token-leak test, coverage targets, lint
 
 ### Checkpoint E: complete

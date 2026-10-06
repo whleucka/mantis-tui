@@ -327,8 +327,8 @@ the status bar and stay until the next action. The
 README covers install (`go install …@latest`), a sample config, the CLI
 reference, the keymap tables and troubleshooting.
 **Acceptance criteria:**
-- [ ] The help overlay lists every binding in `keymap.go`, checked by a test
-- [ ] The README's sample config parses (a test loads the README's sample config block)
+- [x] The help overlay lists every binding in `keymap.go`, checked by a test
+- [x] The README's sample config parses (a test loads the README's sample config block)
 **Verification:** `go test ./...`. Read through the README
 **Dependencies:** 17, 18
 **Files:** `internal/tui/help.go`, `internal/tui/statusbar.go`, `README.md`
