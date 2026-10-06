@@ -117,9 +117,9 @@ and returns the result for each id. `update` and `assign` accept several
 ids and use it. `open` builds `<url>/view.php?id=N` and runs `xdg-open`
 (`open` on macOS).
 **Acceptance criteria:**
-- [ ] A batch test with 10 ids and 1 injected failure gives 9 successes and 1 failure, never more than 4 in flight, and a non-zero exit code
-- [ ] `update --status resolved` resolves the name through meta, and an invalid name exits with code 2 and lists the valid values
-- [ ] `open` uses the right browser opener and has a testable injected opener
+- [x] A batch test with 10 ids and 1 injected failure gives 9 successes and 1 failure, never more than 4 in flight, and a non-zero exit code
+- [x] `update --status resolved` resolves the name through meta, and an invalid name exits with code 2 and lists the valid values
+- [x] `open` uses the right browser opener and has a testable injected opener
 **Verification:** `go test -race ./internal/service/... ./internal/cli/...`
 **Dependencies:** 4, 5, 6
 **Files:** `internal/service/batch.go`, `internal/service/browser.go`, `internal/cli/update.go`, `internal/cli/monitor.go`, `internal/cli/open.go`

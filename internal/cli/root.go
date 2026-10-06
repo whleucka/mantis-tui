@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
+
+	"github.com/whleucka/mantis-tui/internal/service"
 )
 
 // globalOpts holds the flags shared by every subcommand.
@@ -14,11 +16,24 @@ type globalOpts struct {
 	configPath string
 	json       bool
 	timeout    time.Duration
+
+	deps deps
+}
+
+// deps are the side effects the command tree needs; tests replace them.
+type deps struct {
+	openURL func(url string) error
+}
+
+func defaultDeps() deps {
+	return deps{openURL: service.OpenBrowser}
 }
 
 // NewRootCmd builds the mantis-tui command tree.
-func NewRootCmd() *cobra.Command {
-	opts := &globalOpts{}
+func NewRootCmd() *cobra.Command { return newRootCmd(defaultDeps()) }
+
+func newRootCmd(d deps) *cobra.Command {
+	opts := &globalOpts{deps: d}
 
 	root := &cobra.Command{
 		Use:           "mantis-tui",
@@ -44,6 +59,10 @@ func NewRootCmd() *cobra.Command {
 	flags.DurationVar(&opts.timeout, "timeout", 30*time.Second, "timeout for each API request")
 
 	root.SetFlagErrorFunc(func(_ *cobra.Command, err error) error { return asUsage(err) })
-	root.AddCommand(newHostsCmd(opts), newListCmd(opts), newShowCmd(opts))
+	root.AddCommand(
+		newHostsCmd(opts), newListCmd(opts), newShowCmd(opts),
+		newUpdateCmd(opts), newAssignCmd(opts),
+		newMonitorCmd(opts), newUnmonitorCmd(opts), newOpenCmd(opts),
+	)
 	return root
 }

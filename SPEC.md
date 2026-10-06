@@ -219,8 +219,11 @@ mantis-tui open <id>
   values.
 - Users can be given as a username, real name or numeric id. If a name
   matches more than one user, that's an error listing the candidates.
-- Output is an aligned plain-text table by default. With `--json`, the
-  Mantis API's JSON is printed unchanged.
+- Output is an aligned plain-text table by default. With `--json`, read
+  commands (`list`, `show`) print the Mantis API's JSON unchanged. Write
+  commands print a JSON array of per-issue results,
+  `[{"id":33,"ok":true}, {"id":7,"ok":false,"error":"…"}]`, because they
+  can touch several issues.
 - `delete` and `note delete` ask for confirmation on a TTY. They refuse to run
   without `--yes` when stdin isn't a TTY.
 - **Exit codes:** `0` ok, `1` API or server error, `2` usage or config error,

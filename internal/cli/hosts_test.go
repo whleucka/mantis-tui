@@ -12,8 +12,14 @@ import (
 // runCLI executes the root command in-process and returns stdout, stderr and the error.
 func runCLI(t *testing.T, args ...string) (string, string, error) {
 	t.Helper()
+	return runCLIWith(t, defaultDeps(), args...)
+}
+
+// runCLIWith is runCLI with injected dependencies.
+func runCLIWith(t *testing.T, d deps, args ...string) (string, string, error) {
+	t.Helper()
 	var stdout, stderr bytes.Buffer
-	cmd := NewRootCmd()
+	cmd := newRootCmd(d)
 	cmd.SetOut(&stdout)
 	cmd.SetErr(&stderr)
 	cmd.SetArgs(args)
