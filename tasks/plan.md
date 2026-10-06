@@ -1,0 +1,102 @@
+# Implementation Plan: mantis-tui
+
+## Overview
+
+This builds the Go and Bubble Tea MantisBT client described in `SPEC.md`: a
+full-screen TUI and a non-interactive CLI that share one config, API client
+and service layer. Work is sliced vertically. The first slice is a tracer
+bullet that runs config → API client → `mantis-tui list` against the real wh
+host. After that, the CLI write path is completed so the service layer is
+proven before any TUI depends on it. Then the TUI read path, the TUI write
+path, and finally polish.
+
+## Architecture Decisions
+
+- **The service layer is shared by CLI and TUI.** Name→id resolution, the
+  batch runner, the unmonitor step (GET the monitor list, PATCH it back) and
+  browser URLs live in `internal/service`, so the CLI and TUI can't drift
+  apart in behaviour. The CLI is built first because it's the cheapest way to
+  test the service layer end to end.
+- **The client sits behind an interface.** `service` depends on a small
+  `mantis.API` interface rather than `*mantis.Client`, so service, CLI and TUI
+  tests use a fake and never touch a network.
+- **Fixtures are recorded from wh, then scrubbed.** Real response shapes for
+  2.27.0 come from read-only calls. Emails, real names and tokens are
+  replaced before anything is committed under `testdata/`. The wh history
+  entries include emails, so scrubbing is mandatory.
+- **Bubble Tea v2.** v2 was stable (v2.0.10) at Task 1, so the user approved
+  using v2 (bubbletea, bubbles and lipgloss from the `charm.land/*` import
+  paths) instead of v1. SPEC.md's Tech Stack table has been updated.
+- **Chords are handled at the TUI root.** One small chord state machine
+  (with a 1-second timeout) sits in front of the view routing, so `gg`, `dn`
+  and `b*` behave the same in every view.
+
+## Task List
+
+The full task details are in `tasks/todo.md`.
+
+### Phase 1: Foundation and tracer bullet
+- [ ] Task 1: Scaffold the module, Makefile and lint config, with a cobra root that runs
+- [ ] Task 2: Config loading and host selection, plus `mantis-tui hosts`
+- [ ] Task 3: API client core and the read endpoints, with scrubbed fixtures
+- [ ] Task 4: CLI `list` and `show` with table and JSON output, and exit codes
+
+### Checkpoint A: tracer bullet
+- [ ] `mantis-tui list --host williamhleucka` and `show <id> --json` work against the real wh host
+
+### Phase 2: CLI write path and service layer
+- [ ] Task 5: Metadata cache and name→id resolution
+- [ ] Task 6: Client write endpoints, including the unmonitor step
+- [ ] Task 7: CLI `update`, `assign`, `monitor`, `unmonitor` and `open`, plus the batch runner
+- [ ] Task 8: Editor package and CLI `note` / `note delete`
+- [ ] Task 9: CLI `create` and `delete`, with the TTY and `--yes` guard
+
+### Checkpoint B: CLI complete
+- [ ] All of the CLI surface in the spec works. Tests are green and the race detector is clean.
+- [ ] One manual write round trip on wh (create, update, note, delete), **only after the user approves it**
+
+### Phase 3: TUI read path
+- [ ] Task 10: TUI root, keymap and chord helper, status bar, host picker and host switching
+- [ ] Task 11: Issue list with filters, pagination, spinner, icons and status colours
+- [ ] Task 12: List extras: group by project and the `/` search
+- [ ] Task 13: Issue view with header, body, Notes/History tabs and scrolling
+- [ ] Task 14: Auto-refresh for the list and the issue view
+
+### Checkpoint C: TUI browse
+- [ ] I can launch the TUI, pick a host, filter and page the list, open an issue, read notes and history, switch hosts, and auto-refresh keeps the cursor in place
+
+### Phase 4: TUI write path
+- [ ] Task 15: Picker and confirm modals, plus the single-issue actions in the list and the issue view
+- [ ] Task 16: Add and delete notes from the TUI, using `$EDITOR`
+- [ ] Task 17: Selection and batch operations
+- [ ] Task 18: Create-issue form
+
+### Checkpoint D: parity
+- [ ] Every key in mantis.nvim's README keymap tables has a working equivalent (spec success criterion 3)
+
+### Phase 5: Polish
+- [ ] Task 19: Help overlay, polished error display, README
+- [ ] Task 20: Success-criteria audit: token-leak test, coverage targets, lint
+
+### Checkpoint E: complete
+- [ ] All 11 success criteria in SPEC.md are met. Ready for review.
+
+## Parallelization
+
+After Task 5, the CLI tasks (6–9) and the TUI read path (10–14) touch
+separate packages and could run in parallel. The rest is sequential.
+
+## Risks and Mitigations
+
+| Risk | Impact | Mitigation |
+|---|---|---|
+| chainlogic runs a different MantisBT version from wh (2.27.0), with different JSON shapes or routes | Med | Lenient decoding that ignores unknown fields. A read-only smoke test against chainlogic at Checkpoint A (reads are allowed; writes are not). |
+| Fixtures leak personal data (emails in history and users) | High | A scrub step in the fixture script, plus a test that fails if `testdata/` contains `@` outside known placeholder domains |
+| `teatest` is an experimental API (`x/exp`) and may change | Low | Pin the version. Keep most TUI tests as plain `Update()` message tests and use teatest only for a few goldens. |
+| Chord keys clash with bubbles' default table bindings (`space`, `ctrl+a`, `g`) | Med | Build the chord helper in Task 10 with tests before any views exist, and override the table keymap explicitly |
+| `tea.ExecProcess` with nvim leaves the terminal in a bad state | Med | Test this early in Task 8 (CLI) and again in Task 16 (TUI) with real nvim |
+| Writes against real hosts during development | High | Writes are tested only against `httptest`. Manual writes happen only at Checkpoint B, on wh, with approval. chainlogic is never written to. |
+
+## Open Questions
+
+None. The spec's open questions are resolved.
