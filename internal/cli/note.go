@@ -4,16 +4,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"regexp"
 	"strings"
 
 	"github.com/spf13/cobra"
 
 	"github.com/whleucka/mantis-tui/internal/editor"
 	"github.com/whleucka/mantis-tui/internal/mantis"
+	"github.com/whleucka/mantis-tui/internal/service"
 )
-
-var durationRe = regexp.MustCompile(`^\d{1,3}:[0-5]\d$`)
 
 func newNoteCmd(opts *globalOpts) *cobra.Command {
 	var (
@@ -54,7 +52,7 @@ func newNoteCmd(opts *globalOpts) *cobra.Command {
 			case sources == 0:
 				edit = true
 			}
-			if timeLog != "" && !durationRe.MatchString(timeLog) {
+			if timeLog != "" && !service.ValidDuration(timeLog) {
 				return usageErrorf("invalid --time %q (want H:MM, e.g. 0:30)", timeLog)
 			}
 

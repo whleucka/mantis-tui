@@ -267,10 +267,10 @@ optional time tracking and a private flag (a small form), then runs
 `editor.Cmd` via `tea.ExecProcess`. `dn` in the issue view picks a note and
 asks for confirmation.
 **Acceptance criteria:**
-- [ ] Using `$EDITOR`=nvim, the TUI suspends and resumes cleanly with no rendering glitches (manual check)
-- [ ] Saving an empty buffer sends nothing and shows "note discarded"
-- [ ] The time-tracking field is hidden when the server has time tracking disabled (`meta.TimeTrackingEnabled`)
-- [ ] If the submit fails, the status bar shows the path of the saved temp file
+- [x] Using `$EDITOR`=nvim, the TUI suspends and resumes cleanly with no rendering glitches (manual check)
+- [x] Saving an empty buffer sends nothing and shows "note discarded"
+- [x] The time-tracking field is hidden when the server has time tracking disabled (`meta.TimeTrackingEnabled`)
+- [x] If the submit fails, the status bar shows the path of the saved temp file
 **Verification:** `go test ./internal/tui/...`. Manual with nvim
 **Dependencies:** 8, 15
 **Files:** `internal/tui/notes.go`, `internal/tui/issueview/notes.go`, `internal/tui/notes_test.go`

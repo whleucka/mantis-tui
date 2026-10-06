@@ -96,6 +96,8 @@ func (m *Model) issueAction(a action) tea.Cmd {
 		return m.toggleMonitor(*is)
 	case actBrowser:
 		return m.openInBrowser(is.ID)
+	case actAddNote:
+		return m.startNote(*is)
 	}
 	return nil
 }

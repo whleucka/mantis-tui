@@ -10,6 +10,7 @@ import (
 	"charm.land/lipgloss/v2"
 
 	"github.com/whleucka/mantis-tui/internal/config"
+	"github.com/whleucka/mantis-tui/internal/editor"
 )
 
 // Options configure the TUI.
@@ -95,12 +96,13 @@ type Model struct {
 	hosts map[string]*hostView
 	cur   *hostView
 
-	modal   modal
-	editing bool // an external $EDITOR owns the terminal
-	chord   chord
-	status  status
-	spin    spinner.Model
-	loading int
+	modal      modal
+	editing    bool // an external $EDITOR owns the terminal
+	execEditor func(*editor.Session, func(error) tea.Msg) tea.Cmd
+	chord      chord
+	status     status
+	spin       spinner.Model
+	loading    int
 }
 
 // Messages. Anything tied to a host carries its name so responses that
@@ -121,10 +123,11 @@ type (
 // New builds the root model.
 func New(opts Options) *Model {
 	return &Model{
-		opts:  opts,
-		keys:  defaultKeymap(),
-		hosts: map[string]*hostView{},
-		spin:  spinner.New(spinner.WithSpinner(spinner.MiniDot)),
+		opts:       opts,
+		keys:       defaultKeymap(),
+		hosts:      map[string]*hostView{},
+		spin:       spinner.New(spinner.WithSpinner(spinner.MiniDot)),
+		execEditor: defaultExecEditor,
 	}
 }
 
@@ -171,6 +174,13 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 		return m.Update(msg.inner)
+
+	case editorDoneMsg:
+		return m, m.onEditorDone(msg)
+	case noteAddedMsg:
+		return m, m.onNoteAdded(msg)
+	case noteDeletedMsg:
+		return m, m.onNoteDeleted(msg)
 
 	case modalReadyMsg:
 		if m.isCurrent(msg.host) && m.modal == nil {
