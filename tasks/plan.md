@@ -44,7 +44,7 @@ The full task details are in `tasks/todo.md`.
 ### Phase 1: Foundation and tracer bullet
 - [x] Task 1: Scaffold the module, Makefile and lint config, with a cobra root that runs
 - [x] Task 2: Config loading and host selection, plus `mantis-tui hosts`
-- [ ] Task 3: API client core and the read endpoints, with scrubbed fixtures
+- [x] Task 3: API client core and the read endpoints, with scrubbed fixtures
 - [ ] Task 4: CLI `list` and `show` with table and JSON output, and exit codes
 
 ### Checkpoint A: tracer bullet
@@ -87,6 +87,15 @@ The full task details are in `tasks/todo.md`.
 ### Checkpoint E: complete
 - [ ] All 11 success criteria in SPEC.md are met. Ready for review.
 
+## Findings During Build
+
+- On 2.27, `GET /issues` includes the full `history` for every issue in a
+  list. List views should pass `select=` to skip history, especially with
+  `page_size = 500`.
+- History entries carry a plain-text `change` string and file-added
+  `message`s that can contain personal data. The fixture scrubber handles
+  both.
+
 ## Parallelization
 
 After Task 5, the CLI tasks (6–9) and the TUI read path (10–14) touch
@@ -96,7 +105,7 @@ separate packages and could run in parallel. The rest is sequential.
 
 | Risk | Impact | Mitigation |
 |---|---|---|
-| chainlogic runs a different MantisBT version from wh (2.27.0), with different JSON shapes or routes | Med | Lenient decoding that ignores unknown fields. A read-only smoke test against chainlogic at Checkpoint A (reads are allowed; writes are not). |
+| chainlogic runs a different MantisBT version from wh: confirmed 2.28.4 vs 2.27.0. The read-only smoke test passes on both. | Low | Lenient decoding that ignores unknown fields. A read-only smoke test against chainlogic at Checkpoint A (reads are allowed; writes are not). |
 | Fixtures leak personal data (emails in history and users) | High | A scrub step in the fixture script, plus a test that fails if `testdata/` contains `@` outside known placeholder domains |
 | `teatest` is an experimental API (`x/exp`) and may change | Low | Pin the version. Keep most TUI tests as plain `Update()` message tests and use teatest only for a few goldens. |
 | Chord keys clash with bubbles' default table bindings (`space`, `ctrl+a`, `g`) | Med | Build the chord helper in Task 10 with tests before any views exist, and override the table keymap explicitly |

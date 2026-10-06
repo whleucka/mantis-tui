@@ -50,9 +50,9 @@ User, Project, Category, EnumValue. Read endpoints: `Me`, `ListIssues`
 `ProjectUsers`, `Config(options...)`. Add a `scripts/record-fixtures.sh` that
 makes read-only calls against wh and scrubs emails and names.
 **Acceptance criteria:**
-- [ ] `httptest` tests check the method, path, query and headers of every read endpoint, and the error mapping for 401, 403, 404, 500 and non-JSON bodies
-- [ ] A redirect response is returned as an error and is never followed, and a test asserts that `APIError.Error()` never contains the token
-- [ ] Fixtures in `testdata/` are from 2.27.0 and scrubbed, and a test fails if a real-looking email is present
+- [x] `httptest` tests check the method, path, query and headers of every read endpoint, and the error mapping for 401, 403, 404, 500 and non-JSON bodies
+- [x] A redirect response is returned as an error and is never followed, and a test asserts that `APIError.Error()` never contains the token
+- [x] Fixtures in `testdata/` are from 2.27.0 and scrubbed, and a test fails if a real-looking email is present
 **Verification:** `go test ./internal/mantis/...` (coverage ≥ 85%)
 **Dependencies:** 1
 **Files:** `internal/mantis/client.go`, `internal/mantis/types.go`, `internal/mantis/issues.go`, `internal/mantis/client_test.go`, `scripts/record-fixtures.sh`

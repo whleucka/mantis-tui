@@ -1,0 +1,1164 @@
+{
+  "projects": [
+    {
+      "id": 8,
+      "name": "project-8",
+      "status": {
+        "id": 10,
+        "name": "development",
+        "label": "development"
+      },
+      "description": "Sample description",
+      "enabled": true,
+      "view_state": {
+        "id": 10,
+        "name": "public",
+        "label": "public"
+      },
+      "inherit_global": true,
+      "access_level": {
+        "id": 90,
+        "name": "administrator",
+        "label": "administrator"
+      },
+      "custom_fields": [],
+      "versions": [],
+      "categories": [
+        {
+          "id": 4,
+          "name": "API",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 3,
+          "name": "Backend",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 6,
+          "name": "Config",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 5,
+          "name": "Database",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 8,
+          "name": "Docs",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 2,
+          "name": "Frontend",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 1,
+          "name": "General",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 9,
+          "name": "Knowledge",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 10,
+          "name": "Notes",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 7,
+          "name": "Tests",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        }
+      ]
+    },
+    {
+      "id": 27,
+      "name": "project-27",
+      "status": {
+        "id": 10,
+        "name": "development",
+        "label": "development"
+      },
+      "description": "Sample description",
+      "enabled": true,
+      "view_state": {
+        "id": 10,
+        "name": "public",
+        "label": "public"
+      },
+      "inherit_global": true,
+      "access_level": {
+        "id": 90,
+        "name": "administrator",
+        "label": "administrator"
+      },
+      "custom_fields": [],
+      "versions": [],
+      "categories": [
+        {
+          "id": 4,
+          "name": "API",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 3,
+          "name": "Backend",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 6,
+          "name": "Config",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 5,
+          "name": "Database",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 8,
+          "name": "Docs",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 2,
+          "name": "Frontend",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 1,
+          "name": "General",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 9,
+          "name": "Knowledge",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 10,
+          "name": "Notes",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 7,
+          "name": "Tests",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "name": "project-9",
+      "status": {
+        "id": 10,
+        "name": "development",
+        "label": "development"
+      },
+      "description": "Sample description",
+      "enabled": true,
+      "view_state": {
+        "id": 10,
+        "name": "public",
+        "label": "public"
+      },
+      "inherit_global": true,
+      "access_level": {
+        "id": 90,
+        "name": "administrator",
+        "label": "administrator"
+      },
+      "custom_fields": [],
+      "versions": [],
+      "categories": [
+        {
+          "id": 4,
+          "name": "API",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 3,
+          "name": "Backend",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 6,
+          "name": "Config",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 5,
+          "name": "Database",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 8,
+          "name": "Docs",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 2,
+          "name": "Frontend",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 1,
+          "name": "General",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 9,
+          "name": "Knowledge",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 10,
+          "name": "Notes",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 7,
+          "name": "Tests",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        }
+      ]
+    },
+    {
+      "id": 1,
+      "name": "project-1",
+      "status": {
+        "id": 10,
+        "name": "development",
+        "label": "development"
+      },
+      "description": "Sample description",
+      "enabled": true,
+      "view_state": {
+        "id": 10,
+        "name": "public",
+        "label": "public"
+      },
+      "inherit_global": true,
+      "access_level": {
+        "id": 90,
+        "name": "administrator",
+        "label": "administrator"
+      },
+      "custom_fields": [],
+      "versions": [],
+      "categories": [
+        {
+          "id": 4,
+          "name": "API",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 3,
+          "name": "Backend",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 6,
+          "name": "Config",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 5,
+          "name": "Database",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 8,
+          "name": "Docs",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 2,
+          "name": "Frontend",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 1,
+          "name": "General",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 9,
+          "name": "Knowledge",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 10,
+          "name": "Notes",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 7,
+          "name": "Tests",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "name": "project-7",
+      "status": {
+        "id": 10,
+        "name": "development",
+        "label": "development"
+      },
+      "description": "Sample description",
+      "enabled": true,
+      "view_state": {
+        "id": 10,
+        "name": "public",
+        "label": "public"
+      },
+      "inherit_global": true,
+      "access_level": {
+        "id": 90,
+        "name": "administrator",
+        "label": "administrator"
+      },
+      "custom_fields": [],
+      "versions": [],
+      "categories": [
+        {
+          "id": 4,
+          "name": "API",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 3,
+          "name": "Backend",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 6,
+          "name": "Config",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 5,
+          "name": "Database",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 8,
+          "name": "Docs",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 2,
+          "name": "Frontend",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 1,
+          "name": "General",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 9,
+          "name": "Knowledge",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 10,
+          "name": "Notes",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 7,
+          "name": "Tests",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "name": "project-6",
+      "status": {
+        "id": 10,
+        "name": "development",
+        "label": "development"
+      },
+      "description": "Sample description",
+      "enabled": true,
+      "view_state": {
+        "id": 10,
+        "name": "public",
+        "label": "public"
+      },
+      "inherit_global": true,
+      "access_level": {
+        "id": 90,
+        "name": "administrator",
+        "label": "administrator"
+      },
+      "custom_fields": [],
+      "versions": [],
+      "categories": [
+        {
+          "id": 4,
+          "name": "API",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 3,
+          "name": "Backend",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 6,
+          "name": "Config",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 5,
+          "name": "Database",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 8,
+          "name": "Docs",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 2,
+          "name": "Frontend",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 1,
+          "name": "General",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 9,
+          "name": "Knowledge",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 10,
+          "name": "Notes",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 7,
+          "name": "Tests",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "name": "project-5",
+      "status": {
+        "id": 10,
+        "name": "development",
+        "label": "development"
+      },
+      "description": "Sample description",
+      "enabled": true,
+      "view_state": {
+        "id": 10,
+        "name": "public",
+        "label": "public"
+      },
+      "inherit_global": true,
+      "access_level": {
+        "id": 90,
+        "name": "administrator",
+        "label": "administrator"
+      },
+      "custom_fields": [],
+      "versions": [],
+      "categories": [
+        {
+          "id": 4,
+          "name": "API",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 3,
+          "name": "Backend",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 6,
+          "name": "Config",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 5,
+          "name": "Database",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 8,
+          "name": "Docs",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 2,
+          "name": "Frontend",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 1,
+          "name": "General",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 9,
+          "name": "Knowledge",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 10,
+          "name": "Notes",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 7,
+          "name": "Tests",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "name": "project-4",
+      "status": {
+        "id": 10,
+        "name": "development",
+        "label": "development"
+      },
+      "description": "Sample description",
+      "enabled": true,
+      "view_state": {
+        "id": 10,
+        "name": "public",
+        "label": "public"
+      },
+      "inherit_global": true,
+      "access_level": {
+        "id": 90,
+        "name": "administrator",
+        "label": "administrator"
+      },
+      "custom_fields": [],
+      "versions": [],
+      "categories": [
+        {
+          "id": 4,
+          "name": "API",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 3,
+          "name": "Backend",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 6,
+          "name": "Config",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 5,
+          "name": "Database",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 8,
+          "name": "Docs",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 2,
+          "name": "Frontend",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 1,
+          "name": "General",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 9,
+          "name": "Knowledge",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 10,
+          "name": "Notes",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 7,
+          "name": "Tests",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "name": "project-10",
+      "status": {
+        "id": 10,
+        "name": "development",
+        "label": "development"
+      },
+      "description": "Sample description",
+      "enabled": true,
+      "view_state": {
+        "id": 10,
+        "name": "public",
+        "label": "public"
+      },
+      "inherit_global": true,
+      "access_level": {
+        "id": 90,
+        "name": "administrator",
+        "label": "administrator"
+      },
+      "custom_fields": [],
+      "versions": [],
+      "categories": [
+        {
+          "id": 4,
+          "name": "API",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 3,
+          "name": "Backend",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 6,
+          "name": "Config",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 5,
+          "name": "Database",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 8,
+          "name": "Docs",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 2,
+          "name": "Frontend",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 1,
+          "name": "General",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 9,
+          "name": "Knowledge",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 10,
+          "name": "Notes",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 7,
+          "name": "Tests",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "project-2",
+      "status": {
+        "id": 10,
+        "name": "development",
+        "label": "development"
+      },
+      "description": "Sample description",
+      "enabled": true,
+      "view_state": {
+        "id": 10,
+        "name": "public",
+        "label": "public"
+      },
+      "inherit_global": true,
+      "access_level": {
+        "id": 90,
+        "name": "administrator",
+        "label": "administrator"
+      },
+      "custom_fields": [],
+      "versions": [],
+      "categories": [
+        {
+          "id": 4,
+          "name": "API",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 3,
+          "name": "Backend",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 6,
+          "name": "Config",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 5,
+          "name": "Database",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 8,
+          "name": "Docs",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 2,
+          "name": "Frontend",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 1,
+          "name": "General",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 9,
+          "name": "Knowledge",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 10,
+          "name": "Notes",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        },
+        {
+          "id": 7,
+          "name": "Tests",
+          "project": {
+            "id": 0,
+            "name": null
+          },
+          "status": "1"
+        }
+      ]
+    }
+  ]
+}

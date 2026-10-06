@@ -1,0 +1,56 @@
+{
+  "id": 2,
+  "name": "user2",
+  "real_name": "User 2",
+  "email": "user2@example.test",
+  "language": "english",
+  "timezone": "UTC",
+  "access_level": {
+    "id": 90,
+    "name": "administrator",
+    "label": "administrator"
+  },
+  "created_at": "2026-04-09T10:41:05-06:00",
+  "projects": [
+    {
+      "id": 8,
+      "name": "project-8"
+    },
+    {
+      "id": 27,
+      "name": "project-27"
+    },
+    {
+      "id": 9,
+      "name": "project-9"
+    },
+    {
+      "id": 1,
+      "name": "project-1"
+    },
+    {
+      "id": 7,
+      "name": "project-7"
+    },
+    {
+      "id": 6,
+      "name": "project-6"
+    },
+    {
+      "id": 5,
+      "name": "project-5"
+    },
+    {
+      "id": 4,
+      "name": "project-4"
+    },
+    {
+      "id": 10,
+      "name": "project-10"
+    },
+    {
+      "id": 2,
+      "name": "project-2"
+    }
+  ]
+}

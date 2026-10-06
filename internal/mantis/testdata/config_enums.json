@@ -1,0 +1,221 @@
+{
+  "configs": [
+    {
+      "option": "status_enum_string",
+      "value": [
+        {
+          "id": 10,
+          "name": "new",
+          "label": "new"
+        },
+        {
+          "id": 20,
+          "name": "feedback",
+          "label": "feedback"
+        },
+        {
+          "id": 30,
+          "name": "acknowledged",
+          "label": "acknowledged"
+        },
+        {
+          "id": 40,
+          "name": "confirmed",
+          "label": "confirmed"
+        },
+        {
+          "id": 50,
+          "name": "assigned",
+          "label": "assigned"
+        },
+        {
+          "id": 80,
+          "name": "resolved",
+          "label": "resolved"
+        },
+        {
+          "id": 90,
+          "name": "closed",
+          "label": "closed"
+        }
+      ]
+    },
+    {
+      "option": "priority_enum_string",
+      "value": [
+        {
+          "id": 10,
+          "name": "none",
+          "label": "none"
+        },
+        {
+          "id": 20,
+          "name": "low",
+          "label": "low"
+        },
+        {
+          "id": 30,
+          "name": "normal",
+          "label": "normal"
+        },
+        {
+          "id": 40,
+          "name": "high",
+          "label": "high"
+        },
+        {
+          "id": 50,
+          "name": "urgent",
+          "label": "urgent"
+        },
+        {
+          "id": 60,
+          "name": "immediate",
+          "label": "immediate"
+        }
+      ]
+    },
+    {
+      "option": "severity_enum_string",
+      "value": [
+        {
+          "id": 10,
+          "name": "feature",
+          "label": "feature"
+        },
+        {
+          "id": 20,
+          "name": "trivial",
+          "label": "trivial"
+        },
+        {
+          "id": 30,
+          "name": "text",
+          "label": "text"
+        },
+        {
+          "id": 40,
+          "name": "tweak",
+          "label": "tweak"
+        },
+        {
+          "id": 50,
+          "name": "minor",
+          "label": "minor"
+        },
+        {
+          "id": 60,
+          "name": "major",
+          "label": "major"
+        },
+        {
+          "id": 70,
+          "name": "crash",
+          "label": "crash"
+        },
+        {
+          "id": 80,
+          "name": "block",
+          "label": "block"
+        }
+      ]
+    },
+    {
+      "option": "reproducibility_enum_string",
+      "value": [
+        {
+          "id": 10,
+          "name": "always",
+          "label": "always"
+        },
+        {
+          "id": 30,
+          "name": "sometimes",
+          "label": "sometimes"
+        },
+        {
+          "id": 50,
+          "name": "random",
+          "label": "random"
+        },
+        {
+          "id": 70,
+          "name": "have not tried",
+          "label": "have not tried"
+        },
+        {
+          "id": 90,
+          "name": "unable to duplicate",
+          "label": "unable to reproduce"
+        },
+        {
+          "id": 100,
+          "name": "N/A",
+          "label": "N/A"
+        }
+      ]
+    },
+    {
+      "option": "resolution_enum_string",
+      "value": [
+        {
+          "id": 10,
+          "name": "open",
+          "label": "open"
+        },
+        {
+          "id": 20,
+          "name": "fixed",
+          "label": "fixed"
+        },
+        {
+          "id": 30,
+          "name": "reopened",
+          "label": "reopened"
+        },
+        {
+          "id": 40,
+          "name": "unable to duplicate",
+          "label": "unable to reproduce"
+        },
+        {
+          "id": 50,
+          "name": "not fixable",
+          "label": "not fixable"
+        },
+        {
+          "id": 60,
+          "name": "duplicate",
+          "label": "duplicate"
+        },
+        {
+          "id": 70,
+          "name": "not a bug",
+          "label": "no change required"
+        },
+        {
+          "id": 80,
+          "name": "suspended",
+          "label": "suspended"
+        },
+        {
+          "id": 90,
+          "name": "wont fix",
+          "label": "won't fix"
+        }
+      ]
+    },
+    {
+      "option": "status_colors",
+      "value": {
+        "new": "#fcbdbd",
+        "feedback": "#e3b7eb",
+        "acknowledged": "#ffcd85",
+        "confirmed": "#fff494",
+        "assigned": "#c2dfff",
+        "resolved": "#d2f5b0",
+        "closed": "#c9ccc4"
+      }
+    }
+  ]
+}

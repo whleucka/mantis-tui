@@ -1,0 +1,36 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "name": "user1",
+      "real_name": "User 1",
+      "email": "user1@example.test",
+      "access_level": {
+        "id": 90,
+        "name": "administrator",
+        "label": "administrator"
+      }
+    },
+    {
+      "id": 3,
+      "name": "user3",
+      "real_name": "User 3",
+      "access_level": {
+        "id": 55,
+        "name": "developer",
+        "label": "developer"
+      }
+    },
+    {
+      "id": 2,
+      "name": "user2",
+      "real_name": "User 2",
+      "email": "user2@example.test",
+      "access_level": {
+        "id": 90,
+        "name": "administrator",
+        "label": "administrator"
+      }
+    }
+  ]
+}
