@@ -250,6 +250,8 @@ func (l *listModel) handleAction(m *Model, a action) tea.Cmd {
 		if is := m.currentIssue(); is != nil {
 			m.confirmDelete([]mantis.Issue{*is})
 		}
+	case actCreate:
+		return m.openCreate()
 	case actToggleSelect:
 		if is := m.currentIssue(); is != nil {
 			if _, ok := l.selected[is.ID]; ok {

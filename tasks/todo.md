@@ -298,9 +298,9 @@ assignee. `e` on the description field opens `$EDITOR`, `alt+enter`
 submits, and `esc` cancels (asking first if there are unsaved changes).
 A successful submit opens the new issue's view.
 **Acceptance criteria:**
-- [ ] Changing the project reloads the categories and users and clears any choices that are no longer valid
-- [ ] Submitting without a summary or category shows an inline error and makes no request
-- [ ] The request body matches the CLI `create` request body for the same inputs (both go through one shared service function)
+- [x] Changing the project reloads the categories and users and clears any choices that are no longer valid
+- [x] Submitting without a summary or category shows an inline error and makes no request
+- [x] The request body matches the CLI `create` request body for the same inputs (both go through one shared service function)
 **Verification:** `go test ./internal/tui/createform/...`. Manual against an `httptest` dev server
 **Dependencies:** 15, 16
 **Files:** `internal/tui/createform/model.go`, `internal/tui/createform/model_test.go`, `internal/service/create.go`

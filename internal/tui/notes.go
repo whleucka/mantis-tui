@@ -15,14 +15,13 @@ import (
 )
 
 type (
-	// editorDoneMsg arrives when $EDITOR exits.
+	// editorDoneMsg arrives when $EDITOR exits; then decides what to do
+	// with the text.
 	editorDoneMsg struct {
-		host    string
-		issueID int
-		sess    *editor.Session
-		private bool
-		dur     string
-		err     error
+		host string
+		sess *editor.Session
+		err  error
+		then func(m *Model, s *editor.Session, text string, err error) tea.Cmd
 	}
 	noteAddedMsg struct {
 		host    string
@@ -62,19 +61,45 @@ func (m *Model) startNote(is mantis.Issue) tea.Cmd {
 
 func (m *Model) openEditor(issueID int, private bool, dur string) tea.Cmd {
 	host := m.cur.sess.Host.Name
-	s, err := editor.Prepare(editor.Request{
+	return m.runEditor(editor.Request{
 		Host: host, IssueID: issueID, Kind: "note",
 		Hints: []string{
 			fmt.Sprintf("Note for issue #%d on %s.", issueID, host),
 			"Lines starting with '# ' like these are removed. Save an empty file to cancel.",
 		},
+	}, func(m *Model, s *editor.Session, text string, err error) tea.Cmd {
+		if errors.Is(err, editor.ErrEmpty) {
+			s.Cleanup()
+			return infoCmd(host, "note discarded")
+		}
+		if err != nil {
+			return errCmd(host, err)
+		}
+		hv := m.hosts[host]
+		if hv == nil {
+			return nil
+		}
+		api := hv.sess.API
+		return m.call(func(ctx context.Context) tea.Msg {
+			ctx, cancel := timed(ctx)
+			defer cancel()
+			n, err := api.AddNote(ctx, issueID, mantis.NewNote{Text: text, Private: private, TimeTracking: dur})
+			return noteAddedMsg{host: host, issueID: issueID, note: n, sess: s, err: err}
+		})
 	})
+}
+
+// runEditor writes req to a temp file, hands the terminal to $EDITOR, and
+// calls then with the edited text once it exits.
+func (m *Model) runEditor(req editor.Request, then func(*Model, *editor.Session, string, error) tea.Cmd) tea.Cmd {
+	host := m.cur.sess.Host.Name
+	s, err := editor.Prepare(req)
 	if err != nil {
 		return errCmd(host, err)
 	}
 	m.editing = true
 	return m.execEditor(s, func(err error) tea.Msg {
-		return editorDoneMsg{host: host, issueID: issueID, sess: s, private: private, dur: dur, err: err}
+		return editorDoneMsg{host: host, sess: s, err: err, then: then}
 	})
 }
 
@@ -85,24 +110,7 @@ func (m *Model) onEditorDone(msg editorDoneMsg) tea.Cmd {
 		return errCmd(msg.host, fmt.Errorf("editor: %w", msg.err))
 	}
 	text, err := msg.sess.Text()
-	if errors.Is(err, editor.ErrEmpty) {
-		msg.sess.Cleanup()
-		return infoCmd(msg.host, "note discarded")
-	}
-	if err != nil {
-		return errCmd(msg.host, err)
-	}
-	hv := m.hosts[msg.host]
-	if hv == nil {
-		return nil
-	}
-	api := hv.sess.API
-	return m.call(func(ctx context.Context) tea.Msg {
-		ctx, cancel := timed(ctx)
-		defer cancel()
-		n, err := api.AddNote(ctx, msg.issueID, mantis.NewNote{Text: text, Private: msg.private, TimeTracking: msg.dur})
-		return noteAddedMsg{host: msg.host, issueID: msg.issueID, note: n, sess: msg.sess, err: err}
-	})
+	return msg.then(m, msg.sess, text, err)
 }
 
 func (m *Model) onNoteAdded(msg noteAddedMsg) tea.Cmd {

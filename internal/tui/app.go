@@ -38,11 +38,15 @@ type hostView struct {
 	screen screen
 	list   *listModel
 	issue  *issueModel // set while screen == screenIssue
+	create *createForm // set while screen == screenCreate
 }
 
 func (hv *hostView) context() string {
 	if hv.screen == screenIssue && hv.issue != nil {
 		return hv.issue.context()
+	}
+	if hv.screen == screenCreate && hv.create != nil {
+		return hv.create.context()
 	}
 	return hv.list.context()
 }
@@ -71,6 +75,30 @@ func (hv *hostView) handleMsg(m *Model, msg tea.Msg) tea.Cmd {
 		return tea.Batch(cmds...)
 	case deletedMsg:
 		return hv.list.removeDeleted(m, msg)
+	case createSetMsg:
+		if hv.create != nil {
+			return hv.create.set(m, msg)
+		}
+		return nil
+	case createRevalidateMsg:
+		if hv.create != nil {
+			return hv.create.revalidate(msg)
+		}
+		return nil
+	case createdMsg:
+		if hv.create == nil {
+			return nil
+		}
+		if msg.err != nil {
+			hv.create.errText = m.redact(msg.err.Error())
+			return nil
+		}
+		hv.create.close(m)
+		if m.cur != hv {
+			return hv.list.fetch(hv.list.page, msg.issue.ID, true)
+		}
+		return tea.Batch(hv.list.fetch(hv.list.page, msg.issue.ID, true), m.openIssue(msg.issue.ID),
+			infoCmd(hv.sess.Host.Name, fmt.Sprintf("#%d created", msg.issue.ID)))
 	case refreshTickMsg:
 		if msg.target == "issue" {
 			if hv.issue == nil {
@@ -258,6 +286,9 @@ func (m *Model) handleKey(msg tea.KeyPressMsg) tea.Cmd {
 		return nil
 	}
 	m.status.clear()
+	if m.cur.screen == screenCreate && m.cur.create != nil {
+		return m.cur.create.update(m, msg) // the form takes raw keys (typing)
+	}
 
 	a, waiting := m.chord.feed(msg.String(), m.bindings())
 	if waiting {
@@ -372,6 +403,8 @@ func (m *Model) View() tea.View {
 	case m.cur == nil:
 	case m.cur.screen == screenIssue && m.cur.issue != nil:
 		body = m.cur.issue.view()
+	case m.cur.screen == screenCreate && m.cur.create != nil:
+		body = m.cur.create.view(m.width, max(m.height-1, 1))
 	default:
 		body = m.cur.list.view(m, m.width, max(m.height-1, 1))
 	}
