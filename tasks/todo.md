@@ -17,9 +17,9 @@ global flags `--host`, `--config`, `--json` and `--timeout`), a Makefile
 (`build test race lint fmt it`), `.golangci.yml` and `.gitignore` (which
 ignores `bin/`).
 **Acceptance criteria:**
-- [ ] `go run ./cmd/mantis-tui --help` lists the global flags
-- [ ] `make build` produces `bin/mantis-tui`, and `make lint` passes
-- [ ] The Bubble Tea version decision is recorded in plan.md (v2, approved)
+- [x] `go run ./cmd/mantis-tui --help` lists the global flags
+- [x] `make build` produces `bin/mantis-tui`, and `make lint` passes
+- [x] The Bubble Tea version decision is recorded in plan.md (v2, approved)
 **Verification:** `make build && make lint && make test`
 **Dependencies:** None
 **Files:** `go.mod`, `cmd/mantis-tui/main.go`, `internal/cli/root.go`, `Makefile`, `.golangci.yml`

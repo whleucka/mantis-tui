@@ -1,0 +1,13 @@
+version: "2"
+
+linters:
+  enable:
+    - errcheck
+    - gocritic
+    - misspell
+    - revive
+
+formatters:
+  enable:
+    - gofmt
+    - goimports

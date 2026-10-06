@@ -36,7 +36,7 @@ path, and finally polish.
 The full task details are in `tasks/todo.md`.
 
 ### Phase 1: Foundation and tracer bullet
-- [ ] Task 1: Scaffold the module, Makefile and lint config, with a cobra root that runs
+- [x] Task 1: Scaffold the module, Makefile and lint config, with a cobra root that runs
 - [ ] Task 2: Config loading and host selection, plus `mantis-tui hosts`
 - [ ] Task 3: API client core and the read endpoints, with scrubbed fixtures
 - [ ] Task 4: CLI `list` and `show` with table and JSON output, and exit codes
