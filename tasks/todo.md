@@ -33,9 +33,9 @@ to auto-detecting `MANTIS_*` plus `MANTIS_*_URL`. Choose the host in the
 order flag → `MANTIS_TUI_HOST` → `default` → the only host → last used (read
 from the state file) → picker or error. Add the `hosts` subcommand.
 **Acceptance criteria:**
-- [ ] Table tests cover every step of the selection order, dropped hosts, the permission warning and auto-detect
-- [ ] The state file read and write lives at `$XDG_STATE_HOME/mantis-tui/state.toml`, and a missing or stale host is ignored
-- [ ] `mantis-tui hosts` lists both real hosts as active (with your env set), and shows `chainlogic` as dropped when `MANTIS_CL` is unset
+- [x] Table tests cover every step of the selection order, dropped hosts, the permission warning and auto-detect
+- [x] The state file read and write lives at `$XDG_STATE_HOME/mantis-tui/state.toml`, and a missing or stale host is ignored
+- [x] `mantis-tui hosts` lists both real hosts as active (with your env set), and shows `chainlogic` as dropped when `MANTIS_CL` is unset
 **Verification:** `go test ./internal/config/...` (coverage ≥ 85%). Manual: `MANTIS_CL= go run ./cmd/mantis-tui hosts`
 **Dependencies:** 1
 **Files:** `internal/config/config.go`, `internal/config/state.go`, `internal/config/config_test.go`, `internal/cli/hosts.go`

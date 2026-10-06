@@ -37,5 +37,6 @@ func NewRootCmd() *cobra.Command {
 	flags.BoolVar(&opts.json, "json", false, "print raw API JSON instead of a table")
 	flags.DurationVar(&opts.timeout, "timeout", 30*time.Second, "timeout for each API request")
 
+	root.AddCommand(newHostsCmd(opts))
 	return root
 }

@@ -6,6 +6,14 @@ linters:
     - gocritic
     - misspell
     - revive
+  settings:
+    errcheck:
+      # Output writes surface their errors via Flush/Close or are best-effort
+      # terminal output; checking every Fprint* adds noise, not safety.
+      exclude-functions:
+        - fmt.Fprint
+        - fmt.Fprintf
+        - fmt.Fprintln
 
 formatters:
   enable:

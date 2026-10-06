@@ -27,6 +27,12 @@ path, and finally polish.
 - **Bubble Tea v2.** v2 was stable (v2.0.10) at Task 1, so the user approved
   using v2 (bubbletea, bubbles and lipgloss from the `charm.land/*` import
   paths) instead of v1. SPEC.md's Tech Stack table has been updated.
+- **Manual checks run in herdr panes.** The user works inside herdr, a
+  terminal multiplexer for agents. Each "Manual" verification step launches
+  `mantis-tui` in a sibling pane (`herdr pane split --current --no-focus`),
+  drives it with `herdr pane send-keys` / `run`, and reads the screen with
+  `herdr pane read`. This replaces asking the user to try things by hand,
+  and is especially useful for the nvim `$EDITOR` round trips.
 - **Chords are handled at the TUI root.** One small chord state machine
   (with a 1-second timeout) sits in front of the view routing, so `gg`, `dn`
   and `b*` behave the same in every view.
@@ -37,7 +43,7 @@ The full task details are in `tasks/todo.md`.
 
 ### Phase 1: Foundation and tracer bullet
 - [x] Task 1: Scaffold the module, Makefile and lint config, with a cobra root that runs
-- [ ] Task 2: Config loading and host selection, plus `mantis-tui hosts`
+- [x] Task 2: Config loading and host selection, plus `mantis-tui hosts`
 - [ ] Task 3: API client core and the read endpoints, with scrubbed fixtures
 - [ ] Task 4: CLI `list` and `show` with table and JSON output, and exit codes
 
