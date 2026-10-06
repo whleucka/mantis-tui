@@ -13,6 +13,7 @@ var (
 
 	styleTitle    = lipgloss.NewStyle().Bold(true).Foreground(colorAccent)
 	styleMuted    = lipgloss.NewStyle().Foreground(colorMuted)
+	styleError    = lipgloss.NewStyle().Foreground(colorError)
 	styleSelected = lipgloss.NewStyle().Reverse(true)
 	styleHeader   = lipgloss.NewStyle().Bold(true).Foreground(colorMuted)
 	styleGroup    = lipgloss.NewStyle().Bold(true).Foreground(colorAccent)

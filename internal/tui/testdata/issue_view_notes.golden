@@ -1,0 +1,60 @@
+#33 Sample summary
+
+Project         project-4
+Category        General
+Status          closed (fixed)
+Priority        low
+Severity        minor
+Reproducibility N/A
+Reporter        User 2
+Handler         User 3
+Created         2026-09-04 19:03
+Updated         2026-09-05 02:43
+Tags            ui, regression
+Version         1.4.2
+
+Description
+Sample description
+
+Steps to reproduce
+1. Open a generated playlist
+2. Press delete
+
+ Notes (4)   History (10)   (tab)
+
+── User 3 · 2026-09-05 00:30 · note 60
+Sample note text
+
+── User 3 · 2026-09-05 00:33 · note 61
+Sample note text
+
+── User 2 · 2026-09-05 02:42 · note 62
+Sample note text
+attachment: file-6.txt
+
+── User 2 · 2026-09-05 09:15 · private · 00:30 · note 99
+Private follow-up.
+Second line.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ alpha  issue #33

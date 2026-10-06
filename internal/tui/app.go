@@ -35,13 +35,26 @@ type hostView struct {
 	sess   *Session
 	screen screen
 	list   *listModel
+	issue  *issueModel // set while screen == screenIssue
 }
 
 func (hv *hostView) context() string {
-	if hv.screen == screenList {
-		return hv.list.context()
+	if hv.screen == screenIssue && hv.issue != nil {
+		return hv.issue.context()
 	}
-	return ""
+	return hv.list.context()
+}
+
+// handleMsg routes a host-scoped result to the part of the UI that asked.
+func (hv *hostView) handleMsg(m *Model, msg tea.Msg) tea.Cmd {
+	if msg, ok := msg.(issueLoadedMsg); ok {
+		if hv.issue == nil {
+			m.stopLoading()
+			return nil
+		}
+		return hv.issue.handleMsg(m, msg)
+	}
+	return hv.list.handleMsg(m, msg)
 }
 
 // modal is an overlay that captures keys until it closes.
@@ -106,6 +119,9 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.width, m.height = msg.Width, msg.Height
+		if m.cur != nil && m.cur.issue != nil {
+			m.cur.issue.render(m)
+		}
 		return m, nil
 
 	case tea.KeyPressMsg:
@@ -153,7 +169,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	// user has switched away since.
 	if hm, ok := msg.(interface{ hostName() string }); ok {
 		if hv := m.hosts[hm.hostName()]; hv != nil {
-			return m, hv.list.handleMsg(m, msg)
+			return m, hv.handleMsg(m, msg)
 		}
 	}
 	return m, nil
@@ -190,6 +206,9 @@ func (m *Model) handleKey(msg tea.KeyPressMsg) tea.Cmd {
 	case actSwitchHost:
 		m.modal = m.hostPicker()
 		return nil
+	}
+	if m.cur.screen == screenIssue && m.cur.issue != nil {
+		return m.cur.issue.handleAction(m, a)
 	}
 	return m.cur.list.handleAction(m, a)
 }
@@ -265,9 +284,12 @@ func (m *Model) stopLoading() {
 	}
 }
 
-// openIssue shows one issue (the issue view lands in Task 13).
+// openIssue switches the current host to the issue view for id.
 func (m *Model) openIssue(id int) tea.Cmd {
-	return infoCmd(m.cur.sess.Host.Name, fmt.Sprintf("#%d", id))
+	iv := newIssueModel(m.cur.sess, id)
+	m.cur.issue, m.cur.screen = iv, screenIssue
+	iv.render(m)
+	return iv.load(m)
 }
 
 // redact removes every configured token from text shown on screen.
@@ -283,7 +305,11 @@ func (m *Model) redact(s string) string {
 // View implements tea.Model.
 func (m *Model) View() tea.View {
 	var body string
-	if m.cur != nil {
+	switch {
+	case m.cur == nil:
+	case m.cur.screen == screenIssue && m.cur.issue != nil:
+		body = m.cur.issue.view()
+	default:
 		body = m.cur.list.view(m, m.width, max(m.height-1, 1))
 	}
 	body = lipgloss.NewStyle().Width(m.width).Height(max(m.height-1, 1)).MaxHeight(max(m.height-1, 1)).Render(body)

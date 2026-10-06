@@ -215,9 +215,9 @@ reproduce and additional info. `tab` switches between the Notes and History
 tabs. The scrolling keys are `j`, `k`, `ctrl+d`, `ctrl+u`, `gg` and `G`,
 and `q` / `esc` returns to the list.
 **Acceptance criteria:**
-- [ ] Goldens rendered from the scrubbed 2.27.0 fixtures, including an issue with notes, private notes, time tracking and history
-- [ ] Missing optional fields (no handler, no tags) render with no gaps or panics
-- [ ] Returning to the list puts the cursor back on the same issue
+- [x] Goldens rendered from the scrubbed 2.27.0 fixtures, including an issue with notes, private notes, time tracking and history
+- [x] Missing optional fields (no handler, no tags) render with no gaps or panics
+- [x] Returning to the list puts the cursor back on the same issue
 **Verification:** `go test ./internal/tui/issueview/...`. Manual against wh
 **Dependencies:** 11
 **Files:** `internal/tui/issueview/model.go`, `internal/tui/issueview/render.go`, `internal/tui/issueview/model_test.go`

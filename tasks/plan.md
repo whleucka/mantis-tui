@@ -73,7 +73,7 @@ The full task details are in `tasks/todo.md`.
 - [x] Task 10: TUI root, keymap and chord helper, status bar, host picker and host switching
 - [x] Task 11: Issue list with filters, pagination, spinner, icons and status colours
 - [x] Task 12: List extras: group by project and the `/` search
-- [ ] Task 13: Issue view with header, body, Notes/History tabs and scrolling
+- [x] Task 13: Issue view with header, body, Notes/History tabs and scrolling
 - [ ] Task 14: Auto-refresh for the list and the issue view
 
 ### Checkpoint C: TUI browse
@@ -112,6 +112,10 @@ The full task details are in `tasks/todo.md`.
 - Checkpoint B real writes (approved, `ideas` project on wh): create,
   update, private note, monitor, unmonitor and delete all worked. Test
   issues #34 and #35 were deleted afterwards.
+
+- On 2.27, attachments are attached to **notes**, not the issue. `Note`
+  has an `Attachments` field, and the issue view lists them under their
+  note.
 
 ## Parallelization
 

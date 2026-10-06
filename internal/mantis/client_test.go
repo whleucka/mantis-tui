@@ -143,6 +143,13 @@ func TestGetIssueDecodesFixture(t *testing.T) {
 	if len(is.Notes) == 0 || is.Notes[0].Text == "" {
 		t.Errorf("notes not decoded: %+v", is.Notes)
 	}
+	var noteFiles int
+	for _, n := range is.Notes {
+		noteFiles += len(n.Attachments)
+	}
+	if noteFiles == 0 {
+		t.Error("2.27 puts attachments on notes; none decoded")
+	}
 	if len(is.History) == 0 {
 		t.Fatal("history not decoded")
 	}

@@ -91,6 +91,7 @@ type Note struct {
 	ViewState    EnumValue     `json:"view_state"`
 	Type         string        `json:"type,omitempty"`
 	TimeTracking *TimeTracking `json:"time_tracking,omitempty"`
+	Attachments  []Attachment  `json:"attachments,omitempty"`
 	CreatedAt    time.Time     `json:"created_at"`
 	UpdatedAt    time.Time     `json:"updated_at"`
 }
