@@ -419,9 +419,11 @@ Unchanged: `j` `k` `gg` `G` `home` `end` `enter` `l` `q` `esc` `h` `/`
 - **The window title** is `(N) mantis-tui` while N issues are unread across
   all hosts.
 - **`[ui] notify`**: `auto` (default), `herdr`, `terminal` or `off`.
-  - `herdr` runs `herdr notification show <title> --body=<text> --sound
+  - `herdr` runs `herdr notification show <title> --body <text> --sound
     request` (from `$HERDR_BIN_PATH`, else `herdr` on `PATH`), with a 5s
-    timeout.
+    timeout. herdr wants the title first and doesn't accept `--` or
+    `--body=`. The title always starts with `mantis-tui`, so it can't be
+    read as a flag.
   - `terminal` writes an OSC 9 desktop-notification sequence, which iTerm2,
     WezTerm, Ghostty, kitty and Windows Terminal support. Others ignore it.
   - `auto` is `herdr` when `HERDR_ENV=1` and herdr can be found, otherwise

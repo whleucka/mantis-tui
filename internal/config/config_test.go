@@ -47,7 +47,7 @@ func TestLoadAppliesDefaults(t *testing.T) {
 	if cfg.List.PageSize != 100 || cfg.List.MaxIssues != 1000 || cfg.List.Sort != "updated" {
 		t.Errorf("chunk defaults = %d / %d", cfg.List.PageSize, cfg.List.MaxIssues)
 	}
-	if !cfg.List.Preview || !cfg.UI.Mouse {
+	if !cfg.List.Preview || !cfg.UI.Mouse || cfg.UI.Notify != "auto" {
 		t.Error("list.preview and ui.mouse should default to true")
 	}
 }
@@ -91,6 +91,7 @@ func TestLoadRejectsInvalidValues(t *testing.T) {
 		"bad page size":   "[list]\npage_size = 0\n" + twoHosts,
 		"bad max issues":  "[list]\nmax_issues = 0\n" + twoHosts,
 		"bad sort":        "[list]\nsort = \"colour\"\n" + twoHosts,
+		"bad notify":      "[ui]\nnotify = \"pager\"\n" + twoHosts,
 		"bad duration":    "[list]\nauto_refresh = \"soon\"\n" + twoHosts,
 		"missing url":     "[[hosts]]\nname = \"x\"\nenv = \"MANTIS_X\"\n",
 		"non-http url":    "[[hosts]]\nname = \"x\"\nurl = \"ftp://x\"\nenv = \"MANTIS_X\"\n",

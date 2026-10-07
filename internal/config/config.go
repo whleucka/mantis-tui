@@ -23,6 +23,9 @@ var ErrNoConfig = errors.New("no config file")
 // Filters are the issue-list filters Mantis supports.
 var Filters = []string{"all", "assigned", "reported", "monitored", "unassigned"}
 
+// NotifyModes are the ways the TUI can announce new issues.
+var NotifyModes = []string{"auto", "herdr", "terminal", "off"}
+
 // SortFields are the fields the TUI list can sort by.
 var SortFields = []string{"updated", "priority", "severity", "status", "id", "summary"}
 
@@ -57,7 +60,8 @@ type IssueConfig struct {
 
 // UIConfig configures the TUI as a whole.
 type UIConfig struct {
-	Mouse bool `toml:"mouse"`
+	Mouse  bool   `toml:"mouse"`
+	Notify string `toml:"notify"`
 }
 
 // Icons are the glyphs shown for priorities and monitored issues.
@@ -108,7 +112,7 @@ func Defaults() *Config {
 			Preview:       true,
 		},
 		Issue: IssueConfig{AutoRefresh: Duration{120 * time.Second}},
-		UI:    UIConfig{Mouse: true},
+		UI:    UIConfig{Mouse: true, Notify: "auto"},
 		Icons: Icons{
 			Immediate: "🔥",
 			Urgent:    "⚠️",
@@ -169,6 +173,9 @@ func (c *Config) validate() error {
 	}
 	if !slices.Contains(SortFields, c.List.Sort) {
 		return fmt.Errorf("list.sort %q must be one of %s", c.List.Sort, strings.Join(SortFields, ", "))
+	}
+	if !slices.Contains(NotifyModes, c.UI.Notify) {
+		return fmt.Errorf("ui.notify %q must be one of %s", c.UI.Notify, strings.Join(NotifyModes, ", "))
 	}
 	if c.List.MaxIssues < 1 {
 		return fmt.Errorf("list.max_issues must be at least 1, got %d", c.List.MaxIssues)

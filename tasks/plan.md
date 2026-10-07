@@ -111,7 +111,7 @@ The full task details are in `tasks/todo.md`.
 - [x] Task 29: Relative times, status colours, handler column
 
 ### Phase 9: New-issue notifications (v1.4)
-- [ ] Task 30: Watch every host and notify about new issues
+- [x] Task 30: Watch every host and notify about new issues
 
 ## Findings During Build
 

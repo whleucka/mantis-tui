@@ -56,6 +56,9 @@ type listModel struct {
 	lastClickAt time.Time
 
 	now func() time.Time // the model's clock, for relative times
+
+	known     map[int]bool // every issue id this list has shown, for new-issue alerts
+	baselined bool         // a complete load has happened since the filter was set
 }
 
 // loadChain is one load of the whole filter, a chunk at a time.
@@ -110,11 +113,13 @@ func newListModel(cfg *config.Config, sess *Session, seen *config.Seen) *listMod
 		pv:        newPreview(cfg.List.Preview),
 		seen:      seen,
 		now:       time.Now,
+		known:     map[int]bool{},
 	}
 }
 
-func (l *listModel) init(m *Model) tea.Cmd {
-	return tea.Batch(l.load(m, 0, true, false), l.loadMeta(), l.scheduleRefresh())
+// init starts the first load; a background host's load is silent.
+func (l *listModel) init(m *Model, background bool) tea.Cmd {
+	return tea.Batch(l.load(m, 0, true, background), l.loadMeta(), l.scheduleRefresh())
 }
 
 func (l *listModel) host() string { return l.sess.Host.Name }
@@ -198,7 +203,7 @@ func (l *listModel) onChunk(m *Model, msg issuesLoadedMsg) tea.Cmd {
 	}
 	l.capped = capped
 	l.endLoad(m)
-	return nil
+	return l.announce(c.acc)
 }
 
 // setIssues shows issues, keeping the cursor on keepID when it is there.
@@ -230,8 +235,10 @@ func (l *listModel) onTick(m *Model, msg refreshTickMsg) tea.Cmd {
 		return nil
 	}
 	next := l.scheduleRefresh()
+	// Every host keeps refreshing, so new issues are noticed anywhere. Only
+	// a modal open over this very list, or the external editor, holds it.
 	hv := m.hosts[l.host()]
-	if m.cur != hv || hv.screen != screenList || m.busy() || l.inFlight {
+	if l.inFlight || m.editing || (m.cur == hv && hv.screen == screenList && m.modal != nil) {
 		return next
 	}
 	return tea.Batch(next, l.load(m, 0, false, true))
@@ -499,6 +506,7 @@ func (msg filterChosenMsg) hostName() string { return msg.host }
 
 func (l *listModel) setFilter(m *Model, f string) tea.Cmd {
 	l.filter = f
+	l.baselined = false // the new filter's first load is not "new issues"
 	return l.load(m, 0, true, false)
 }
 

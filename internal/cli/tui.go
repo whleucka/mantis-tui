@@ -3,6 +3,7 @@ package cli
 import (
 	"errors"
 	"os"
+	"os/exec"
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/spf13/cobra"
@@ -40,6 +41,7 @@ func (o *globalOpts) runTUI(cmd *cobra.Command) error {
 		},
 		OpenURL: o.deps.openURL,
 		Seen:    config.LoadSeen(config.DefaultSeenPath(os.Getenv)),
+		Notify:  notifierFor(cfg.UI.Notify, os.Getenv, exec.LookPath),
 		SaveLastHost: func(name string) error {
 			st, _ := config.LoadState(statePath)
 			st.LastHost = name

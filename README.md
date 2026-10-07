@@ -42,6 +42,7 @@ auto_refresh = "120s"
 
 [ui]
 mouse = true                  # hold shift to select text with the mouse
+notify = "auto"               # auto | herdr | terminal | off
 
 [icons]
 immediate = "🔥"
@@ -153,6 +154,21 @@ changes are. Your own edits and notes never mark an issue unread.
 screen with its key, plus each filter, each other host and "Mark all read".
 Type to narrow it down. Type a number (`1234` or `#1234`) to open that issue,
 even if it isn't in the list.
+
+**New-issue alerts.** While mantis-tui runs, every configured host's list
+refreshes on `list.auto_refresh`, including hosts you aren't looking at.
+When an issue appears in a list that wasn't there before, the status bar
+says so ("2 new on work: #41 …") and a notification goes out:
+
+- `notify = "auto"` uses [herdr](https://herdr.dev)'s `herdr notification
+  show` inside herdr, and the terminal's own notification (OSC 9: iTerm2,
+  WezTerm, Ghostty, kitty, Windows Terminal) elsewhere.
+- `"herdr"` or `"terminal"` force one; `"off"` keeps only the status bar.
+
+Issues you reported or just created don't count, and neither does the first
+load or a filter change. The window title shows the unread count across all
+hosts, e.g. `(3) mantis-tui`. Setting `list.auto_refresh = "0"` turns all of
+this off.
 
 **Mouse.** Click a row to move to it and click it again to open it. The
 wheel scrolls the list, the preview, the issue view, help and pickers.

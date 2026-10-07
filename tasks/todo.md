@@ -530,13 +530,22 @@ rules that keep polling outside the list screen, new-issue detection per
 list, status-bar and window-title signals, and a notifier (herdr, OSC 9 or
 off) chosen from `[ui] notify`.
 **Acceptance criteria:**
-- [ ] The first complete load (and the first after a filter change) never notifies; a later refresh with a new id does, once
-- [ ] Issues you reported, and issues created from the TUI, don't notify
-- [ ] A new issue on a background host shows "1 new on beta: …" while you're on alpha
-- [ ] The herdr notifier gets the title and body as separate arguments, with control characters removed; terminal mode writes OSC 9; `off` sends nothing
-- [ ] The window title shows the unread count across hosts
-- [ ] `auto` resolves to herdr inside herdr and to terminal outside it
+- [x] The first complete load (and the first after a filter change) never notifies; a later refresh with a new id does, once
+- [x] Issues you reported, and issues created from the TUI, don't notify
+- [x] A new issue on a background host shows "1 new on beta: …" while you're on alpha
+- [x] The herdr notifier gets the title and body as separate arguments, with control characters removed; terminal mode writes OSC 9; `off` sends nothing
+- [x] The window title shows the unread count across hosts
+- [x] `auto` resolves to herdr inside herdr and to terminal outside it
 **Verification:** `make race && make lint`, plus a herdr check with the dev server
 **Dependencies:** 27–29
 **Scope:** M
+
+**Live check (herdr pane, dev server, 2026-10-07):** config with two hosts
+(`dev`, `dev2`, both on the dev server), `assigned` filter and a 4s refresh.
+Both lists started empty. A PATCH assigning #26 (reported by user 3) to me
+made it appear with `•` within one refresh. The status bar said "1 new on
+dev2: #26 Sample summary" (dev's message came first and was replaced), herdr
+reported the pane title as `(2) mantis-tui`, and no "notification failed"
+appeared, so both herdr calls succeeded. The first attempt used a stale
+`bin/` build; rebuild before live checks.
 

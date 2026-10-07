@@ -23,6 +23,7 @@ type Options struct {
 	SaveLastHost func(name string) error
 	OpenURL      func(url string) error
 	Seen         *config.Seen // read state; nil keeps it in memory only
+	Notify       Notifier
 }
 
 // screen is what fills the main area for the current host.
@@ -96,6 +97,7 @@ func (hv *hostView) handleMsg(m *Model, msg tea.Msg) tea.Cmd {
 			return nil
 		}
 		hv.create.close(m)
+		hv.list.known[msg.issue.ID] = true // your own issue is not news
 		if m.cur != hv {
 			return hv.list.load(m, msg.issue.ID, false, true)
 		}
@@ -255,6 +257,13 @@ func (m *Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.isCurrent(msg.host) && m.modal == nil {
 			m.modal = msg.modal
 		}
+		return m, nil
+
+	case newIssuesMsg:
+		return m, m.onNewIssues(msg)
+
+	case notifyFailedMsg:
+		m.status.err("notification failed: " + m.redact(msg.err.Error()))
 		return m, nil
 
 	case paletteRunMsg:
@@ -439,19 +448,8 @@ func (m *Model) selectHost(name string) tea.Cmd {
 		return nil
 	}
 
-	var cmds []tea.Cmd
-	hv, ok := m.hosts[name]
-	if !ok {
-		sess := m.opts.NewSession(*host)
-		hv = &hostView{sess: sess, list: newListModel(m.opts.Config, sess, m.seen)}
-		hv.list.now = func() time.Time { return m.now() }
-		if m.seen.Begin(name, time.Now()) {
-			cmds = append(cmds, m.saveSeen())
-		}
-		m.hosts[name] = hv
-		m.cur = hv
-		cmds = append(cmds, hv.list.init(m))
-	}
+	hv, cmd := m.ensureHost(*host, false)
+	cmds := []tea.Cmd{cmd, m.watchAll()}
 	m.cur = hv
 	m.chord = chord{}
 	m.status.clear()
@@ -463,6 +461,39 @@ func (m *Model) selectHost(name string) tea.Cmd {
 			}
 			return nil
 		})
+	}
+	return tea.Batch(cmds...)
+}
+
+// ensureHost returns host's view, creating it and starting its first load
+// if needed. A background view loads without the spinner.
+func (m *Model) ensureHost(host config.Host, background bool) (*hostView, tea.Cmd) {
+	if hv, ok := m.hosts[host.Name]; ok {
+		return hv, nil
+	}
+	sess := m.opts.NewSession(host)
+	hv := &hostView{sess: sess, list: newListModel(m.opts.Config, sess, m.seen)}
+	hv.list.now = func() time.Time { return m.now() }
+	m.hosts[host.Name] = hv
+	cmds := []tea.Cmd{hv.list.init(m, background)}
+	if m.seen.Begin(host.Name, time.Now()) {
+		cmds = append(cmds, m.saveSeen())
+	}
+	return hv, tea.Batch(cmds...)
+}
+
+// watchAll loads every other host in the background, so their new issues
+// are noticed too. It needs auto-refresh to be on.
+func (m *Model) watchAll() tea.Cmd {
+	if m.opts.Config.List.AutoRefresh.Duration <= 0 {
+		return nil
+	}
+	var cmds []tea.Cmd
+	for _, h := range m.opts.Hosts {
+		if _, ok := m.hosts[h.Name]; !ok {
+			_, cmd := m.ensureHost(h, true)
+			cmds = append(cmds, cmd)
+		}
 	}
 	return tea.Batch(cmds...)
 }
@@ -526,6 +557,9 @@ func (m *Model) View() tea.View {
 		v.MouseMode = tea.MouseModeCellMotion
 	}
 	v.WindowTitle = "mantis-tui"
+	if n := m.unreadTotal(); n > 0 {
+		v.WindowTitle = fmt.Sprintf("(%d) mantis-tui", n)
+	}
 	return v
 }
 
