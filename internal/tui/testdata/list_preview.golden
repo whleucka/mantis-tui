@@ -1,4 +1,4 @@
-          ID STATUS        SUMMARY                                       UPDATED       │ #4 Issue number 4 summary
+        ID ↓ STATUS        SUMMARY                                       UPDATED       │ #4 Issue number 4 summary
 ▸  🔻      4 assigned      Issue number 4 summary                        2026-09-05    │
    🔵      3 assigned      Issue number 3 summary                        2026-09-04 👁️ │ Project         Soprano
    🔺      2 assigned      Issue number 2 summary                        2026-09-03    │ Category        General
@@ -12,7 +12,7 @@
                                                                                        │
                                                                                        │ Notes (0)
                                                                                        │
-                                                                                       │ No notes. N adds one.
+                                                                                       │ No notes. r adds one.
                                                                                        │
                                                                                        │
                                                                                        │
@@ -37,4 +37,4 @@
                                                                                        │
                                                                                        │
                                                                                        │
- alpha  all · 4 issues
+ alpha  all · 4 issues · by id ↓

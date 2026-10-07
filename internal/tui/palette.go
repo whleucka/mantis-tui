@@ -59,6 +59,16 @@ func (m *Model) newPalette() *palette {
 				return m.cur.list.setFilter(m, f)
 			}})
 		}
+		for _, f := range config.SortFields {
+			label := "Sort: " + f
+			if f == l.sort.field {
+				label += " (current, " + l.sort.arrow() + "; again reverses)"
+			}
+			p.entries = append(p.entries, paletteEntry{label: label, run: func(m *Model) tea.Cmd {
+				m.cur.list.setSort(m, f)
+				return nil
+			}})
+		}
 		p.entries = append(p.entries, paletteEntry{label: "Mark all read", run: func(m *Model) tea.Cmd {
 			return m.cur.list.markAllRead(m)
 		}})

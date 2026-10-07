@@ -55,6 +55,7 @@ func newHarnessWith(t *testing.T, initial *config.Host, setup func(host string, 
 	cfg := config.Defaults()
 	cfg.List.AutoRefresh.Duration = 0
 	cfg.Issue.AutoRefresh.Duration = 0
+	cfg.List.Sort = "id" // the fake serves issues by id; most tests rely on that order
 	if tweak != nil {
 		tweak(cfg)
 	}

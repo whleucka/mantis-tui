@@ -493,10 +493,10 @@ Drop `]`/`[` paging.
 **Description:** Add the `S` sort picker, `list.sort`, a per-host session
 choice, the header arrow and the palette commands.
 **Acceptance criteria:**
-- [ ] Each field sorts in its natural direction, and choosing it again reverses it
-- [ ] Ties fall back to newest updated, then highest id
-- [ ] Grouping sorts within each project
-- [ ] An unknown `list.sort` value is a config error that lists the valid ones
+- [x] Each field sorts in its natural direction, and choosing it again reverses it
+- [x] Ties fall back to newest updated, then highest id
+- [x] Grouping sorts within each project
+- [x] An unknown `list.sort` value is a config error that lists the valid ones
 **Verification:** `go test -race ./internal/tui/ ./internal/config/`
 **Dependencies:** 27
 **Scope:** S

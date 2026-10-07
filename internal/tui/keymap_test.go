@@ -137,3 +137,14 @@ func TestEscClearsSearchThenSelection(t *testing.T) {
 		t.Error("second esc clears the selection")
 	}
 }
+
+func TestHintsNameTheCurrentKeys(t *testing.T) {
+	h := listHarness(t, 1, nil)
+	h.keys("enter")
+	if out := h.view(); !strings.Contains(out, "No notes. r adds one.") {
+		t.Errorf("the empty-notes hint should name r:\n%s", out)
+	}
+	if keyOf(actRefresh) != "R" || keyOf(actFilter) != "f" || keyOf(actEscape) != "esc" {
+		t.Errorf("keyOf = %q %q %q", keyOf(actRefresh), keyOf(actFilter), keyOf(actEscape))
+	}
+}

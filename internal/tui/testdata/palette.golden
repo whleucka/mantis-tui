@@ -1,22 +1,27 @@
-          ID SEVERITY  STATUS        CATEGORY     SUMMARY                                                 UPDATED
+        ID ↓ SEVERITY  STATUS        CATEGORY     SUMMARY                                                 UPDATED
 ▸  🔵      3 minor     assigned      General      Issue number 3 summary                                  2026-09-04 👁️
    🔺      2 minor     assigned      General      Issue number 2 summary                                  2026-09-03
    ⚠️      1 minor     assigned      General      Issue number 1 summary                                  2026-09-02
 
 
-
-
                               ╭──────────────────────────────────────────────────────────╮
                               │ : st▏                                                    │
                               │ Change status                                          s │
+                              │ Sort: status                                             │
                               │ Switch host                                            H │
                               │ Change severity                                        v │
                               │ First issue                                      gg/home │
                               │ Last issue                                         G/end │
+                              │ Sort                                                   S │
                               │ Search the list                                        / │
                               │ Clear search, then selection                         esc │
                               │ Toggle selection                                   space │
                               │ Select all shown                                  ctrl+a │
+                              │ Sort: updated                                            │
+                              │ Sort: priority                                           │
+                              │ Sort: severity                                           │
+                              │ Sort: id (current, ↓; again reverses)                    │
+                              │ Sort: summary                                            │
                               │ Host: beta                                               │
                               │ enter run · type a number to open an issue · esc close   │
                               ╰──────────────────────────────────────────────────────────╯
@@ -32,9 +37,4 @@
 
 
 
-
-
-
-
-
- alpha  all · 3 issues
+ alpha  all · 3 issues · by id ↓

@@ -23,6 +23,9 @@ var ErrNoConfig = errors.New("no config file")
 // Filters are the issue-list filters Mantis supports.
 var Filters = []string{"all", "assigned", "reported", "monitored", "unassigned"}
 
+// SortFields are the fields the TUI list can sort by.
+var SortFields = []string{"updated", "priority", "severity", "status", "id", "summary"}
+
 // Config is the parsed config.toml.
 type Config struct {
 	List  ListConfig   `toml:"list"`
@@ -41,6 +44,7 @@ type ListConfig struct {
 	DefaultFilter  string   `toml:"default_filter"`
 	PageSize       int      `toml:"page_size"`
 	MaxIssues      int      `toml:"max_issues"`
+	Sort           string   `toml:"sort"`
 	AutoRefresh    Duration `toml:"auto_refresh"`
 	GroupByProject bool     `toml:"group_by_project"`
 	Preview        bool     `toml:"preview"`
@@ -99,6 +103,7 @@ func Defaults() *Config {
 			DefaultFilter: "all",
 			PageSize:      100,
 			MaxIssues:     1000,
+			Sort:          "updated",
 			AutoRefresh:   Duration{120 * time.Second},
 			Preview:       true,
 		},
@@ -161,6 +166,9 @@ func (c *Config) validate() error {
 	}
 	if c.List.PageSize < 1 {
 		return fmt.Errorf("list.page_size must be at least 1, got %d", c.List.PageSize)
+	}
+	if !slices.Contains(SortFields, c.List.Sort) {
+		return fmt.Errorf("list.sort %q must be one of %s", c.List.Sort, strings.Join(SortFields, ", "))
 	}
 	if c.List.MaxIssues < 1 {
 		return fmt.Errorf("list.max_issues must be at least 1, got %d", c.List.MaxIssues)

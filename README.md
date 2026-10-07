@@ -32,6 +32,7 @@ or pass `--config <path>`):
 default_filter = "assigned"   # all | assigned | reported | monitored | unassigned
 page_size = 100               # issues per request
 max_issues = 1000             # the TUI list loads the whole filter up to this
+sort = "updated"              # updated | priority | severity | status | id | summary
 auto_refresh = "120s"         # "0" disables
 group_by_project = false
 preview = true                # split view on terminals ≥ 140 columns
@@ -106,6 +107,7 @@ name their target ("Status for 3 issues").
 | `gg`/`home`, `G`/`end` | first / last issue |
 | `enter`/`l` | view issue |
 | `f` | filter (all, assigned, reported, monitored, unassigned) |
+| `S` | sort by updated, priority, severity, status, id or summary (again to reverse) |
 | `/` | search the list (id, summary, category, handler) |
 | `esc` | clear the search, then the selection |
 | `n` / `N` | next / previous unread issue |

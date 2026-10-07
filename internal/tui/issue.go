@@ -173,7 +173,7 @@ func (iv *issueModel) view() string { return iv.vp.View() }
 func (iv *issueModel) content(w int) string {
 	if iv.issue == nil {
 		if iv.err != nil {
-			return styleError.Render(fmt.Sprintf("Could not load issue #%d: %v", iv.id, iv.err)) + "\n" + styleMuted.Render("q to go back, r to retry")
+			return styleError.Render(fmt.Sprintf("Could not load issue #%d: %v", iv.id, iv.err)) + "\n" + styleMuted.Render(keyOf(actBack)+" to go back, "+keyOf(actRefresh)+" to retry")
 		}
 		return styleMuted.Render(fmt.Sprintf("Loading issue #%d…", iv.id))
 	}
@@ -258,7 +258,7 @@ func renderIssueTabs(is *mantis.Issue, tab, w int) (string, int) {
 
 	if tab != tabHistory {
 		if len(is.Notes) == 0 {
-			b.WriteString(styleMuted.Render("No notes. N adds one.") + "\n")
+			b.WriteString(styleMuted.Render("No notes. "+keyOf(actAddNote)+" adds one.") + "\n")
 		}
 		for _, n := range is.Notes {
 			meta := []string{n.Reporter.Display(), timeOf(n.CreatedAt)}

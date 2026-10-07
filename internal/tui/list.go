@@ -32,6 +32,7 @@ type listModel struct {
 	cursor   int // index into rows()
 	offset   int // first visible row
 	grouped  bool
+	sort     listSort
 	search   string
 	selected map[int]mantis.Issue // by id; survives refreshes
 	loaded   bool
@@ -100,6 +101,7 @@ func newListModel(cfg *config.Config, sess *Session, seen *config.Seen) *listMod
 		filter:    cfg.List.DefaultFilter,
 		grouped:   cfg.List.GroupByProject,
 		pageSize:  cfg.List.PageSize,
+		sort:      listSort{field: cfg.List.Sort},
 		maxIssues: cfg.List.MaxIssues,
 		interval:  cfg.List.AutoRefresh.Duration,
 		selected:  map[int]mantis.Issue{},
@@ -199,6 +201,7 @@ func (l *listModel) onChunk(m *Model, msg issuesLoadedMsg) tea.Cmd {
 // setIssues shows issues, keeping the cursor on keepID when it is there.
 func (l *listModel) setIssues(m *Model, issues []mantis.Issue, keepID int) {
 	l.issues = append([]mantis.Issue(nil), issues...)
+	l.sortIssues()
 	l.loaded, l.loadErr = true, nil
 	for _, is := range l.issues { // keep selection snapshots fresh
 		if _, ok := l.selected[is.ID]; ok {
@@ -255,6 +258,9 @@ func (l *listModel) context() string {
 		case l.capped:
 			s += fmt.Sprintf(" (limit %d)", l.maxIssues)
 		}
+		if l.sort != (listSort{field: "updated"}) {
+			s += " · by " + l.sort.field + " " + l.sort.arrow()
+		}
 		if n := l.unreadCount(); n > 0 {
 			s += fmt.Sprintf(" · %d unread", n)
 		}
@@ -282,6 +288,8 @@ func (l *listModel) handleMsg(m *Model, msg tea.Msg) tea.Cmd {
 			return errCmd(l.host(), msg.err)
 		}
 		l.meID, l.colors = msg.meID, msg.colors
+	case sortChosenMsg:
+		l.setSort(m, msg.field)
 	case previewTickMsg:
 		return l.onPreviewTick(msg)
 	case previewLoadedMsg:
@@ -323,6 +331,8 @@ func (l *listModel) handleAction(m *Model, a action) tea.Cmd {
 		return l.load(m, 0, false, false)
 	case actFilter:
 		m.modal = l.filterPicker()
+	case actSort:
+		m.modal = l.sortPicker()
 	case actOpen:
 		if id := l.currentID(); id != 0 {
 			return m.openIssue(id)
@@ -408,7 +418,7 @@ func (l *listModel) batch(m *Model, a action) tea.Cmd {
 // applyPatched swaps in updated issues and reports the outcome. Issues that
 // succeeded leave the selection, so a partial failure leaves only the
 // failures selected for a retry.
-func (l *listModel) applyPatched(_ *Model, msg patchedMsg) tea.Cmd {
+func (l *listModel) applyPatched(m *Model, msg patchedMsg) tea.Cmd {
 	for _, r := range msg.results {
 		if r.Err == nil {
 			delete(l.selected, r.ID)
@@ -420,6 +430,7 @@ func (l *listModel) applyPatched(_ *Model, msg patchedMsg) tea.Cmd {
 			l.issues[i] = *fresh
 		}
 	}
+	l.resort(m) // a changed field can move the row
 	text, err := summarize(msg.label, msg.results)
 	if err != nil {
 		return errCmd(l.host(), err)
@@ -546,6 +557,7 @@ func (l *listModel) scrollToCursor(m *Model) {
 
 // column is one list column; width 0 means "fill the rest" (summary).
 type column struct {
+	key   string // the sort field it shows, if any
 	title string
 	width int
 	right bool
@@ -555,13 +567,13 @@ type column struct {
 // columnsFor drops lower-value columns as the terminal narrows.
 func columnsFor(width int) []column {
 	cols := []column{
-		{title: "", width: 2, cell: func(l *listModel, is mantis.Issue) string { return l.priorityIcon(is.Priority.Name) }},
-		{title: "ID", width: 6, right: true, cell: func(_ *listModel, is mantis.Issue) string { return fmt.Sprint(is.ID) }},
-		{title: "SEVERITY", width: 9, cell: func(_ *listModel, is mantis.Issue) string { return is.Severity.Label }},
-		{title: "STATUS", width: 13, cell: func(_ *listModel, is mantis.Issue) string { return is.Status.Label }},
+		{key: "priority", title: "", width: 2, cell: func(l *listModel, is mantis.Issue) string { return l.priorityIcon(is.Priority.Name) }},
+		{key: "id", title: "ID", width: 6, right: true, cell: func(_ *listModel, is mantis.Issue) string { return fmt.Sprint(is.ID) }},
+		{key: "severity", title: "SEVERITY", width: 9, cell: func(_ *listModel, is mantis.Issue) string { return is.Severity.Label }},
+		{key: "status", title: "STATUS", width: 13, cell: func(_ *listModel, is mantis.Issue) string { return is.Status.Label }},
 		{title: "CATEGORY", width: 12, cell: func(_ *listModel, is mantis.Issue) string { return is.Category.Name }},
-		{title: "SUMMARY", width: 0, cell: func(_ *listModel, is mantis.Issue) string { return is.Summary }},
-		{title: "UPDATED", width: 10, cell: func(_ *listModel, is mantis.Issue) string { return dateOf(is.UpdatedAt) }},
+		{key: "summary", title: "SUMMARY", width: 0, cell: func(_ *listModel, is mantis.Issue) string { return is.Summary }},
+		{key: "updated", title: "UPDATED", width: 10, cell: func(_ *listModel, is mantis.Issue) string { return dateOf(is.UpdatedAt) }},
 		{title: "", width: 2, cell: func(l *listModel, is mantis.Issue) string {
 			if l.meID != 0 && service.IsMonitoring(is, l.meID) {
 				return l.icons.Monitor
@@ -629,15 +641,15 @@ func (l *listModel) listView(m *Model, width, height int) string {
 	}
 	if !l.loaded {
 		if l.loadErr != nil {
-			return styleError.Render("  Could not load issues: "+m.redact(l.loadErr.Error())) + "\n" + styleMuted.Render("  R to retry, f to change the filter, H to switch host")
+			return styleError.Render("  Could not load issues: "+m.redact(l.loadErr.Error())) + "\n" + styleMuted.Render(fmt.Sprintf("  %s to retry, %s to change the filter, %s to switch host", keyOf(actRefresh), keyOf(actFilter), keyOf(actSwitchHost)))
 		}
 		return styleMuted.Render("  Loading issues…")
 	}
 	if len(l.issues) == 0 {
-		return styleMuted.Render(fmt.Sprintf("  No issues match the %q filter. f changes the filter.", l.filter))
+		return styleMuted.Render(fmt.Sprintf("  No issues match the %q filter. %s changes the filter.", l.filter, keyOf(actFilter)))
 	}
 	if len(l.rows()) == 0 {
-		return searchLine + styleMuted.Render("  No issues on this page match the search. esc clears it.")
+		return searchLine + styleMuted.Render("  No issues match the search. "+keyOf(actEscape)+" clears it.")
 	}
 
 	cols := columnsFor(width)
@@ -656,7 +668,11 @@ func (l *listModel) listView(m *Model, width, height int) string {
 		if w == 0 {
 			w = summary
 		}
-		header += fit(c.title, w, c.right) + " "
+		title := c.title
+		if c.key == l.sort.field {
+			title = strings.TrimSpace(title + " " + l.sort.arrow())
+		}
+		header += fit(title, w, c.right) + " "
 	}
 	b.WriteString(styleHeader.Render(ansi.Truncate(header, width, "")) + "\n")
 

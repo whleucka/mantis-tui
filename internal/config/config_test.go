@@ -44,7 +44,7 @@ func TestLoadAppliesDefaults(t *testing.T) {
 	if cfg.Icons.Immediate != "🔥" || cfg.Icons.Monitor != "👁️" {
 		t.Errorf("icon defaults = %+v", cfg.Icons)
 	}
-	if cfg.List.PageSize != 100 || cfg.List.MaxIssues != 1000 {
+	if cfg.List.PageSize != 100 || cfg.List.MaxIssues != 1000 || cfg.List.Sort != "updated" {
 		t.Errorf("chunk defaults = %d / %d", cfg.List.PageSize, cfg.List.MaxIssues)
 	}
 	if !cfg.List.Preview || !cfg.UI.Mouse {
@@ -90,6 +90,7 @@ func TestLoadRejectsInvalidValues(t *testing.T) {
 		"bad filter":      "[list]\ndefault_filter = \"mine\"\n" + twoHosts,
 		"bad page size":   "[list]\npage_size = 0\n" + twoHosts,
 		"bad max issues":  "[list]\nmax_issues = 0\n" + twoHosts,
+		"bad sort":        "[list]\nsort = \"colour\"\n" + twoHosts,
 		"bad duration":    "[list]\nauto_refresh = \"soon\"\n" + twoHosts,
 		"missing url":     "[[hosts]]\nname = \"x\"\nenv = \"MANTIS_X\"\n",
 		"non-http url":    "[[hosts]]\nname = \"x\"\nurl = \"ftp://x\"\nenv = \"MANTIS_X\"\n",

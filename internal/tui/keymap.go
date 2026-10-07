@@ -30,6 +30,7 @@ const (
 	actCategory       action = "category"
 	actMonitor        action = "monitor"
 	actFilter         action = "filter"
+	actSort           action = "sort"
 	actToggleGroup    action = "toggle-group"
 	actNextIssue      action = "next-issue"
 	actPrevIssue      action = "prev-issue"
@@ -56,6 +57,18 @@ type binding struct {
 	action action
 	keys   []string
 	help   string
+}
+
+// keyOf is the first key bound to a, for hints in the UI, so they cannot
+// drift from the keymap.
+func keyOf(a action) string {
+	km := defaultKeymap()
+	for _, b := range append(km.list, km.issue...) {
+		if b.action == a {
+			return keyLabel(b.keys[:1])
+		}
+	}
+	return "?"
 }
 
 type keymap struct {
@@ -94,6 +107,7 @@ func defaultKeymap() keymap {
 		binding{actPageDown, []string{"ctrl+d", "pgdown"}, "half page down"},
 		binding{actPageUp, []string{"ctrl+u", "pgup"}, "half page up"},
 		binding{actFilter, []string{"f"}, "filter"},
+		binding{actSort, []string{"S"}, "sort"},
 		binding{actSearch, []string{"/"}, "search the list"},
 		binding{actEscape, []string{"esc"}, "clear search, then selection"},
 		binding{actNextUnread, []string{"n"}, "next unread issue"},
