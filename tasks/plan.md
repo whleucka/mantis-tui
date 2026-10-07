@@ -99,7 +99,7 @@ The full task details are in `tasks/todo.md`.
 - [x] Task 21: Split view with a preview pane
 - [x] Task 22: Unread tracking
 - [x] Task 23: Command palette and jump to issue
-- [ ] Task 24: Mouse support
+- [x] Task 24: Mouse support
 - [ ] Task 25: Docs and a live check
 
 ## Findings During Build

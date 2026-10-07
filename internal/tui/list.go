@@ -46,6 +46,9 @@ type listModel struct {
 
 	pv   preview
 	seen *config.Seen
+
+	lastClickID int // for double clicks
+	lastClickAt time.Time
 }
 
 type (

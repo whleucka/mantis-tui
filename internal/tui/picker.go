@@ -99,11 +99,7 @@ func (p *picker) view(width, height int) string {
 	b.WriteString("\n")
 
 	vis := p.visible()
-	maxRows := max(height-6, 3)
-	start := 0
-	if p.cursor >= maxRows {
-		start = p.cursor - maxRows + 1
-	}
+	start, maxRows := p.window(height)
 	for row, idx := range vis {
 		if row < start || row >= start+maxRows {
 			continue

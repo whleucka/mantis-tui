@@ -44,8 +44,8 @@ func TestLoadAppliesDefaults(t *testing.T) {
 	if cfg.Icons.Immediate != "🔥" || cfg.Icons.Monitor != "👁️" {
 		t.Errorf("icon defaults = %+v", cfg.Icons)
 	}
-	if !cfg.List.Preview {
-		t.Error("list.preview should default to true")
+	if !cfg.List.Preview || !cfg.UI.Mouse {
+		t.Error("list.preview and ui.mouse should default to true")
 	}
 }
 
@@ -57,6 +57,9 @@ page_size = 500
 auto_refresh = "0"
 group_by_project = true
 preview = false
+
+[ui]
+mouse = false
 
 [icons]
 high = "H"
@@ -70,6 +73,9 @@ high = "H"
 	}
 	if cfg.List.AutoRefresh.Duration != 0 {
 		t.Errorf("auto_refresh = %v, want 0 (disabled)", cfg.List.AutoRefresh)
+	}
+	if cfg.UI.Mouse {
+		t.Error("ui.mouse = false should disable the mouse")
 	}
 	if cfg.Icons.High != "H" || cfg.Icons.Low != "🔻" {
 		t.Errorf("icons = %+v, want High overridden and Low default", cfg.Icons)

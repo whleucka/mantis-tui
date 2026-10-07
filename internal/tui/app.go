@@ -142,6 +142,7 @@ type Model struct {
 
 	previewDelay time.Duration // cursor rest time before the preview fetches
 	seen         *config.Seen
+	now          func() time.Time // clock for double clicks
 }
 
 // Messages. Anything tied to a host carries its name so responses that
@@ -173,6 +174,7 @@ func New(opts Options) *Model {
 		spin:         spinner.New(spinner.WithSpinner(spinner.MiniDot)),
 		execEditor:   defaultExecEditor,
 		previewDelay: previewDelay,
+		now:          time.Now,
 	}
 }
 
@@ -207,6 +209,9 @@ func (m *Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.KeyPressMsg:
 		return m, m.handleKey(msg)
+
+	case tea.MouseClickMsg, tea.MouseWheelMsg:
+		return m, m.onMouse(msg.(tea.MouseMsg))
 
 	case chordTimeoutMsg:
 		m.chord.timeout(msg.gen)
@@ -471,14 +476,16 @@ func (m *Model) View() tea.View {
 	}
 	v := tea.NewView(content)
 	v.AltScreen = true
+	if m.opts.Config.UI.Mouse {
+		v.MouseMode = tea.MouseModeCellMotion
+	}
 	v.WindowTitle = "mantis-tui"
 	return v
 }
 
 // overlay centers box on top of base.
 func overlay(base, box string, width, height int) string {
-	bw, bh := lipgloss.Width(box), lipgloss.Height(box)
-	x, y := max((width-bw)/2, 0), max((height-bh)/3, 0)
+	x, y := modalOrigin(box, width, height)
 	baseLayer := lipgloss.NewLayer(base)
 	boxLayer := lipgloss.NewLayer(box).X(x).Y(y).Z(1)
 	return lipgloss.NewCompositor(baseLayer, boxLayer).Render()

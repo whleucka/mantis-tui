@@ -31,6 +31,8 @@ type issueModel struct {
 	req    int
 	loaded bool
 
+	tabLine int // content line of the Notes/History labels; -1 before load
+
 	interval time.Duration
 	tickGen  int
 	inFlight bool
@@ -48,7 +50,7 @@ type issueLoadedMsg struct {
 func (msg issueLoadedMsg) hostName() string { return msg.host }
 
 func newIssueModel(sess *Session, id int, interval time.Duration) *issueModel {
-	return &issueModel{sess: sess, id: id, vp: viewport.New(), interval: interval}
+	return &issueModel{sess: sess, id: id, vp: viewport.New(), interval: interval, tabLine: -1}
 }
 
 func (iv *issueModel) load(m *Model) tea.Cmd {
@@ -171,12 +173,21 @@ func (iv *issueModel) content(w int) string {
 		}
 		return styleMuted.Render(fmt.Sprintf("Loading issue #%d…", iv.id))
 	}
-	return renderIssue(iv.issue, iv.tab, w)
+	s, line := renderIssueTabs(iv.issue, iv.tab, w)
+	iv.tabLine = line
+	return s
 }
 
 // renderIssue lays out an issue's header, body and the notes or history tab
 // in w columns. The issue view and the list's preview pane share it.
 func renderIssue(is *mantis.Issue, tab, w int) string {
+	s, _ := renderIssueTabs(is, tab, w)
+	return s
+}
+
+// renderIssueTabs is renderIssue that also returns the line holding the tab
+// labels, for mouse clicks.
+func renderIssueTabs(is *mantis.Issue, tab, w int) (string, int) {
 	text := lipgloss.NewStyle().Width(max(w-2, 10))
 	var b strings.Builder
 
@@ -231,6 +242,7 @@ func renderIssue(is *mantis.Issue, tab, w int) string {
 
 	notes := fmt.Sprintf("Notes (%d)", len(is.Notes))
 	history := fmt.Sprintf("History (%d)", len(is.History))
+	tabLine := strings.Count(b.String(), "\n") + 1 // the bar follows a blank line
 	switch tab {
 	case tabPreview:
 		b.WriteString("\n" + styleHeader.Render(notes) + "\n\n")
@@ -272,7 +284,7 @@ func renderIssue(is *mantis.Issue, tab, w int) string {
 			b.WriteString(styleMuted.Render(timeOf(h.CreatedAt)+"  "+fmt.Sprintf("%-12s", h.User.Name)) + " " + line + "\n")
 		}
 	}
-	return strings.TrimRight(b.String(), "\n")
+	return strings.TrimRight(b.String(), "\n"), tabLine
 }
 
 func timeOf(t time.Time) string {

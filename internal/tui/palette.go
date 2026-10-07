@@ -165,8 +165,7 @@ func (p *palette) view(width, height int) string {
 	b.WriteString(styleTitle.Render(": ") + p.query + styleMuted.Render("▏") + "\n")
 
 	vis := p.visible()
-	rows := max(height-6, 3)
-	start := max(p.cursor-rows+1, 0)
+	start, rows := p.window(height)
 	for i := start; i < len(vis) && i < start+rows; i++ {
 		e := vis[i]
 		keys := e.keys

@@ -28,6 +28,7 @@ type Config struct {
 	List  ListConfig   `toml:"list"`
 	Issue IssueConfig  `toml:"issue"`
 	Icons Icons        `toml:"icons"`
+	UI    UIConfig     `toml:"ui"`
 	Hosts []HostConfig `toml:"hosts"`
 
 	// Warnings are non-fatal problems found while loading (e.g. an inline
@@ -47,6 +48,11 @@ type ListConfig struct {
 // IssueConfig configures the single-issue view.
 type IssueConfig struct {
 	AutoRefresh Duration `toml:"auto_refresh"`
+}
+
+// UIConfig configures the TUI as a whole.
+type UIConfig struct {
+	Mouse bool `toml:"mouse"`
 }
 
 // Icons are the glyphs shown for priorities and monitored issues.
@@ -95,6 +101,7 @@ func Defaults() *Config {
 			Preview:       true,
 		},
 		Issue: IssueConfig{AutoRefresh: Duration{120 * time.Second}},
+		UI:    UIConfig{Mouse: true},
 		Icons: Icons{
 			Immediate: "🔥",
 			Urgent:    "⚠️",

@@ -415,10 +415,10 @@ runs actions the same way keys do.
 **Description:** Add `ui.mouse`, enable cell-motion mouse reporting, and route
 clicks and the wheel to the list, preview, issue view and modals.
 **Acceptance criteria:**
-- [ ] Click moves the cursor, a second click on the same row within 400ms opens it
-- [ ] The wheel moves the list cursor, scrolls the preview and the issue view, and moves picker cursors
-- [ ] Clicking a tab label or a picker option acts on it
-- [ ] `ui.mouse = false` leaves mouse reporting off
+- [x] Click moves the cursor, a second click on the same row within 400ms opens it
+- [x] The wheel moves the list cursor, scrolls the preview and the issue view, and moves picker cursors
+- [x] Clicking a tab label or a picker option acts on it
+- [x] `ui.mouse = false` leaves mouse reporting off
 **Verification:** `go test -race ./internal/tui/`
 **Dependencies:** 21
 **Files:** `internal/tui/mouse.go`, `internal/tui/app.go`, `internal/config/config.go`
