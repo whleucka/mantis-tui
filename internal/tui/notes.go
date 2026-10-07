@@ -118,7 +118,8 @@ func (m *Model) onNoteAdded(msg noteAddedMsg) tea.Cmd {
 		return errCmd(msg.host, fmt.Errorf("note not sent (%w); your text is saved in %s", msg.err, msg.sess.Path))
 	}
 	msg.sess.Cleanup()
-	return tea.Batch(infoCmd(msg.host, fmt.Sprintf("#%d note %d added", msg.issueID, msg.note.ID)), m.reloadIssue(msg.host, msg.issueID))
+	return tea.Batch(infoCmd(msg.host, fmt.Sprintf("#%d note %d added", msg.issueID, msg.note.ID)),
+		m.markSeenFromServer(msg.host, msg.issueID), m.reloadIssue(msg.host, msg.issueID))
 }
 
 // reloadIssue silently refreshes the issue view if it shows issueID, and

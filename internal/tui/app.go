@@ -22,6 +22,7 @@ type Options struct {
 	NewSession   func(config.Host) *Session
 	SaveLastHost func(name string) error
 	OpenURL      func(url string) error
+	Seen         *config.Seen // read state; nil keeps it in memory only
 }
 
 // screen is what fills the main area for the current host.
@@ -67,7 +68,7 @@ func (hv *hostView) handleMsg(m *Model, msg tea.Msg) tea.Cmd {
 		if msg.batch == m.batchID {
 			m.batchID = 0
 		}
-		cmds := []tea.Cmd{hv.list.applyPatched(m, msg)}
+		cmds := []tea.Cmd{hv.list.applyPatched(m, msg), m.markPatchedSeen(hv.sess.Host.Name, msg.updated)}
 		if hv.issue != nil {
 			if _, ok := msg.updated[hv.issue.id]; ok {
 				cmds = append(cmds, hv.issue.fetch(true))
@@ -140,6 +141,7 @@ type Model struct {
 	batchID  int // batch whose progress is shown; 0 when none
 
 	previewDelay time.Duration // cursor rest time before the preview fetches
+	seen         *config.Seen
 }
 
 // Messages. Anything tied to a host carries its name so responses that
@@ -159,7 +161,12 @@ type (
 
 // New builds the root model.
 func New(opts Options) *Model {
+	seen := opts.Seen
+	if seen == nil {
+		seen = config.NewSeen("")
+	}
 	return &Model{
+		seen:         seen,
 		opts:         opts,
 		keys:         defaultKeymap(),
 		hosts:        map[string]*hostView{},
@@ -241,6 +248,13 @@ func (m *Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.isCurrent(msg.host) && m.modal == nil {
 			m.modal = msg.modal
 		}
+		return m, nil
+
+	case seenFetchedMsg:
+		return m, m.markSeen(msg.host, msg.issue)
+
+	case seenSaveFailedMsg:
+		m.status.err("could not save read state: " + msg.err.Error())
 		return m, nil
 
 	case saveHostFailedMsg:
@@ -364,7 +378,10 @@ func (m *Model) selectHost(name string) tea.Cmd {
 	hv, ok := m.hosts[name]
 	if !ok {
 		sess := m.opts.NewSession(*host)
-		hv = &hostView{sess: sess, list: newListModel(m.opts.Config, sess)}
+		hv = &hostView{sess: sess, list: newListModel(m.opts.Config, sess, m.seen)}
+		if m.seen.Begin(name, time.Now()) {
+			cmds = append(cmds, m.saveSeen())
+		}
 		m.hosts[name] = hv
 		m.cur = hv
 		cmds = append(cmds, hv.list.init(m))

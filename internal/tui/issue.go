@@ -110,7 +110,7 @@ func (iv *issueModel) handleMsg(m *Model, msg issueLoadedMsg) tea.Cmd {
 	offset := iv.vp.YOffset()
 	iv.render(m)
 	iv.vp.SetYOffset(offset) // keep the reading position across refreshes
-	return nil
+	return m.markSeen(iv.sess.Host.Name, *iv.issue)
 }
 
 func (iv *issueModel) handleAction(m *Model, a action) tea.Cmd {
@@ -118,6 +118,12 @@ func (iv *issueModel) handleAction(m *Model, a action) tea.Cmd {
 	case actBack:
 		m.cur.screen = screenList
 		m.cur.issue = nil
+	case actMarkUnreadBack:
+		m.cur.screen = screenList
+		m.cur.issue = nil
+		if m.seen.MarkUnread(iv.sess.Host.Name, iv.id) {
+			return tea.Batch(m.saveSeen(), infoCmd(iv.sess.Host.Name, fmt.Sprintf("#%d marked unread", iv.id)))
+		}
 	case actUp:
 		iv.vp.ScrollUp(1)
 	case actDown:

@@ -97,7 +97,7 @@ The full task details are in `tasks/todo.md`.
 
 ### Phase 6: Beyond parity (v1.1)
 - [x] Task 21: Split view with a preview pane
-- [ ] Task 22: Unread tracking
+- [x] Task 22: Unread tracking
 - [ ] Task 23: Command palette and jump to issue
 - [ ] Task 24: Mouse support
 - [ ] Task 25: Docs and a live check

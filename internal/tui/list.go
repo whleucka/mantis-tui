@@ -44,7 +44,8 @@ type listModel struct {
 	tickGen  int           // current auto-refresh chain
 	inFlight bool
 
-	pv preview
+	pv   preview
+	seen *config.Seen
 }
 
 type (
@@ -77,7 +78,7 @@ type refreshTickMsg struct {
 
 func (msg refreshTickMsg) hostName() string { return msg.host }
 
-func newListModel(cfg *config.Config, sess *Session) *listModel {
+func newListModel(cfg *config.Config, sess *Session, seen *config.Seen) *listModel {
 	return &listModel{
 		sess:     sess,
 		cfg:      cfg.List,
@@ -89,6 +90,7 @@ func newListModel(cfg *config.Config, sess *Session) *listModel {
 		interval: cfg.List.AutoRefresh.Duration,
 		selected: map[int]mantis.Issue{},
 		pv:       newPreview(cfg.List.Preview),
+		seen:     seen,
 	}
 }
 
@@ -163,6 +165,9 @@ func (l *listModel) context() string {
 	s := fmt.Sprintf("%s · page %d", l.filter, l.page)
 	if l.loaded {
 		s += fmt.Sprintf(" · %d issues", len(l.issues))
+		if n := l.unreadCount(); n > 0 {
+			s += fmt.Sprintf(" · %d unread", n)
+		}
 	}
 	if n := len(l.selected); n > 0 {
 		s += fmt.Sprintf(" · %d selected", n)
@@ -276,6 +281,10 @@ func (l *listModel) handleAction(m *Model, a action) tea.Cmd {
 		}
 	case actClearSelection:
 		l.selected = map[int]mantis.Issue{}
+	case actNextUnread:
+		return l.nextUnread(m)
+	case actToggleRead:
+		return l.toggleRead(m)
 	case actTogglePreview:
 		return l.togglePreview(m)
 	case actPreviewDown:
@@ -562,7 +571,7 @@ func (l *listModel) listView(m *Model, width, height int) string {
 	}
 
 	cols := columnsFor(width)
-	const marker = 2 // cursor/selection gutter
+	const marker = 3 // cursor, selection and unread gutter
 	fixed := marker
 	for _, c := range cols {
 		fixed += c.width + 1
@@ -589,6 +598,7 @@ func (l *listModel) listView(m *Model, width, height int) string {
 			continue
 		}
 		is := l.issues[rs[i].idx]
+		unread := l.unread(is)
 		var cells []string
 		plain := ""
 		for _, c := range cols {
@@ -598,6 +608,9 @@ func (l *listModel) listView(m *Model, width, height int) string {
 			}
 			text := fit(c.cell(l, is), w, c.right)
 			plain += text + " "
+			if c.title == "SUMMARY" && unread && i != l.cursor {
+				text = styleUnread.Render(text)
+			}
 			if c.title == "STATUS" && i != l.cursor {
 				if hex := l.colors[is.Status.Name]; hex != "" {
 					text = lipgloss.NewStyle().Foreground(lipgloss.Color(hex)).Render(text)
@@ -609,13 +622,17 @@ func (l *listModel) listView(m *Model, width, height int) string {
 		if _, ok := l.selected[is.ID]; ok {
 			mark = styleGroup.Render("●")
 		}
-		line := " " + mark + strings.Join(cells, " ")
+		dot, dotPlain := " ", " "
+		if unread {
+			dot, dotPlain = styleUnreadDot.Render("•"), "•"
+		}
+		line := " " + mark + dot + strings.Join(cells, " ")
 		if i == l.cursor {
 			sel := " "
 			if _, ok := l.selected[is.ID]; ok {
 				sel = "●"
 			}
-			line = styleSelected.Render(ansi.Truncate("▸"+sel+plain, width, ""))
+			line = styleSelected.Bold(unread).Render(ansi.Truncate("▸"+sel+dotPlain+plain, width, ""))
 		}
 		b.WriteString(ansi.Truncate(line, width, "") + "\n")
 	}

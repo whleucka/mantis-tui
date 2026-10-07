@@ -289,7 +289,10 @@ Both default to `true`.
 - Unread rows show an accent `•` in the gutter and a bold summary. The status
   bar counts the unread issues on the page.
 - `n` moves to the next unread issue (wrapping). `u` toggles read/unread for
-  the selection, or the issue under the cursor.
+  the selection, or the issue under the cursor. In the issue view, `u` marks
+  the issue unread and goes back to the list.
+- After adding a note, the TUI re-reads the issue to learn its new
+  `updated_at`, because the note's timestamp and the issue's can differ.
 - Each host keeps at most 5000 entries; the oldest are dropped first.
 
 ### Command palette

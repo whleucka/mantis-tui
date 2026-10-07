@@ -389,9 +389,9 @@ and `ctrl+d` / `ctrl+u` to scroll it.
 TUI through `Options`, mark issues seen when the view or preview loads and
 after your own writes, and show unread rows. Add `n` and `u`.
 **Acceptance criteria:**
-- [ ] Store tests: baseline, unread and read comparison, explicit unread, pruning at 5000, `0600` atomic save, a corrupt file reads as empty
-- [ ] A row updated after it was seen shows `•`, and opening it clears the marker
-- [ ] Your own status change or note doesn't leave the issue unread
+- [x] Store tests: baseline, unread and read comparison, explicit unread, pruning at 5000, `0600` atomic save, a corrupt file reads as empty
+- [x] A row updated after it was seen shows `•`, and opening it clears the marker
+- [x] Your own status change or note doesn't leave the issue unread
 **Verification:** `go test -race ./internal/config/ ./internal/tui/`
 **Dependencies:** 21 (the preview marks issues seen)
 **Files:** `internal/config/seen.go`, `internal/tui/unread.go`, `internal/cli/tui.go`

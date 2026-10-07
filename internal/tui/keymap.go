@@ -47,6 +47,9 @@ const (
 	actTogglePreview  action = "toggle-preview"
 	actPreviewDown    action = "preview-down"
 	actPreviewUp      action = "preview-up"
+	actNextUnread     action = "next-unread"
+	actToggleRead     action = "toggle-read"
+	actMarkUnreadBack action = "mark-unread-back"
 )
 
 // binding maps key sequences to an action. Each entry in keys is one
@@ -92,6 +95,8 @@ func defaultKeymap() keymap {
 		binding{actSearch, []string{"/"}, "search this page"},
 		binding{actClearSearch, []string{"esc"}, "clear search"},
 		binding{actToggleGroup, []string{"ctrl+g"}, "group by project"},
+		binding{actNextUnread, []string{"n"}, "next unread issue"},
+		binding{actToggleRead, []string{"u"}, "toggle read / unread"},
 		binding{actTogglePreview, []string{"P"}, "toggle preview pane"},
 		binding{actPreviewDown, []string{"ctrl+d"}, "scroll preview down"},
 		binding{actPreviewUp, []string{"ctrl+u"}, "scroll preview up"},
@@ -115,6 +120,7 @@ func defaultKeymap() keymap {
 		binding{actPageUp, []string{"ctrl+u", "pgup"}, "page up"},
 		binding{actNextTab, []string{"tab"}, "notes / history"},
 		binding{actDeleteNote, []string{"d n"}, "delete note"},
+		binding{actMarkUnreadBack, []string{"u"}, "mark unread, back to list"},
 	)
 	return keymap{list: list, issue: issue}
 }

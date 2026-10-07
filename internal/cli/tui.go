@@ -39,6 +39,7 @@ func (o *globalOpts) runTUI(cmd *cobra.Command) error {
 			return tui.NewSession(h, mantis.NewClient(h.URL, h.Token))
 		},
 		OpenURL: o.deps.openURL,
+		Seen:    config.LoadSeen(config.DefaultSeenPath(os.Getenv)),
 		SaveLastHost: func(name string) error {
 			st, _ := config.LoadState(statePath)
 			st.LastHost = name

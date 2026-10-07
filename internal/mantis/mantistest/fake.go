@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"sort"
 	"sync"
+	"time"
 
 	"github.com/whleucka/mantis-tui/internal/mantis"
 )
@@ -25,6 +26,10 @@ type Fake struct {
 	// ErrFor fails a call for one issue id only: ErrFor["UpdateIssue"][7].
 	ErrFor map[string]map[int]error
 
+	// BumpOnWrite makes writes advance the issue's updated_at (and stamp new
+	// notes) like a real server does, using a clock an hour ahead of now.
+	BumpOnWrite bool
+
 	// ListCalls records every ListIssues request.
 	ListCalls []mantis.ListOptions
 
@@ -38,6 +43,20 @@ type Fake struct {
 
 	calls  map[string]int
 	nextID int
+	clock  time.Time
+}
+
+// bump returns the next write time when BumpOnWrite is set, else zero.
+// Callers hold f.mu.
+func (f *Fake) bump() time.Time {
+	if !f.BumpOnWrite {
+		return time.Time{}
+	}
+	if f.clock.IsZero() {
+		f.clock = time.Now().Add(time.Hour).Truncate(time.Second)
+	}
+	f.clock = f.clock.Add(time.Second)
+	return f.clock
 }
 
 // Patch is a recorded UpdateIssue call.
@@ -246,6 +265,9 @@ func (f *Fake) UpdateIssue(_ context.Context, id int, p mantis.IssuePatch) (*man
 	if p.Summary != nil {
 		is.Summary = *p.Summary
 	}
+	if t := f.bump(); !t.IsZero() {
+		is.UpdatedAt = t
+	}
 	if p.Description != nil {
 		is.Description = *p.Description
 	}
@@ -285,8 +307,11 @@ func (f *Fake) AddNote(_ context.Context, issueID int, n mantis.NewNote) (*manti
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.NotesAdded = append(f.NotesAdded, NoteCall{IssueID: issueID, Note: n})
-	note := mantis.Note{ID: 5000 + len(f.NotesAdded), Text: n.Text}
+	note := mantis.Note{ID: 5000 + len(f.NotesAdded), Text: n.Text, CreatedAt: f.bump()}
 	if is, ok := f.Issues[issueID]; ok {
+		if !note.CreatedAt.IsZero() {
+			is.UpdatedAt = note.CreatedAt
+		}
 		is.Notes = append(is.Notes, note)
 		f.Issues[issueID] = is
 	}
@@ -323,6 +348,9 @@ func (f *Fake) Monitor(_ context.Context, issueID int) error {
 	defer f.mu.Unlock()
 	f.Monitored = append(f.Monitored, issueID)
 	if is, ok := f.Issues[issueID]; ok {
+		if t := f.bump(); !t.IsZero() {
+			is.UpdatedAt = t
+		}
 		is.Monitors = append(is.Monitors, f.CurrentUser)
 		f.Issues[issueID] = is
 	}

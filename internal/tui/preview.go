@@ -28,9 +28,9 @@ type preview struct {
 	vp    viewport.Model
 
 	// what the viewport currently holds, so it is only rebuilt on change
-	shownID      int
-	shownUpdated time.Time
-	shownWidth   int
+	shown      *mantis.Issue // the cached copy; a refetch replaces it
+	shownID    int
+	shownWidth int
 }
 
 type (
@@ -96,11 +96,11 @@ func (l *listModel) syncPreview(m *Model) tea.Cmd {
 	return tea.Tick(m.previewDelay, func(time.Time) tea.Msg { return msg })
 }
 
-// show puts is in the viewport, rebuilding it only when the issue, its
-// version or the size changed.
+// show puts is in the viewport, rebuilding it only when the cached copy or
+// the size changed.
 func (p *preview) show(is *mantis.Issue, w, h int) {
 	p.vp.SetHeight(h)
-	if is.ID == p.shownID && is.UpdatedAt.Equal(p.shownUpdated) && w == p.shownWidth {
+	if is == p.shown && w == p.shownWidth {
 		return
 	}
 	p.vp.SetWidth(w)
@@ -111,7 +111,7 @@ func (p *preview) show(is *mantis.Issue, w, h int) {
 	} else {
 		p.vp.GotoTop()
 	}
-	p.shownID, p.shownUpdated, p.shownWidth = is.ID, is.UpdatedAt, w
+	p.shown, p.shownID, p.shownWidth = is, is.ID, w
 }
 
 // onPreviewTick fetches the issue if the cursor is still resting on it.
@@ -132,7 +132,7 @@ func (l *listModel) onPreviewTick(msg previewTickMsg) tea.Cmd {
 	}
 }
 
-func (l *listModel) onPreviewLoaded(_ *Model, msg previewLoadedMsg) tea.Cmd {
+func (l *listModel) onPreviewLoaded(m *Model, msg previewLoadedMsg) tea.Cmd {
 	if msg.err != nil {
 		l.pv.errs[msg.id] = msg.err
 		return nil // stays in want, so it is retried only when the cursor comes back
@@ -142,7 +142,7 @@ func (l *listModel) onPreviewLoaded(_ *Model, msg previewLoadedMsg) tea.Cmd {
 	if l.pv.want == msg.id {
 		l.pv.want = 0
 	}
-	return nil
+	return m.markSeen(l.host(), *msg.issue)
 }
 
 // forget drops the cached copy of id so the next sync fetches it again.

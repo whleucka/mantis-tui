@@ -171,10 +171,9 @@ func TestNoteFromListRefreshesPreview(t *testing.T) {
 	t.Setenv("TMPDIR", t.TempDir())
 	h := previewHarness(t, 2, nil)
 	stubEditor(h, "a note from the list\n")
-	before := h.fakes["alpha"].Calls("GetIssue")
 	h.keys("N")
 	h.keys("enter") // not private; the fake server has no time tracking
-	if got := h.fakes["alpha"].Calls("GetIssue"); got != before+1 {
-		t.Errorf("adding a note should refetch the preview: %d GetIssue calls, want %d", got, before+1)
+	if !strings.Contains(h.view(), "a note from the list") {
+		t.Errorf("the preview should show the new note:\n%s", h.view())
 	}
 }

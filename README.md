@@ -94,6 +94,8 @@ current screen.
 | `esc` | clear search |
 | `ctrl+g` | group by project |
 | `P` | toggle the preview pane |
+| `n` | next unread issue |
+| `u` | toggle read / unread |
 | `ctrl+d` / `ctrl+u` | scroll the preview |
 | `r` | refresh |
 | `C` | create issue |
@@ -136,6 +138,7 @@ can retry them.
 | `s` `p` `V` `c` `S` `a` `m` `o` | same as in the list |
 | `r` | refresh |
 | `q`/`esc`/`h` | back to the list |
+| `u` | mark unread and go back to the list |
 
 ### Notes and the create form
 
