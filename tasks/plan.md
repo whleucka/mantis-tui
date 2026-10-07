@@ -105,6 +105,11 @@ The full task details are in `tasks/todo.md`.
 ### Phase 7: Keymap redesign (v1.2)
 - [x] Task 26: Keys that suit a terminal app
 
+### Phase 8: Whole-filter list, sorting, display (v1.3)
+- [ ] Task 27: The list holds the whole filter
+- [ ] Task 28: Sorting
+- [ ] Task 29: Relative times, status colours, handler column
+
 ## Findings During Build
 
 - On 2.27, `GET /issues` includes the full `history` for every issue in a

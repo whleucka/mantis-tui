@@ -358,6 +358,46 @@ Unchanged: `j` `k` `gg` `G` `home` `end` `enter` `l` `q` `esc` `h` `/`
   order, and move the list cursor with them, so going back lands on the issue
   you were reading.
 
+## v1.3: Whole-filter list, sorting and display
+
+### The list holds the whole filter
+- The list loads every issue the filter matches, `list.page_size` issues per
+  request, and stops at `list.max_issues` (default 1000; the status bar says
+  when the cap is reached). The first chunk shows at once and later chunks
+  are appended as they arrive. Issues are de-duplicated by id, because an
+  issue updated during the load can move between chunks.
+- `]` / `[` paging goes away in the TUI. The CLI's `list --page` is
+  unchanged.
+- Refreshes (auto and `R`) load every chunk again in the background and swap
+  the list in once the last chunk arrives, keeping the cursor on the same
+  issue. A failed chunk keeps the list that was showing and reports the
+  error.
+- `/` search, `n` / `N`, `ctrl+a`, grouping and "Mark all read" cover every
+  loaded issue.
+
+### Sorting
+- `S` opens a sort picker: **updated** (newest first, the default),
+  **priority** (highest first), **severity** (worst first), **status**
+  (workflow order), **id** (newest first) and **summary** (A–Z). Choosing
+  the current field again reverses it.
+- Sorting happens in the client, because the REST API has no sort parameter.
+  Ties fall back to newest updated, then highest id. With grouping on,
+  issues are sorted within each project.
+- `list.sort` sets the default (`updated`, `priority`, `severity`, `status`,
+  `id` or `summary`). The choice is kept per host for the session. The
+  column header shows the sorted column with ↑ or ↓, and the palette has a
+  "Sort: …" command for each field.
+
+### Display
+- Times within the last week show as relative ("now", "12m ago", "3h ago",
+  "6d ago"), and older ones as the date. The issue view and preview show
+  both, e.g. `2026-09-04 13:47 (3d ago)`.
+- The issue view and preview colour the status with the server's
+  `status_colors`, like the list does.
+- On terminals at least 140 columns wide (counting only the list's part when
+  the preview is open), the list adds a HANDLER column with the handler's
+  username.
+
 ## API Client Contract (`internal/mantis`)
 
 - `Client{BaseURL, Token, HTTP *http.Client}`. Every method takes a

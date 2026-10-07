@@ -470,3 +470,46 @@ on this page". `y` put the URL on the system clipboard through herdr (read
 back with `wl-paste`). `h` returned with the cursor on the issue. `ctrl+h`
 did nothing.
 
+---
+
+## Phase 8: Whole-filter list, sorting, display (v1.3)
+
+### Task 27: The list holds the whole filter
+**Description:** Replace TUI paging with a chunked load of the whole filter
+(capped by `list.max_issues`). Show chunks progressively on first load and
+filter change; swap the list in only when the last chunk arrives on refresh.
+Drop `]`/`[` paging.
+**Acceptance criteria:**
+- [ ] 120 issues with `page_size = 50` load in 3 requests, and the list shows all 120
+- [ ] `max_issues = 100` stops at 100 and says so
+- [ ] A refresh keeps the old list until the last chunk arrives, and the cursor stays on its issue
+- [ ] A chunk that fails part way keeps the old list and reports the error
+- [ ] `/` finds an issue from the third chunk
+**Verification:** `go test -race ./internal/tui/ ./internal/config/`
+**Dependencies:** 26
+**Scope:** M
+
+### Task 28: Sorting
+**Description:** Add the `S` sort picker, `list.sort`, a per-host session
+choice, the header arrow and the palette commands.
+**Acceptance criteria:**
+- [ ] Each field sorts in its natural direction, and choosing it again reverses it
+- [ ] Ties fall back to newest updated, then highest id
+- [ ] Grouping sorts within each project
+- [ ] An unknown `list.sort` value is a config error that lists the valid ones
+**Verification:** `go test -race ./internal/tui/ ./internal/config/`
+**Dependencies:** 27
+**Scope:** S
+
+### Task 29: Relative times, status colours, handler column
+**Description:** Relative times in the list, issue view and preview; server
+status colours in the issue view and preview; a HANDLER column when the
+list is at least 140 columns wide.
+**Acceptance criteria:**
+- [ ] Relative-time boundaries are tested against a fixed clock
+- [ ] The issue view's status uses the server colour
+- [ ] HANDLER shows at 160 columns without the preview, and hides at 120
+**Verification:** `go test -race ./internal/tui/`, plus a herdr check of all three tasks
+**Dependencies:** 27
+**Scope:** S
+
