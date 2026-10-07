@@ -121,9 +121,15 @@ func (m *Model) onNoteAdded(msg noteAddedMsg) tea.Cmd {
 	return tea.Batch(infoCmd(msg.host, fmt.Sprintf("#%d note %d added", msg.issueID, msg.note.ID)), m.reloadIssue(msg.host, msg.issueID))
 }
 
-// reloadIssue silently refreshes the issue view if it shows issueID.
+// reloadIssue silently refreshes the issue view if it shows issueID, and
+// drops the preview's copy so the preview fetches it again.
 func (m *Model) reloadIssue(host string, issueID int) tea.Cmd {
-	if hv := m.hosts[host]; hv != nil && hv.issue != nil && hv.issue.id == issueID {
+	hv := m.hosts[host]
+	if hv == nil {
+		return nil
+	}
+	hv.list.pv.forget(issueID)
+	if hv.issue != nil && hv.issue.id == issueID {
 		return hv.issue.fetch(true)
 	}
 	return nil

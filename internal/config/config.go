@@ -41,6 +41,7 @@ type ListConfig struct {
 	PageSize       int      `toml:"page_size"`
 	AutoRefresh    Duration `toml:"auto_refresh"`
 	GroupByProject bool     `toml:"group_by_project"`
+	Preview        bool     `toml:"preview"`
 }
 
 // IssueConfig configures the single-issue view.
@@ -91,6 +92,7 @@ func Defaults() *Config {
 			DefaultFilter: "all",
 			PageSize:      50,
 			AutoRefresh:   Duration{120 * time.Second},
+			Preview:       true,
 		},
 		Issue: IssueConfig{AutoRefresh: Duration{120 * time.Second}},
 		Icons: Icons{

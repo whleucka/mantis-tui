@@ -271,6 +271,10 @@ Both default to `true`.
   moving back and forth costs nothing, and an auto-refresh that shows a newer
   `updated_at` refetches the preview.
 
+### Vim-style open and back
+- `l` opens the issue under the cursor (like `enter`), and `h` goes back from
+  the issue view to the list (like `q` / `esc`). Paging stays on `L` / `H`.
+
 ### Unread tracking
 - The TUI remembers, per host, the `updated_at` of each issue when you last
   saw it, in `$XDG_STATE_HOME/mantis-tui/seen.json` (mode `0600`, written

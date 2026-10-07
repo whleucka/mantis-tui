@@ -43,6 +43,8 @@ type listModel struct {
 	interval time.Duration // auto-refresh; 0 disables
 	tickGen  int           // current auto-refresh chain
 	inFlight bool
+
+	pv preview
 }
 
 type (
@@ -86,6 +88,7 @@ func newListModel(cfg *config.Config, sess *Session) *listModel {
 		pageSize: cfg.List.PageSize,
 		interval: cfg.List.AutoRefresh.Duration,
 		selected: map[int]mantis.Issue{},
+		pv:       newPreview(cfg.List.Preview),
 	}
 }
 
@@ -203,6 +206,10 @@ func (l *listModel) handleMsg(m *Model, msg tea.Msg) tea.Cmd {
 			return errCmd(l.host(), msg.err)
 		}
 		l.meID, l.colors = msg.meID, msg.colors
+	case previewTickMsg:
+		return l.onPreviewTick(msg)
+	case previewLoadedMsg:
+		return l.onPreviewLoaded(m, msg)
 	}
 	return nil
 }
@@ -269,6 +276,12 @@ func (l *listModel) handleAction(m *Model, a action) tea.Cmd {
 		}
 	case actClearSelection:
 		l.selected = map[int]mantis.Issue{}
+	case actTogglePreview:
+		return l.togglePreview(m)
+	case actPreviewDown:
+		l.pv.vp.HalfPageDown()
+	case actPreviewUp:
+		l.pv.vp.HalfPageUp()
 	case actBatchStatus, actBatchPriority, actBatchSeverity, actBatchCategory, actBatchAssign, actBatchDelete:
 		return l.batch(m, a)
 	default:
@@ -524,6 +537,15 @@ func dateOf(t time.Time) string {
 }
 
 func (l *listModel) view(m *Model, width, height int) string {
+	lw, pw := l.previewWidths(width)
+	list := l.listView(m, lw, height)
+	if pw == 0 {
+		return list
+	}
+	return withPreview(list, l.previewView(m.currentIssue(), pw), lw, pw, height)
+}
+
+func (l *listModel) listView(m *Model, width, height int) string {
 	searchLine := ""
 	if _, typing := m.modal.(*searchInput); typing || l.search != "" {
 		searchLine = styleTitle.Render("/"+l.search) + "\n"

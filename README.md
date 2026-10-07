@@ -30,6 +30,7 @@ default_filter = "assigned"   # all | assigned | reported | monitored | unassign
 page_size = 50
 auto_refresh = "120s"         # "0" disables
 group_by_project = false
+preview = true                # split view on terminals ≥ 140 columns
 
 [issue]
 auto_refresh = "120s"
@@ -84,7 +85,7 @@ current screen.
 
 | Key | Action |
 |---|---|
-| `enter` | view issue |
+| `enter`/`l` | view issue |
 | `j`/`k`, `up`/`down` | move |
 | `gg`/`home`, `G`/`end` | first / last issue |
 | `L` / `H` | next / previous page |
@@ -92,6 +93,8 @@ current screen.
 | `/` | search this page (id, summary, category, handler) |
 | `esc` | clear search |
 | `ctrl+g` | group by project |
+| `P` | toggle the preview pane |
+| `ctrl+d` / `ctrl+u` | scroll the preview |
 | `r` | refresh |
 | `C` | create issue |
 | `D` | delete issue |
@@ -132,7 +135,7 @@ can retry them.
 | `dn` | delete note |
 | `s` `p` `V` `c` `S` `a` `m` `o` | same as in the list |
 | `r` | refresh |
-| `q`/`esc` | back to the list |
+| `q`/`esc`/`h` | back to the list |
 
 ### Notes and the create form
 

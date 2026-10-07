@@ -376,9 +376,9 @@ function the preview can share. Add `list.preview` and the preview pane: a
 debounced fetch, a per-host cache keyed by `updated_at`, `P` to toggle it,
 and `ctrl+d` / `ctrl+u` to scroll it.
 **Acceptance criteria:**
-- [ ] At 160 columns the list and the preview share the screen; at 120 the list is full width
-- [ ] Resting on a row fetches it once; returning to it uses the cache; a newer `updated_at` refetches
-- [ ] `P` hides and shows the pane, and `list.preview = false` starts with it hidden
+- [x] At 160 columns the list and the preview share the screen; at 120 the list is full width
+- [x] Resting on a row fetches it once; returning to it uses the cache; a newer `updated_at` refetches
+- [x] `P` hides and shows the pane, and `list.preview = false` starts with it hidden
 **Verification:** `go test -race ./internal/tui/ ./internal/config/`, plus a golden at 160×40
 **Dependencies:** None
 **Files:** `internal/tui/preview.go`, `internal/tui/issue.go`, `internal/tui/list.go`, `internal/tui/app.go`, `internal/config/config.go`

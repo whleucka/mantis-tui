@@ -96,7 +96,7 @@ The full task details are in `tasks/todo.md`.
 - [x] All 11 success criteria in SPEC.md are met. Ready for review. Evidence is in `tasks/todo.md`.
 
 ### Phase 6: Beyond parity (v1.1)
-- [ ] Task 21: Split view with a preview pane
+- [x] Task 21: Split view with a preview pane
 - [ ] Task 22: Unread tracking
 - [ ] Task 23: Command palette and jump to issue
 - [ ] Task 24: Mouse support

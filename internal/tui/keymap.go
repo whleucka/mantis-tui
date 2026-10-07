@@ -44,6 +44,9 @@ const (
 	actBatchCategory  action = "batch-category"
 	actBatchAssign    action = "batch-assign"
 	actBatchDelete    action = "batch-delete"
+	actTogglePreview  action = "toggle-preview"
+	actPreviewDown    action = "preview-down"
+	actPreviewUp      action = "preview-up"
 )
 
 // binding maps key sequences to an action. Each entry in keys is one
@@ -80,7 +83,7 @@ func defaultKeymap() keymap {
 	}
 	list := append(append([]binding{}, common...),
 		binding{actQuit, []string{"q"}, "quit"},
-		binding{actOpen, []string{"enter"}, "view issue"},
+		binding{actOpen, []string{"enter", "l"}, "view issue"},
 		binding{actTop, []string{"g g", "home"}, "first issue"},
 		binding{actBottom, []string{"G", "end"}, "last issue"},
 		binding{actCreate, []string{"C"}, "create issue"},
@@ -89,6 +92,9 @@ func defaultKeymap() keymap {
 		binding{actSearch, []string{"/"}, "search this page"},
 		binding{actClearSearch, []string{"esc"}, "clear search"},
 		binding{actToggleGroup, []string{"ctrl+g"}, "group by project"},
+		binding{actTogglePreview, []string{"P"}, "toggle preview pane"},
+		binding{actPreviewDown, []string{"ctrl+d"}, "scroll preview down"},
+		binding{actPreviewUp, []string{"ctrl+u"}, "scroll preview up"},
 		binding{actNextPage, []string{"L"}, "next page"},
 		binding{actPrevPage, []string{"H"}, "previous page"},
 		binding{actToggleSelect, []string{"space"}, "toggle selection"},
@@ -102,7 +108,7 @@ func defaultKeymap() keymap {
 		binding{actBatchDelete, []string{"b D"}, "batch delete"},
 	)
 	issue := append(append([]binding{}, common...),
-		binding{actBack, []string{"q", "esc"}, "back to list"},
+		binding{actBack, []string{"q", "esc", "h"}, "back to list"},
 		binding{actTop, []string{"g g"}, "top"},
 		binding{actBottom, []string{"G"}, "bottom"},
 		binding{actPageDown, []string{"ctrl+d", "pgdown"}, "page down"},

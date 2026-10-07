@@ -16,6 +16,7 @@ import (
 const (
 	tabNotes = iota
 	tabHistory
+	tabPreview // notes only, with no tab bar: the list's preview pane
 )
 
 // issueModel shows one issue with its notes and history.
@@ -164,8 +165,13 @@ func (iv *issueModel) content(w int) string {
 		}
 		return styleMuted.Render(fmt.Sprintf("Loading issue #%d…", iv.id))
 	}
-	is := iv.issue
-	text := lipgloss.NewStyle().Width(w - 2)
+	return renderIssue(iv.issue, iv.tab, w)
+}
+
+// renderIssue lays out an issue's header, body and the notes or history tab
+// in w columns. The issue view and the list's preview pane share it.
+func renderIssue(is *mantis.Issue, tab, w int) string {
+	text := lipgloss.NewStyle().Width(max(w-2, 10))
 	var b strings.Builder
 
 	b.WriteString(styleTitle.Render(fmt.Sprintf("#%d %s", is.ID, is.Summary)) + "\n\n")
@@ -219,14 +225,16 @@ func (iv *issueModel) content(w int) string {
 
 	notes := fmt.Sprintf("Notes (%d)", len(is.Notes))
 	history := fmt.Sprintf("History (%d)", len(is.History))
-	if iv.tab == tabNotes {
-		notes, history = styleSelected.Render(" "+notes+" "), styleMuted.Render(" "+history+" ")
-	} else {
-		notes, history = styleMuted.Render(" "+notes+" "), styleSelected.Render(" "+history+" ")
+	switch tab {
+	case tabPreview:
+		b.WriteString("\n" + styleHeader.Render(notes) + "\n\n")
+	case tabNotes:
+		b.WriteString("\n" + styleSelected.Render(" "+notes+" ") + " " + styleMuted.Render(" "+history+" ") + styleMuted.Render("  (tab)") + "\n\n")
+	default:
+		b.WriteString("\n" + styleMuted.Render(" "+notes+" ") + " " + styleSelected.Render(" "+history+" ") + styleMuted.Render("  (tab)") + "\n\n")
 	}
-	b.WriteString("\n" + notes + " " + history + styleMuted.Render("  (tab)") + "\n\n")
 
-	if iv.tab == tabNotes {
+	if tab != tabHistory {
 		if len(is.Notes) == 0 {
 			b.WriteString(styleMuted.Render("No notes. N adds one.") + "\n")
 		}

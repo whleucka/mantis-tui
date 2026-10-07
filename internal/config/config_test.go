@@ -44,6 +44,9 @@ func TestLoadAppliesDefaults(t *testing.T) {
 	if cfg.Icons.Immediate != "🔥" || cfg.Icons.Monitor != "👁️" {
 		t.Errorf("icon defaults = %+v", cfg.Icons)
 	}
+	if !cfg.List.Preview {
+		t.Error("list.preview should default to true")
+	}
 }
 
 func TestLoadOverridesDefaults(t *testing.T) {
@@ -53,6 +56,7 @@ default_filter = "assigned"
 page_size = 500
 auto_refresh = "0"
 group_by_project = true
+preview = false
 
 [icons]
 high = "H"
@@ -61,7 +65,7 @@ high = "H"
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cfg.List.DefaultFilter != "assigned" || cfg.List.PageSize != 500 || !cfg.List.GroupByProject {
+	if cfg.List.DefaultFilter != "assigned" || cfg.List.PageSize != 500 || !cfg.List.GroupByProject || cfg.List.Preview {
 		t.Errorf("list = %+v", cfg.List)
 	}
 	if cfg.List.AutoRefresh.Duration != 0 {

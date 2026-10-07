@@ -4,6 +4,7 @@ package tui
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"charm.land/bubbles/v2/spinner"
 	tea "charm.land/bubbletea/v2"
@@ -137,6 +138,8 @@ type Model struct {
 
 	batchSeq int // last batch started
 	batchID  int // batch whose progress is shown; 0 when none
+
+	previewDelay time.Duration // cursor rest time before the preview fetches
 }
 
 // Messages. Anything tied to a host carries its name so responses that
@@ -157,11 +160,12 @@ type (
 // New builds the root model.
 func New(opts Options) *Model {
 	return &Model{
-		opts:       opts,
-		keys:       defaultKeymap(),
-		hosts:      map[string]*hostView{},
-		spin:       spinner.New(spinner.WithSpinner(spinner.MiniDot)),
-		execEditor: defaultExecEditor,
+		opts:         opts,
+		keys:         defaultKeymap(),
+		hosts:        map[string]*hostView{},
+		spin:         spinner.New(spinner.WithSpinner(spinner.MiniDot)),
+		execEditor:   defaultExecEditor,
+		previewDelay: previewDelay,
 	}
 }
 
@@ -176,6 +180,16 @@ func (m *Model) Init() tea.Cmd {
 
 // Update implements tea.Model.
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	_, cmd := m.update(msg)
+	// Any message may have moved the cursor or changed the list, so check
+	// whether the preview needs a different issue.
+	if m.cur != nil {
+		cmd = tea.Batch(cmd, m.cur.list.syncPreview(m))
+	}
+	return m, cmd
+}
+
+func (m *Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.width, m.height = msg.Width, msg.Height
@@ -207,7 +221,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if msg.inner == nil {
 			return m, nil
 		}
-		return m.Update(msg.inner)
+		return m.update(msg.inner)
 
 	case editorDoneMsg:
 		return m, m.onEditorDone(msg)
