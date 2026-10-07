@@ -443,3 +443,30 @@ and `h` went back. A raw SGR click moved the cursor to #32. The wheel moved
 the list cursor and scrolled a long preview. `seen.json` was written with
 mode 0600.
 
+---
+
+## Phase 7: Keymap redesign (v1.2)
+
+### Task 26: Keys that suit a terminal app
+**Description:** Apply the "v1.2: Keymap redesign" table in SPEC.md. List
+actions follow the selection and the `b` chords go away. Add `1`–`9` host
+jumps, `[`/`]` paging and issue stepping, `N` previous unread, `y` copy URL,
+`esc` layering and half-page moves in the list.
+**Acceptance criteria:**
+- [x] `s` with three issues selected opens "Status for 3 issues" and patches all three
+- [x] `H` opens the host picker, and `2` switches to the second host; `ctrl+h` does nothing
+- [x] `]` in the issue view opens the next issue, and `h` returns with the cursor on it
+- [x] `y` puts the issue URL on the clipboard through OSC 52
+- [x] The README, help screen and palette show only the new keys (the README test enforces it)
+**Verification:** `make race && make lint`, plus a herdr check
+**Dependencies:** 21–25
+**Files:** `internal/tui/keymap.go`, `internal/tui/list.go`, `internal/tui/issue.go`, `internal/tui/app.go`, tests, `README.md`
+**Scope:** M
+
+**Live check (herdr pane, dev server, 2026-10-07, 167 columns):** two issues
+selected, then `s` opened "Status for 2 issues". `esc` closed the picker, and
+a second `esc` cleared the selection. `]` from the last issue said "last issue
+on this page". `y` put the URL on the system clipboard through herdr (read
+back with `wl-paste`). `h` returned with the cursor on the issue. `ctrl+h`
+did nothing.
+

@@ -24,8 +24,12 @@ func newHelp(title string, bindings []binding) *helpModal {
 	return h
 }
 
-// keyLabel shows sequences compactly: "g g" → "gg", alternatives joined by "/".
+// keyLabel shows sequences compactly: "g g" → "gg", alternatives joined by
+// "/", and the digit run 1…9 as "1-9".
 func keyLabel(keys []string) string {
+	if strings.Join(keys, "") == "123456789" {
+		return "1-9"
+	}
 	out := make([]string, len(keys))
 	for i, k := range keys {
 		parts := strings.Fields(k)

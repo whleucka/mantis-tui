@@ -90,33 +90,45 @@ current screen.
 
 ### Issue list
 
+Actions that change issues (`s` `p` `v` `c` `a` `D`) apply to the selected
+issues, or to the issue under the cursor when nothing is selected. Pickers
+name their target ("Status for 3 issues").
+
 | Key | Action |
 |---|---|
-| `enter`/`l` | view issue |
 | `j`/`k`, `up`/`down` | move |
+| `ctrl+d`/`pgdown`, `ctrl+u`/`pgup` | half page down / up |
 | `gg`/`home`, `G`/`end` | first / last issue |
-| `L` / `H` | next / previous page |
-| `F` | filter (all, assigned, reported, monitored, unassigned) |
+| `]` / `[` | next / previous page |
+| `enter`/`l` | view issue |
+| `f` | filter (all, assigned, reported, monitored, unassigned) |
 | `/` | search this page (id, summary, category, handler) |
-| `esc` | clear search |
-| `ctrl+g` | group by project |
-| `P` | toggle the preview pane |
-| `n` | next unread issue |
+| `esc` | clear the search, then the selection |
+| `n` / `N` | next / previous unread issue |
 | `u` | toggle read / unread |
-| `ctrl+d` / `ctrl+u` | scroll the preview |
-| `r` | refresh |
-| `C` | create issue |
-| `D` | delete issue |
-| `s` / `p` / `V` / `c` | change status / priority / severity / category |
-| `S` | change summary |
+| `space` | toggle selection |
+| `ctrl+a` | select every shown issue |
+| `s` / `p` / `v` / `c` | change status / priority / severity / category |
 | `a` | assign |
-| `N` | add note |
+| `e` | edit the summary |
+| `r` | add a note (reply) |
 | `m` | toggle monitoring (👁️ marks monitored issues) |
 | `o` | open in browser |
-| `ctrl+h` | switch host |
+| `y` | copy the issue URL (OSC 52, works over SSH) |
+| `C` | create issue |
+| `D` | delete issue(s) |
+| `P` | toggle the preview pane |
+| `J` / `K` | scroll the preview |
+| `ctrl+g` | group by project |
+| `R` | refresh |
+| `H` | switch host |
+| `1`–`9` | switch to the Nth host in the config |
 | `:` / `ctrl+p` | command palette |
 | `?` | toggle help |
 | `q` | quit |
+
+If a change to several issues partly fails, only the issues that failed stay
+selected, so you can retry them.
 
 **Split view.** On terminals at least 140 columns wide, the right side
 shows a preview of the issue under the cursor: its details, description and
@@ -140,21 +152,6 @@ Clicking a picker option or a palette command chooses it, and clicking
 Notes/History switches tabs. Mouse reporting stops the terminal's own text
 selection, so hold `shift` to select text, or set `ui.mouse = false`.
 
-**Selection and batch actions.** Batch actions apply to the selected issues,
-or to the issue under the cursor when nothing is selected.
-
-| Key | Action |
-|---|---|
-| `space` | toggle selection |
-| `ctrl+a` | select every shown issue |
-| `ctrl+x` | clear selection |
-| `bs` / `bp` / `bv` / `bc` | batch status / priority / severity / category |
-| `ba` | batch assign |
-| `bD` | batch delete |
-
-If a batch partly fails, only the issues that failed stay selected, so you
-can retry them.
-
 ### Issue view
 
 | Key | Action |
@@ -162,18 +159,19 @@ can retry them.
 | `j`/`k`, `up`/`down` | scroll |
 | `ctrl+d`/`pgdown`, `ctrl+u`/`pgup` | half page down / up |
 | `gg` / `G` | top / bottom |
+| `]` / `[` | next / previous issue in the list |
 | `tab` | switch between notes and history |
-| `N` | add note |
-| `dn` | delete note |
-| `s` `p` `V` `c` `S` `a` `m` `o` | same as in the list |
-| `r` | refresh |
-| `:` / `ctrl+p` | command palette |
-| `q`/`esc`/`h` | back to the list |
+| `r` | add a note (reply) |
+| `dn` | delete a note |
+| `s` `p` `v` `c` `a` `e` `m` `o` `y` | same as in the list, for this issue |
+| `R` | refresh |
 | `u` | mark unread and go back to the list |
+| `q`/`esc`/`h` | back to the list |
+| `H`, `1`–`9`, `:`/`ctrl+p`, `?` | same as in the list |
 
 ### Notes and the create form
 
-- **Notes:** `N` asks whether the note is private, and for the time spent
+- **Notes:** `r` asks whether the note is private, and for the time spent
   (only if the server has time tracking enabled). It then opens
   `$VISUAL`/`$EDITOR` (falling back to `vi`). Lines starting with `# ` that
   mantis-tui inserted are removed. Saving an empty file cancels the note. If

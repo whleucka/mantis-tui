@@ -143,6 +143,10 @@ func (iv *issueModel) handleAction(m *Model, a action) tea.Cmd {
 		iv.render(m)
 	case actRefresh:
 		return iv.load(m)
+	case actNextIssue:
+		return m.stepIssue(1)
+	case actPrevIssue:
+		return m.stepIssue(-1)
 	case actDeleteNote:
 		return m.pickNoteToDelete(iv.issue)
 	default:

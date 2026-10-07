@@ -143,6 +143,7 @@ type Model struct {
 	previewDelay time.Duration // cursor rest time before the preview fetches
 	seen         *config.Seen
 	now          func() time.Time // clock for double clicks
+	clipboard    func(string) tea.Cmd
 }
 
 // Messages. Anything tied to a host carries its name so responses that
@@ -175,6 +176,7 @@ func New(opts Options) *Model {
 		execEditor:   defaultExecEditor,
 		previewDelay: previewDelay,
 		now:          time.Now,
+		clipboard:    tea.SetClipboard,
 	}
 }
 
@@ -330,7 +332,50 @@ func (m *Model) handleKey(msg tea.KeyPressMsg) tea.Cmd {
 	if waiting {
 		return m.chord.waitCmd()
 	}
+	if a == actJumpHost {
+		return m.jumpHost(msg.String())
+	}
 	return m.dispatch(a)
+}
+
+// jumpHost switches to the Nth configured host for the digit key n.
+func (m *Model) jumpHost(n string) tea.Cmd {
+	i := int(n[0] - '1')
+	if len(n) != 1 || i < 0 || i >= len(m.opts.Hosts) {
+		m.status.info(fmt.Sprintf("no host %s (%d configured)", n, len(m.opts.Hosts)))
+		return nil
+	}
+	if name := m.opts.Hosts[i].Name; name != m.cur.sess.Host.Name {
+		return m.selectHost(name)
+	}
+	return nil
+}
+
+// stepIssue opens the next (dir 1) or previous (dir -1) issue in the list's
+// order and moves the list cursor along, so going back lands on it.
+func (m *Model) stepIssue(dir int) tea.Cmd {
+	l, iv := m.cur.list, m.cur.issue
+	rs := l.rows()
+	pos := -1
+	for i, r := range rs {
+		if r.idx >= 0 && l.issues[r.idx].ID == iv.id {
+			pos = i
+		}
+	}
+	if pos < 0 {
+		return infoCmd(m.cur.sess.Host.Name, fmt.Sprintf("#%d is not in the list", iv.id))
+	}
+	for i := pos + dir; i >= 0 && i < len(rs); i += dir {
+		if rs[i].idx >= 0 {
+			l.cursor = i
+			l.scrollToCursor(m)
+			return m.openIssue(l.issues[rs[i].idx].ID)
+		}
+	}
+	if dir > 0 {
+		return infoCmd(m.cur.sess.Host.Name, "last issue on this page")
+	}
+	return infoCmd(m.cur.sess.Host.Name, "first issue on this page")
 }
 
 // dispatch runs an action on the current screen, whether it came from a key

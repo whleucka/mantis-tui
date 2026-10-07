@@ -84,11 +84,12 @@ func (l *listModel) unreadCount() int {
 	return n
 }
 
-// nextUnread moves the cursor to the next unread row, wrapping around.
-func (l *listModel) nextUnread(m *Model) tea.Cmd {
+// nextUnread moves the cursor to the next (dir 1) or previous (dir -1)
+// unread row, wrapping around.
+func (l *listModel) nextUnread(m *Model, dir int) tea.Cmd {
 	rs := l.rows()
 	for step := 1; step <= len(rs); step++ {
-		i := (l.cursor + step) % len(rs)
+		i := ((l.cursor+dir*step)%len(rs) + len(rs)) % len(rs)
 		if rs[i].idx >= 0 && l.unread(l.issues[rs[i].idx]) {
 			l.cursor = i
 			l.scrollToCursor(m)

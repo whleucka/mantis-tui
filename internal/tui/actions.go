@@ -106,6 +106,9 @@ func (m *Model) issueAction(a action) tea.Cmd {
 		return m.toggleMonitor(*is)
 	case actBrowser:
 		return m.openInBrowser(is.ID)
+	case actCopyURL:
+		url := service.IssueURL(m.cur.sess.Host.URL, is.ID)
+		return tea.Batch(m.clipboard(url), infoCmd(m.cur.sess.Host.Name, "copied "+url))
 	case actAddNote:
 		return m.startNote(*is)
 	}

@@ -102,6 +102,9 @@ The full task details are in `tasks/todo.md`.
 - [x] Task 24: Mouse support
 - [x] Task 25: Docs and a live check
 
+### Phase 7: Keymap redesign (v1.2)
+- [x] Task 26: Keys that suit a terminal app
+
 ## Findings During Build
 
 - On 2.27, `GET /issues` includes the full `history` for every issue in a

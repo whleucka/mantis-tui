@@ -7,7 +7,7 @@ func testBindings() []binding {
 		{action: actTop, keys: []string{"g g"}},
 		{action: actBottom, keys: []string{"G"}},
 		{action: actDeleteNote, keys: []string{"d n"}},
-		{action: actBatchStatus, keys: []string{"b s"}},
+		{action: actPriority, keys: []string{"b s"}},
 		{action: actStatus, keys: []string{"s"}},
 		{action: actDown, keys: []string{"j", "down"}},
 	}
@@ -30,7 +30,7 @@ func TestChordSequences(t *testing.T) {
 	}{
 		{[]string{"g", "g"}, actTop},
 		{[]string{"d", "n"}, actDeleteNote},
-		{[]string{"b", "s"}, actBatchStatus},
+		{[]string{"b", "s"}, actPriority},
 	} {
 		var c chord
 		a, wait := c.feed(tt.keys[0], testBindings())

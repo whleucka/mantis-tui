@@ -76,7 +76,7 @@ func TestAutoRefreshSkippedWhileModalOpenOrLoading(t *testing.T) {
 	calls := func() int { return len(h.fakes["alpha"].ListCalls) }
 	before := calls()
 
-	h.keys("F") // filter picker open
+	h.keys("f") // filter picker open
 	h.listTick()
 	if calls() != before {
 		t.Error("no refresh while a modal is open")

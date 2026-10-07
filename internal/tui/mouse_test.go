@@ -107,7 +107,7 @@ func TestWheelOverPreviewScrollsIt(t *testing.T) {
 	is.UpdatedAt = is.UpdatedAt.Add(time.Minute)
 	is.Description = strings.Repeat("long line\n", 100)
 	f.Issues[1] = is
-	h.keys("r")
+	h.keys("R")
 	h.send(wheel(150, 10, true))
 	if h.m.cur.list.pv.vp.YOffset() != wheelStep {
 		t.Errorf("wheel over the preview should scroll it, offset = %d", h.m.cur.list.pv.vp.YOffset())
@@ -198,7 +198,7 @@ func TestHelpWheelAndModalsWithoutMouse(t *testing.T) {
 	if hm.offset != 1 {
 		t.Errorf("wheel should scroll help, offset = %d", hm.offset)
 	}
-	h.keys("esc", "S") // summary prompt: a text modal that ignores the mouse
+	h.keys("esc", "e") // summary prompt: a text modal that ignores the mouse
 	h.send(click(1, 1), wheel(1, 1, true))
 	if h.m.modal == nil {
 		t.Error("the mouse must not close a text prompt")

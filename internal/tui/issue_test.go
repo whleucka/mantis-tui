@@ -156,7 +156,7 @@ func TestIssueRefresh(t *testing.T) {
 	h.keys("j", "enter")
 	is.Summary = "Edited elsewhere"
 	h.fakes["alpha"].Issues[33] = is
-	h.keys("r")
+	h.keys("R")
 	if !strings.Contains(h.view(), "Edited elsewhere") {
 		t.Error("r should reload the issue")
 	}

@@ -123,6 +123,9 @@ default = true
 
 ## Feature Scope (v1 = mantis.nvim parity)
 
+(The keys below are v1's. "v1.2: Keymap redesign" further down replaces
+several of them.)
+
 ### Hosts
 - Host picker at startup, following the selection rules above.
 - `ctrl+h` switches host at runtime. Each host's view state (filter, page,
@@ -315,6 +318,46 @@ Both default to `true`.
 - Pickers, the palette and help: the wheel moves the cursor or scrolls, and
   clicking a picker option chooses it.
 
+## v1.2: Keymap redesign
+
+v1 copied mantis.nvim's keys. v1.2 picks keys that suit a terminal app,
+without compatibility aliases for the old ones. Every v1 action still has a
+key, which keeps success criterion 3.
+
+- **Actions follow the selection.** In the list, `s` `p` `v` `c` `a` `D`
+  act on the selected issues, or on the issue under the cursor when nothing is
+  selected. The `b` chords (`bs` `bp` `bv` `bc` `ba` `bD`) are gone. Pickers
+  name their target ("Status for 3 issues") and the status bar counts the
+  selection.
+- **`ctrl+h` is gone**, because many terminals send it for Backspace.
+  `H` opens the host picker, and `1`–`9` switch straight to the Nth
+  configured host.
+
+| Action | v1 | v1.2 |
+|---|---|---|
+| switch host | `ctrl+h` | `H`; `1`–`9` for host N |
+| next / previous page | `L` / `H` | `]` / `[` |
+| half page down / up (list) | none | `ctrl+d` / `ctrl+u`, `pgdown` / `pgup` |
+| scroll preview | `ctrl+d` / `ctrl+u` | `J` / `K` |
+| next / previous issue (issue view) | none | `]` / `[` |
+| next / previous unread | `n` / none | `n` / `N` |
+| add note | `N` | `r` |
+| refresh | `r` | `R` |
+| severity | `V` | `v` |
+| change summary | `S` | `e` |
+| filter | `F` | `f` |
+| clear selection | `ctrl+x` | `esc` (clears the search first, then the selection) |
+| batch actions | `b` + key | the plain key, applied to the selection |
+| copy issue URL | none | `y` (OSC 52, so it works over SSH) |
+
+Unchanged: `j` `k` `gg` `G` `home` `end` `enter` `l` `q` `esc` `h` `/`
+`space` `ctrl+a` `s` `p` `c` `a` `m` `o` `u` `D` `C` `P` `ctrl+g` `tab` `dn`
+`?` `:` `ctrl+p`.
+
+- In the issue view, `]` / `[` open the next or previous issue in the list's
+  order, and move the list cursor with them, so going back lands on the issue
+  you were reading.
+
 ## API Client Contract (`internal/mantis`)
 
 - `Client{BaseURL, Token, HTTP *http.Client}`. Every method takes a
@@ -417,7 +460,8 @@ func (m Model) changeStatus(id int, status mantis.Ref) tea.Cmd {
 
 Naming: exported types are nouns (`Issue`, `HostConfig`) and messages end in
 `Msg`. Key bindings are declared once in `internal/tui/keymap.go` using
-`bubbles/key`, with defaults that match the mantis.nvim keymap. A chord
+`bubbles/key`. The defaults started as the mantis.nvim keymap and were
+redesigned in v1.2. A chord
 helper handles multi-key sequences (`gg`, `dn`, `bs`…) with a 1-second
 timeout.
 

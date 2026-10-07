@@ -240,10 +240,17 @@ func (l *listModel) handleAction(m *Model, a action) tea.Cmd {
 		l.cursorTo(m, id)
 	case actSearch:
 		m.modal = &searchInput{l: l, m: m}
-	case actClearSearch:
-		if l.search != "" {
+	case actEscape: // backs out one layer: the search, then the selection
+		switch {
+		case l.search != "":
 			l.setSearch(m, "")
+		case len(l.selected) > 0:
+			l.selected = map[int]mantis.Issue{}
 		}
+	case actPageDown:
+		l.move(m, max(bodyRows(m)/2, 1))
+	case actPageUp:
+		l.move(m, -max(bodyRows(m)/2, 1))
 	case actRefresh:
 		return l.load(m, l.page, l.currentID())
 	case actNextPage:
@@ -260,10 +267,6 @@ func (l *listModel) handleAction(m *Model, a action) tea.Cmd {
 	case actOpen:
 		if id := l.currentID(); id != 0 {
 			return m.openIssue(id)
-		}
-	case actDelete:
-		if is := m.currentIssue(); is != nil {
-			m.confirmDelete([]mantis.Issue{*is})
 		}
 	case actCreate:
 		return m.openCreate()
@@ -282,10 +285,10 @@ func (l *listModel) handleAction(m *Model, a action) tea.Cmd {
 				l.selected[l.issues[r.idx].ID] = l.issues[r.idx]
 			}
 		}
-	case actClearSelection:
-		l.selected = map[int]mantis.Issue{}
 	case actNextUnread:
-		return l.nextUnread(m)
+		return l.nextUnread(m, 1)
+	case actPrevUnread:
+		return l.nextUnread(m, -1)
 	case actToggleRead:
 		return l.toggleRead(m)
 	case actTogglePreview:
@@ -294,7 +297,7 @@ func (l *listModel) handleAction(m *Model, a action) tea.Cmd {
 		l.pv.vp.HalfPageDown()
 	case actPreviewUp:
 		l.pv.vp.HalfPageUp()
-	case actBatchStatus, actBatchPriority, actBatchSeverity, actBatchCategory, actBatchAssign, actBatchDelete:
+	case actStatus, actPriority, actSeverity, actCategory, actAssign, actDelete:
 		return l.batch(m, a)
 	default:
 		return m.issueAction(a)
@@ -319,23 +322,25 @@ func (l *listModel) targets(m *Model) []mantis.Issue {
 	return out
 }
 
+// batch runs a field change or delete on the targets: the selection, or
+// the issue under the cursor.
 func (l *listModel) batch(m *Model, a action) tea.Cmd {
 	targets := l.targets(m)
 	if len(targets) == 0 {
 		return nil
 	}
 	switch a {
-	case actBatchStatus:
+	case actStatus:
 		return m.pickEnum(meta.Status, targets)
-	case actBatchPriority:
+	case actPriority:
 		return m.pickEnum(meta.Priority, targets)
-	case actBatchSeverity:
+	case actSeverity:
 		return m.pickEnum(meta.Severity, targets)
-	case actBatchCategory:
+	case actCategory:
 		return m.pickCategory(targets)
-	case actBatchAssign:
+	case actAssign:
 		return m.pickUser(targets)
-	case actBatchDelete:
+	case actDelete:
 		m.confirmDelete(targets)
 	}
 	return nil

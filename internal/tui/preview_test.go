@@ -78,7 +78,7 @@ func TestPreviewCachesUntilTheRowIsNewer(t *testing.T) {
 	is.UpdatedAt = is.UpdatedAt.Add(time.Hour)
 	is.Description = "Edited body"
 	f.Issues[5] = is
-	h.keys("r")
+	h.keys("R")
 	if got := f.Calls("GetIssue"); got != 3 {
 		t.Errorf("a newer updated_at should refetch: %d GetIssue calls, want 3", got)
 	}
@@ -139,12 +139,12 @@ func TestPreviewScrollKeys(t *testing.T) {
 	is.UpdatedAt = is.UpdatedAt.Add(time.Minute)
 	is.Description = strings.Repeat("long line\n", 100)
 	f.Issues[1] = is
-	h.keys("r")
-	h.keys("ctrl+d")
+	h.keys("R")
+	h.keys("J")
 	if h.m.cur.list.pv.vp.YOffset() == 0 {
 		t.Fatal("ctrl+d should scroll the preview")
 	}
-	h.keys("ctrl+u")
+	h.keys("K")
 	if h.m.cur.list.pv.vp.YOffset() != 0 {
 		t.Error("ctrl+u should scroll back")
 	}
@@ -171,7 +171,7 @@ func TestNoteFromListRefreshesPreview(t *testing.T) {
 	t.Setenv("TMPDIR", t.TempDir())
 	h := previewHarness(t, 2, nil)
 	stubEditor(h, "a note from the list\n")
-	h.keys("N")
+	h.keys("r")
 	h.keys("enter") // not private; the fake server has no time tracking
 	if !strings.Contains(h.view(), "a note from the list") {
 		t.Errorf("the preview should show the new note:\n%s", h.view())

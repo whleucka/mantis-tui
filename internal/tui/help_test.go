@@ -77,6 +77,12 @@ func TestReadmeDocumentsEveryKey(t *testing.T) {
 	}
 	km := defaultKeymap()
 	for _, b := range append(km.list, km.issue...) {
+		if keyLabel(b.keys) == "1-9" {
+			if !strings.Contains(string(readme), "`1`–`9`") {
+				t.Errorf("README does not document `1`–`9` (%s)", b.help)
+			}
+			continue
+		}
 		for _, k := range b.keys {
 			label := "`" + keyLabel([]string{k}) + "`"
 			if !strings.Contains(string(readme), label) {

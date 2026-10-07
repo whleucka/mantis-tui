@@ -50,7 +50,7 @@ func TestSwitchHostKeepsPerHostState(t *testing.T) {
 	h := newHarness(t, &hosts[0], nil)
 	alpha := h.m.cur
 
-	h.keys("ctrl+h")
+	h.keys("H")
 	if h.m.modal == nil {
 		t.Fatal("ctrl+h should open the host picker")
 	}
@@ -59,7 +59,7 @@ func TestSwitchHostKeepsPerHostState(t *testing.T) {
 		t.Fatalf("switched to %q", h.m.cur.sess.Host.Name)
 	}
 
-	h.keys("ctrl+h", "up", "enter")
+	h.keys("H", "up", "enter")
 	if h.m.cur != alpha {
 		t.Error("switching back should restore alpha's existing state")
 	}
@@ -114,11 +114,11 @@ func TestCtrlCAlwaysQuits(t *testing.T) {
 func TestChordTimeoutViaMessage(t *testing.T) {
 	hosts := testHosts()
 	h := newHarness(t, &hosts[0], nil)
-	h.keys("b")
+	h.keys("g")
 	if len(h.m.chord.pending) != 1 {
-		t.Fatal("b should start a chord")
+		t.Fatal("g should start a chord")
 	}
-	if !strings.Contains(h.view(), "b-") {
+	if !strings.Contains(h.view(), "g-") {
 		t.Error("pending chord should be shown in the status bar")
 	}
 	h.send(chordTimeoutMsg{gen: h.m.chord.gen})

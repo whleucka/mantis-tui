@@ -39,7 +39,7 @@ func TestFirstRunHasNothingUnread(t *testing.T) {
 func TestUpdatedIssueIsUnreadUntilOpened(t *testing.T) {
 	h := listHarness(t, 5, nil)
 	bump(h, 3)
-	h.keys("r")
+	h.keys("R")
 	if row := rowOf(h, 3); !strings.Contains(row, "•") {
 		t.Fatalf("#3 changed after the baseline and should be unread: %q", row)
 	}
@@ -67,7 +67,7 @@ func TestUpdatedIssueIsUnreadUntilOpened(t *testing.T) {
 func TestPreviewMarksIssueRead(t *testing.T) {
 	h := previewHarness(t, 3, nil)
 	bump(h, 2)
-	h.keys("r")
+	h.keys("R")
 	if !strings.Contains(rowOf(h, 2), "•") {
 		t.Fatal("precondition: #2 unread")
 	}
@@ -118,7 +118,7 @@ func TestOwnChangesDoNotMarkUnread(t *testing.T) {
 	if len(h.fakes["alpha"].Patches) != 1 {
 		t.Fatal("precondition: one patch")
 	}
-	h.keys("r")
+	h.keys("R")
 	if strings.Contains(rowOf(h, 3), "•") {
 		t.Errorf("your own status change must not leave #3 unread: %q", rowOf(h, 3))
 	}
@@ -128,8 +128,8 @@ func TestOwnNoteDoesNotMarkUnread(t *testing.T) {
 	h := notesHarness(t, false)
 	h.fakes["alpha"].BumpOnWrite = true
 	stubEditor(h, "mine\n")
-	h.keys("N", "enter")
-	h.keys("r")
+	h.keys("r", "enter")
+	h.keys("R")
 	if strings.Contains(rowOf(h, 3), "•") {
 		t.Errorf("your own note must not leave #3 unread: %q", rowOf(h, 3))
 	}
@@ -155,7 +155,7 @@ func TestOwnMonitorDoesNotMarkUnread(t *testing.T) {
 	if len(h.fakes["alpha"].Monitored) != 1 {
 		t.Fatal("precondition: monitored")
 	}
-	h.keys("r")
+	h.keys("R")
 	if strings.Contains(rowOf(h, 2), "•") {
 		t.Errorf("monitoring must not leave #2 unread: %q", rowOf(h, 2))
 	}

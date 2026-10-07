@@ -48,7 +48,7 @@ func notesHarness(t *testing.T, timeTracking bool) *harness {
 func TestAddNoteFromList(t *testing.T) {
 	h := notesHarness(t, false)
 	stubEditor(h, "Fixed in abc123.\n")
-	h.keys("N")
+	h.keys("r")
 	if !strings.Contains(h.view(), "Add note to #3") {
 		t.Fatalf("note form missing:\n%s", h.view())
 	}
@@ -71,7 +71,7 @@ func TestAddNoteFromList(t *testing.T) {
 func TestAddPrivateTimedNote(t *testing.T) {
 	h := notesHarness(t, true)
 	stubEditor(h, "Spent a while.\n")
-	h.keys("N")
+	h.keys("r")
 	if !strings.Contains(h.view(), "Time spent") {
 		t.Fatal("time field should show when time tracking is enabled")
 	}
@@ -89,7 +89,7 @@ func TestAddPrivateTimedNote(t *testing.T) {
 func TestNoteFormRejectsBadTime(t *testing.T) {
 	h := notesHarness(t, true)
 	stubEditor(h, "x")
-	h.keys("N", "tab", "9", "9", "enter")
+	h.keys("r", "tab", "9", "9", "enter")
 	if h.m.modal == nil || !strings.Contains(h.view(), "H:MM") {
 		t.Errorf("bad time should keep the form open with an error:\n%s", h.view())
 	}
@@ -101,7 +101,7 @@ func TestNoteFormRejectsBadTime(t *testing.T) {
 func TestEmptyEditorDiscardsNote(t *testing.T) {
 	h := notesHarness(t, false)
 	stubEditor(h, "")
-	h.keys("N", "enter")
+	h.keys("r", "enter")
 	if len(h.fakes["alpha"].NotesAdded) != 0 {
 		t.Error("empty note must not be sent")
 	}
@@ -114,7 +114,7 @@ func TestFailedNoteKeepsTextFile(t *testing.T) {
 	h := notesHarness(t, false)
 	h.fakes["alpha"].Errs = map[string]error{"AddNote": errors.New("db down")}
 	stubEditor(h, "precious words\n")
-	h.keys("N", "enter")
+	h.keys("r", "enter")
 	files, _ := filepath.Glob(filepath.Join(os.Getenv("TMPDIR"), "mantis-*"))
 	if len(files) != 1 {
 		t.Fatalf("text file should be kept, found %v", files)
@@ -131,7 +131,7 @@ func TestEditingBlocksAutoRefresh(t *testing.T) {
 		finish = done
 		return nil // the editor is "still open"
 	}
-	h.keys("N", "enter")
+	h.keys("r", "enter")
 	if !h.m.editing {
 		t.Fatal("model should know an editor is open")
 	}
@@ -149,7 +149,7 @@ func TestAddNoteFromIssueViewReloadsIt(t *testing.T) {
 	stubEditor(h, "From the issue view.\n")
 	h.keys("enter") // #3
 	gets := h.fakes["alpha"].Calls("GetIssue")
-	h.keys("N", "enter")
+	h.keys("r", "enter")
 	if len(h.fakes["alpha"].NotesAdded) != 1 {
 		t.Fatal("note not added")
 	}

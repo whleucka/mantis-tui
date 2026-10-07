@@ -31,7 +31,7 @@ type palette struct {
 
 // paletteSkip are bindings too small to be worth a palette row.
 var paletteSkip = map[action]bool{
-	actPalette: true, actUp: true, actDown: true, actPageUp: true, actPageDown: true,
+	actPalette: true, actJumpHost: true, actUp: true, actDown: true, actPageUp: true, actPageDown: true,
 	actPreviewUp: true, actPreviewDown: true,
 }
 

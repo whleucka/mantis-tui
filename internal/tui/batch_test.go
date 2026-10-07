@@ -56,9 +56,9 @@ func TestSelectAllAndClear(t *testing.T) {
 	if got := selectedIDs(h); len(got) != 4 {
 		t.Errorf("ctrl+a selected %v", got)
 	}
-	h.keys("ctrl+x")
+	h.keys("esc")
 	if got := selectedIDs(h); len(got) != 0 {
-		t.Errorf("ctrl+x left %v", got)
+		t.Errorf("esc left %v", got)
 	}
 }
 
@@ -75,7 +75,7 @@ func TestSelectAllRespectsSearch(t *testing.T) {
 func TestBatchStatusOnSelection(t *testing.T) {
 	h := batchHarness(t, 5)
 	h.keys("space", "space", "space") // 5,4,3
-	h.keys("b", "s")
+	h.keys("s")
 	if !strings.Contains(h.view(), "for 3 issues") {
 		t.Fatalf("picker should name the count:\n%s", h.view())
 	}
@@ -99,7 +99,7 @@ func TestBatchStatusOnSelection(t *testing.T) {
 
 func TestBatchWithoutSelectionUsesCursorRow(t *testing.T) {
 	h := batchHarness(t, 5)
-	h.keys("j", "b", "p", "h", "i", "enter")
+	h.keys("j", "p", "h", "i", "enter")
 	f := h.fakes["alpha"]
 	if len(f.Patches) != 1 || f.Patches[0].ID != 4 || f.Patches[0].Patch.Priority.Name != "high" {
 		t.Errorf("patches = %+v", f.Patches)
@@ -109,7 +109,7 @@ func TestBatchWithoutSelectionUsesCursorRow(t *testing.T) {
 func TestBatchPartialFailureKeepsOnlyFailedSelected(t *testing.T) {
 	h := batchHarness(t, 10)
 	h.fakes["alpha"].ErrFor = map[string]map[int]error{"UpdateIssue": {7: errors.New("access denied")}}
-	h.keys("ctrl+a", "b", "v", "m", "a", "j", "enter") // severity major
+	h.keys("ctrl+a", "v", "m", "a", "j", "enter") // severity major
 	if got := selectedIDs(h); !equalInts(got, []int{7}) {
 		t.Errorf("selected after partial failure = %v, want [7]", got)
 	}
@@ -121,7 +121,7 @@ func TestBatchPartialFailureKeepsOnlyFailedSelected(t *testing.T) {
 
 func TestBatchDeleteConfirmsCount(t *testing.T) {
 	h := batchHarness(t, 5)
-	h.keys("space", "space", "b", "D")
+	h.keys("space", "space", "D")
 	if !strings.Contains(h.view(), "Delete 2 issues?") {
 		t.Fatalf("confirm should show the count:\n%s", h.view())
 	}
@@ -140,18 +140,18 @@ func TestBatchDeleteConfirmsCount(t *testing.T) {
 func TestSelectionSurvivesPagingAndRefresh(t *testing.T) {
 	h := batchHarness(t, 60)
 	h.keys("space") // #60
-	h.keys("L")
+	h.keys("]")
 	if _, ok := h.m.cur.list.selected[60]; !ok {
 		t.Fatal("selection lost after paging")
 	}
 	if !strings.Contains(lastLine(h.view()), "1 selected") {
 		t.Errorf("status = %q", lastLine(h.view()))
 	}
-	h.keys("space", "r") // select #10 on page 2, then refresh
+	h.keys("space", "R") // select #10 on page 2, then refresh
 	if len(h.m.cur.list.selected) != 2 {
 		t.Errorf("selection after refresh = %v", h.m.cur.list.selected)
 	}
-	h.keys("b", "s", "n", "e", "w", "enter")
+	h.keys("s", "n", "e", "w", "enter")
 	got := map[int]bool{}
 	for _, p := range h.fakes["alpha"].Patches {
 		got[p.ID] = true
@@ -166,7 +166,7 @@ func TestBatchCategoryAcrossProjects(t *testing.T) {
 	other := h.fakes["alpha"].Issues[2]
 	other.Project = mantis.Ref{ID: 8, Name: "Other"}
 	h.fakes["alpha"].Issues[2] = other
-	h.keys("r", "ctrl+a", "b", "c", "b", "a", "c", "enter")
+	h.keys("R", "ctrl+a", "c", "b", "a", "c", "enter")
 	for _, p := range h.fakes["alpha"].Patches {
 		c := p.Patch.Category
 		switch p.ID {

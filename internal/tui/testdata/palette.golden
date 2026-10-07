@@ -6,21 +6,21 @@
 
 
 
+
                               ╭──────────────────────────────────────────────────────────╮
                               │ : st▏                                                    │
                               │ Change status                                          s │
-                              │ Batch status                                          bs │
-                              │ Switch host                                       ctrl+h │
-                              │ Change severity                                        V │
+                              │ Switch host                                            H │
+                              │ Change severity                                        v │
                               │ First issue                                      gg/home │
                               │ Last issue                                         G/end │
+                              │ Clear search, then selection                         esc │
                               │ Toggle selection                                   space │
                               │ Select page                                       ctrl+a │
-                              │ Clear selection                                   ctrl+x │
-                              │ Batch severity                                        bv │
                               │ Host: beta                                               │
                               │ enter run · type a number to open an issue · esc close   │
                               ╰──────────────────────────────────────────────────────────╯
+
 
 
 

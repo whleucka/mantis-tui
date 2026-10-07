@@ -67,11 +67,11 @@ func TestListLoadsWithConfigDefaults(t *testing.T) {
 
 func TestFilterChangeReloadsPageOne(t *testing.T) {
 	h := listHarness(t, 60, nil)
-	h.keys("L") // to page 2
+	h.keys("]") // to page 2
 	if h.fakes["alpha"].LastList().Page != 2 {
 		t.Fatal("precondition: on page 2")
 	}
-	h.keys("F")
+	h.keys("f")
 	if h.m.modal == nil {
 		t.Fatal("F should open the filter picker")
 	}
@@ -86,22 +86,22 @@ func TestPaging(t *testing.T) {
 	h := listHarness(t, 60, nil) // page size 50 → 2 pages
 	calls := func() int { return len(h.fakes["alpha"].ListCalls) }
 
-	h.keys("H")
+	h.keys("[")
 	if calls() != 1 {
 		t.Error("H on page 1 must not request anything")
 	}
-	h.keys("L")
+	h.keys("]")
 	if l := h.fakes["alpha"].LastList(); l.Page != 2 || calls() != 2 {
 		t.Fatalf("L: %+v (%d calls)", l, calls())
 	}
 	if !strings.Contains(h.view(), "Issue number 10 summary") || strings.Contains(h.view(), "Issue number 60 summary") {
 		t.Error("page 2 should show the last 10 issues")
 	}
-	h.keys("L") // page 2 is short → last page
+	h.keys("]") // page 2 is short → last page
 	if calls() != 2 {
 		t.Error("L past the last page must be a no-op")
 	}
-	h.keys("H")
+	h.keys("[")
 	if l := h.fakes["alpha"].LastList(); l.Page != 1 {
 		t.Errorf("H: %+v", l)
 	}
@@ -109,7 +109,7 @@ func TestPaging(t *testing.T) {
 
 func TestPagingOntoEmptyPageStays(t *testing.T) {
 	h := listHarness(t, 50, nil) // exactly one full page
-	h.keys("L")
+	h.keys("]")
 	if h.m.cur.list.page != 1 {
 		t.Errorf("an empty next page should keep page 1, got %d", h.m.cur.list.page)
 	}
@@ -183,7 +183,7 @@ func TestRefreshKeepsCursorOnSameIssue(t *testing.T) {
 	h := listHarness(t, 5, nil)
 	h.keys("j", "j") // #3
 	h.fakes["alpha"].Issues[9] = mantis.Issue{ID: 9, Summary: "new on top"}
-	h.keys("r")
+	h.keys("R")
 	if id := h.m.cur.list.currentID(); id != 3 {
 		t.Errorf("after refresh cursor on #%d, want #3", id)
 	}

@@ -34,7 +34,7 @@ func TestEnumActionsPatchTheCurrentIssue(t *testing.T) {
 	}{
 		{"s", "resol", "resolved", func(p mantis.IssuePatch) *mantis.Ref { return p.Status }},
 		{"p", "urg", "urgent", func(p mantis.IssuePatch) *mantis.Ref { return p.Priority }},
-		{"V", "cra", "crash", func(p mantis.IssuePatch) *mantis.Ref { return p.Severity }},
+		{"v", "cra", "crash", func(p mantis.IssuePatch) *mantis.Ref { return p.Severity }},
 	} {
 		h := actionsHarness(t)
 		h.keys("j") // #4
@@ -78,7 +78,7 @@ func TestCategoryAndAssign(t *testing.T) {
 
 func TestSummaryPrompt(t *testing.T) {
 	h := actionsHarness(t)
-	h.keys("S")
+	h.keys("e")
 	if !strings.Contains(h.view(), "Issue number 5 summary") {
 		t.Error("summary prompt should be prefilled")
 	}
@@ -94,7 +94,7 @@ func TestSummaryPrompt(t *testing.T) {
 
 func TestSummaryPromptRejectsEmpty(t *testing.T) {
 	h := actionsHarness(t)
-	h.keys("S", "ctrl+u", "enter")
+	h.keys("e", "ctrl+u", "enter")
 	if h.m.modal == nil {
 		t.Error("empty summary should keep the prompt open")
 	}
