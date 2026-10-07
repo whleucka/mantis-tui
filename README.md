@@ -7,6 +7,9 @@ tracker. It has feature parity with
 - **TUI:** browse, filter, search and group issues across several Mantis
   hosts. Change status, priority, severity, category, summary and assignee.
   Write notes and descriptions in `$EDITOR`, and batch-edit a selection.
+  Beyond mantis.nvim: a split view with a live preview, unread markers for
+  issues that changed since you looked, a command palette that jumps to any
+  issue by number, and mouse support.
 - **CLI:** the same operations as one-shot commands, with `--json` output and
   stable exit codes for scripts and agents.
 
@@ -34,6 +37,9 @@ preview = true                # split view on terminals ≥ 140 columns
 
 [issue]
 auto_refresh = "120s"
+
+[ui]
+mouse = true                  # hold shift to select text with the mouse
 
 [icons]
 immediate = "🔥"
@@ -73,6 +79,7 @@ A host can use `token = "…"` instead of `env`, but then keep the file private
   one, then the host you used last. If none of those settles it, the TUI
   shows a picker and the CLI asks you to pass `--host`.
 - The last-used host is saved in `~/.local/state/mantis-tui/state.toml`.
+  Read/unread state is kept next to it in `seen.json`.
 - With no config file, mantis-tui looks for pairs of `MANTIS_<NAME>` (the
   token) and `MANTIS_<NAME>_URL` environment variables.
 
@@ -110,6 +117,28 @@ current screen.
 | `:` / `ctrl+p` | command palette |
 | `?` | toggle help |
 | `q` | quit |
+
+**Split view.** On terminals at least 140 columns wide, the right side
+shows a preview of the issue under the cursor: its details, description and
+notes. It loads once the cursor rests on a row and is cached until the issue
+changes. `P` hides or shows it, and `list.preview = false` starts with it
+hidden.
+
+**Unread issues.** An issue that changed since you last opened or previewed
+it shows a `•` and a bold summary, and the status bar counts them. On the
+first run with a host nothing is unread; from then on, other people's
+changes are. Your own edits and notes never mark an issue unread.
+
+**Command palette.** `:` or `ctrl+p` lists every command on the current
+screen with its key, plus each filter, each other host and "Mark page read".
+Type to narrow it down. Type a number (`1234` or `#1234`) to open that issue,
+even if it isn't in the list.
+
+**Mouse.** Click a row to move to it and click it again to open it. The
+wheel scrolls the list, the preview, the issue view, help and pickers.
+Clicking a picker option or a palette command chooses it, and clicking
+Notes/History switches tabs. Mouse reporting stops the terminal's own text
+selection, so hold `shift` to select text, or set `ui.mouse = false`.
 
 **Selection and batch actions.** Batch actions apply to the selected issues,
 or to the issue under the cursor when nothing is selected.

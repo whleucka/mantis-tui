@@ -428,8 +428,18 @@ clicks and the wheel to the list, preview, issue view and modals.
 **Description:** Update the README (keys, config, state), and check all four
 features in a herdr pane against the dev server.
 **Acceptance criteria:**
-- [ ] README covers `P`, `n`, `u`, `:`/`ctrl+p`, the mouse, `[ui]`, `list.preview` and `seen.json`
-- [ ] The herdr check passes for split view, unread markers, the palette and the mouse wheel
+- [x] README covers `P`, `n`, `u`, `:`/`ctrl+p`, the mouse, `[ui]`, `list.preview` and `seen.json`
+- [x] The herdr check passes for split view, unread markers, the palette and the mouse wheel
 **Verification:** `make race && make lint`
 **Dependencies:** 21–24
 **Scope:** S
+
+**Live check (herdr pane, dev server, 2026-10-07):** the preview showed #33
+beside the list (using a scratch build with the threshold lowered to 100,
+because the pane is 113 columns wide). An edit made through the dev server's
+API showed #26 as `•` with "1 unread" while the cursor stayed on #33. `n`
+jumped to #26 and the preview marked it read. `:` `#32` `enter` opened #32,
+and `h` went back. A raw SGR click moved the cursor to #32. The wheel moved
+the list cursor and scrolled a long preview. `seen.json` was written with
+mode 0600.
+

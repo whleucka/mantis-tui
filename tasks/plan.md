@@ -100,7 +100,7 @@ The full task details are in `tasks/todo.md`.
 - [x] Task 22: Unread tracking
 - [x] Task 23: Command palette and jump to issue
 - [x] Task 24: Mouse support
-- [ ] Task 25: Docs and a live check
+- [x] Task 25: Docs and a live check
 
 ## Findings During Build
 
