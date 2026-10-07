@@ -363,3 +363,73 @@ through the 11 success criteria in SPEC.md and tick them off.
 9. **JSON and exit codes:** `show 33 --json | jq .issues[0].id` printed `33` on wh. Exit codes are tested in `TestShowExitCodes`, `TestExitCodeUsage` and the others.
 10. **No token leaks:** a search of the repo and scratchpad for the real token values matches 0 files. `TestErrorsNeverContainToken`, `TestNetworkErrorNeverContainsToken`, `TestNoTokenLeakWhenServerEchoesIt` (every command; a mutation check caught 36 leaks with scrubbing off) and `TestNoTokenLeakOnSuccess` all pass.
 11. **Clean build:** race tests and lint are clean. Coverage: config 96.5%, mantis 92.9%, service 88.7% (target 85%), tui 92.9% (target 60%), cli 86.3%.
+
+---
+
+## Phase 6: Beyond parity (v1.1)
+
+See "v1.1: Beyond parity" in SPEC.md.
+
+### Task 21: Split view with a preview pane
+**Description:** Pull the issue body rendering out of `issueModel` into a
+function the preview can share. Add `list.preview` and the preview pane: a
+debounced fetch, a per-host cache keyed by `updated_at`, `P` to toggle it,
+and `ctrl+d` / `ctrl+u` to scroll it.
+**Acceptance criteria:**
+- [ ] At 160 columns the list and the preview share the screen; at 120 the list is full width
+- [ ] Resting on a row fetches it once; returning to it uses the cache; a newer `updated_at` refetches
+- [ ] `P` hides and shows the pane, and `list.preview = false` starts with it hidden
+**Verification:** `go test -race ./internal/tui/ ./internal/config/`, plus a golden at 160×40
+**Dependencies:** None
+**Files:** `internal/tui/preview.go`, `internal/tui/issue.go`, `internal/tui/list.go`, `internal/tui/app.go`, `internal/config/config.go`
+**Scope:** M
+
+### Task 22: Unread tracking
+**Description:** Add a `seen.json` store in `internal/config`, wire it into the
+TUI through `Options`, mark issues seen when the view or preview loads and
+after your own writes, and show unread rows. Add `n` and `u`.
+**Acceptance criteria:**
+- [ ] Store tests: baseline, unread and read comparison, explicit unread, pruning at 5000, `0600` atomic save, a corrupt file reads as empty
+- [ ] A row updated after it was seen shows `•`, and opening it clears the marker
+- [ ] Your own status change or note doesn't leave the issue unread
+**Verification:** `go test -race ./internal/config/ ./internal/tui/`
+**Dependencies:** 21 (the preview marks issues seen)
+**Files:** `internal/config/seen.go`, `internal/tui/unread.go`, `internal/cli/tui.go`
+**Scope:** M
+
+### Task 23: Command palette and jump to issue
+**Description:** A palette modal on `:` and `ctrl+p`, built from the current
+screen's bindings plus extra commands without keys. Typing a number offers
+"Open issue #N". Split the action dispatch out of `handleKey` so the palette
+runs actions the same way keys do.
+**Acceptance criteria:**
+- [ ] Every bound action of the current screen is listed with its key
+- [ ] `:` `1` `2` `3` `enter` opens #123 even when it isn't on the page
+- [ ] Filter and host commands work from the palette
+**Verification:** `go test -race ./internal/tui/`
+**Dependencies:** 22 (for "mark page read")
+**Files:** `internal/tui/palette.go`, `internal/tui/app.go`, `internal/tui/keymap.go`
+**Scope:** M
+
+### Task 24: Mouse support
+**Description:** Add `ui.mouse`, enable cell-motion mouse reporting, and route
+clicks and the wheel to the list, preview, issue view and modals.
+**Acceptance criteria:**
+- [ ] Click moves the cursor, a second click on the same row within 400ms opens it
+- [ ] The wheel moves the list cursor, scrolls the preview and the issue view, and moves picker cursors
+- [ ] Clicking a tab label or a picker option acts on it
+- [ ] `ui.mouse = false` leaves mouse reporting off
+**Verification:** `go test -race ./internal/tui/`
+**Dependencies:** 21
+**Files:** `internal/tui/mouse.go`, `internal/tui/app.go`, `internal/config/config.go`
+**Scope:** M
+
+### Task 25: Docs and a live check
+**Description:** Update the README (keys, config, state), and check all four
+features in a herdr pane against the dev server.
+**Acceptance criteria:**
+- [ ] README covers `P`, `n`, `u`, `:`/`ctrl+p`, the mouse, `[ui]`, `list.preview` and `seen.json`
+- [ ] The herdr check passes for split view, unread markers, the palette and the mouse wheel
+**Verification:** `make race && make lint`
+**Dependencies:** 21–24
+**Scope:** S

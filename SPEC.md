@@ -235,6 +235,79 @@ Uploading attachments, editing notes, adding or removing tags and
 relationships, editing custom fields, saved server-side filters,
 configurable keymaps, multiple panes or split view, Windows support.
 
+(Split view was moved into v1.1, below.)
+
+## v1.1: Beyond parity
+
+v1 copied mantis.nvim closely. v1.1 adds things a full-screen terminal app can
+do that a Neovim buffer can't do as well. Parity stays: every v1 key keeps
+its meaning.
+
+### Config additions
+
+```toml
+[list]
+preview = true      # show the preview pane when the terminal is wide enough
+
+[ui]
+mouse = true        # mouse support; hold shift to select text with the mouse
+```
+
+Both default to `true`.
+
+### Split view (preview pane)
+- When `list.preview` is on and the terminal is at least **140 columns**
+  wide, the list takes the left part of the screen and a preview of the
+  issue under the cursor fills the right part (45% of the width, clamped to
+  50–100 columns), separated by a vertical rule. Below 140 columns the list
+  is full width, as in v1.
+- `P` toggles the preview for the session.
+- The preview shows what the issue view shows (header, description, notes),
+  always on the Notes tab. `ctrl+d` / `ctrl+u` scroll it from the list.
+  `enter` still opens the full issue view.
+- The issue is fetched with `GET issues/{id}` once the cursor rests on it for
+  150ms, so holding `j` doesn't fire a request per row. Fetched issues are
+  cached per host and reused while the list row's `updated_at` matches, so
+  moving back and forth costs nothing, and an auto-refresh that shows a newer
+  `updated_at` refetches the preview.
+
+### Unread tracking
+- The TUI remembers, per host, the `updated_at` of each issue when you last
+  saw it, in `$XDG_STATE_HOME/mantis-tui/seen.json` (mode `0600`, written
+  atomically). The CLI never reads or writes it.
+- An issue is **unread** when its `updated_at` is newer than the time you last
+  saw it. Issues you have never opened count as seen at the moment the host
+  was first used (the host's *baseline*), so the first run doesn't mark
+  everything unread.
+- "Seen" means: its issue view or preview finished loading. Your own changes
+  from the TUI (field edits, notes, monitoring) also count as seen, so they
+  never mark an issue unread.
+- Unread rows show an accent `•` in the gutter and a bold summary. The status
+  bar counts the unread issues on the page.
+- `n` moves to the next unread issue (wrapping). `u` toggles read/unread for
+  the selection, or the issue under the cursor.
+- Each host keeps at most 5000 entries; the oldest are dropped first.
+
+### Command palette
+- `:` or `ctrl+p` opens a palette in the list and the issue view. Typing
+  fuzzy-matches commands; `enter` runs the highlighted one, `esc` closes.
+- Commands are every keybinding of the current screen (with its key shown),
+  plus commands that have no key: each list filter, each other host, toggle
+  preview and "mark page read".
+- Typing a number (with or without `#`) offers **Open issue #N** first,
+  which opens that issue even if it isn't in the loaded list.
+
+### Mouse
+- When `ui.mouse` is on, the TUI enables mouse reporting (click, release and
+  wheel; no motion events).
+- List: clicking a row moves the cursor there; clicking the row under the
+  cursor again within 400ms opens it. The wheel moves the cursor three rows
+  (over the list) or scrolls the preview (over the preview).
+- Issue view: the wheel scrolls; clicking the Notes/History tab label
+  switches tabs.
+- Pickers, the palette and help: the wheel moves the cursor or scrolls, and
+  clicking a picker option chooses it.
+
 ## API Client Contract (`internal/mantis`)
 
 - `Client{BaseURL, Token, HTTP *http.Client}`. Every method takes a

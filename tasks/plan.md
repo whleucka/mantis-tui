@@ -95,6 +95,13 @@ The full task details are in `tasks/todo.md`.
 ### Checkpoint E: complete
 - [x] All 11 success criteria in SPEC.md are met. Ready for review. Evidence is in `tasks/todo.md`.
 
+### Phase 6: Beyond parity (v1.1)
+- [ ] Task 21: Split view with a preview pane
+- [ ] Task 22: Unread tracking
+- [ ] Task 23: Command palette and jump to issue
+- [ ] Task 24: Mouse support
+- [ ] Task 25: Docs and a live check
+
 ## Findings During Build
 
 - On 2.27, `GET /issues` includes the full `history` for every issue in a
