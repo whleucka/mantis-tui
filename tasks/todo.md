@@ -480,11 +480,11 @@ did nothing.
 filter change; swap the list in only when the last chunk arrives on refresh.
 Drop `]`/`[` paging.
 **Acceptance criteria:**
-- [ ] 120 issues with `page_size = 50` load in 3 requests, and the list shows all 120
-- [ ] `max_issues = 100` stops at 100 and says so
-- [ ] A refresh keeps the old list until the last chunk arrives, and the cursor stays on its issue
-- [ ] A chunk that fails part way keeps the old list and reports the error
-- [ ] `/` finds an issue from the third chunk
+- [x] 120 issues with `page_size = 50` load in 3 requests, and the list shows all 120
+- [x] `max_issues = 100` stops at 100 and says so
+- [x] A refresh keeps the old list until the last chunk arrives, and the cursor stays on its issue
+- [x] A chunk that fails part way keeps the old list and reports the error
+- [x] `/` finds an issue from the third chunk
 **Verification:** `go test -race ./internal/tui/ ./internal/config/`
 **Dependencies:** 26
 **Scope:** M

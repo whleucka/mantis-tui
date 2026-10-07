@@ -97,9 +97,9 @@ func (hv *hostView) handleMsg(m *Model, msg tea.Msg) tea.Cmd {
 		}
 		hv.create.close(m)
 		if m.cur != hv {
-			return hv.list.fetch(hv.list.page, msg.issue.ID, true)
+			return hv.list.load(m, msg.issue.ID, false, true)
 		}
-		return tea.Batch(hv.list.fetch(hv.list.page, msg.issue.ID, true), m.openIssue(msg.issue.ID),
+		return tea.Batch(hv.list.load(m, msg.issue.ID, false, true), m.openIssue(msg.issue.ID),
 			infoCmd(hv.sess.Host.Name, fmt.Sprintf("#%d created", msg.issue.ID)))
 	case refreshTickMsg:
 		if msg.target == "issue" {
@@ -373,9 +373,9 @@ func (m *Model) stepIssue(dir int) tea.Cmd {
 		}
 	}
 	if dir > 0 {
-		return infoCmd(m.cur.sess.Host.Name, "last issue on this page")
+		return infoCmd(m.cur.sess.Host.Name, "last issue in the list")
 	}
-	return infoCmd(m.cur.sess.Host.Name, "first issue on this page")
+	return infoCmd(m.cur.sess.Host.Name, "first issue in the list")
 }
 
 // dispatch runs an action on the current screen, whether it came from a key

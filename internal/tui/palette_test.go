@@ -23,7 +23,7 @@ func TestPaletteListsCommandsWithKeys(t *testing.T) {
 		labels = append(labels, e.label)
 	}
 	all := strings.Join(labels, "\n")
-	for _, want := range []string{"Change status", "Filter: assigned", "Filter: all (current)", "Host: beta", "Mark page read"} {
+	for _, want := range []string{"Change status", "Filter: assigned", "Filter: all (current)", "Host: beta", "Mark all read"} {
 		if !strings.Contains(all, want) {
 			t.Errorf("palette missing %q:\n%s", want, all)
 		}
@@ -85,12 +85,12 @@ func TestPaletteFilterAndHostCommands(t *testing.T) {
 	}
 }
 
-func TestPaletteMarkPageRead(t *testing.T) {
+func TestPaletteMarkAllRead(t *testing.T) {
 	h := listHarness(t, 3, nil)
 	h.keys("ctrl+a", "u", "ctrl+x") // everything unread
-	h.keys(":", "m", "a", "r", "k", " ", "p", "a", "g", "e", "enter")
+	h.keys(":", "m", "a", "r", "k", " ", "a", "l", "l", "enter")
 	if strings.Contains(ansi.Strip(h.view()), "•") {
-		t.Errorf("Mark page read should clear every unread marker:\n%s", h.view())
+		t.Errorf("Mark all read should clear every unread marker:\n%s", h.view())
 	}
 }
 

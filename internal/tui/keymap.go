@@ -31,8 +31,6 @@ const (
 	actMonitor        action = "monitor"
 	actFilter         action = "filter"
 	actToggleGroup    action = "toggle-group"
-	actNextPage       action = "next-page"
-	actPrevPage       action = "prev-page"
 	actNextIssue      action = "next-issue"
 	actPrevIssue      action = "prev-issue"
 	actAddNote        action = "add-note"
@@ -95,16 +93,14 @@ func defaultKeymap() keymap {
 		binding{actBottom, []string{"G", "end"}, "last issue"},
 		binding{actPageDown, []string{"ctrl+d", "pgdown"}, "half page down"},
 		binding{actPageUp, []string{"ctrl+u", "pgup"}, "half page up"},
-		binding{actNextPage, []string{"]"}, "next page"},
-		binding{actPrevPage, []string{"["}, "previous page"},
 		binding{actFilter, []string{"f"}, "filter"},
-		binding{actSearch, []string{"/"}, "search this page"},
+		binding{actSearch, []string{"/"}, "search the list"},
 		binding{actEscape, []string{"esc"}, "clear search, then selection"},
 		binding{actNextUnread, []string{"n"}, "next unread issue"},
 		binding{actPrevUnread, []string{"N"}, "previous unread issue"},
 		binding{actToggleRead, []string{"u"}, "toggle read / unread"},
 		binding{actToggleSelect, []string{"space"}, "toggle selection"},
-		binding{actSelectAll, []string{"ctrl+a"}, "select page"},
+		binding{actSelectAll, []string{"ctrl+a"}, "select all shown"},
 		binding{actCreate, []string{"C"}, "create issue"},
 		binding{actDelete, []string{"D"}, "delete issue(s)"},
 		binding{actTogglePreview, []string{"P"}, "toggle preview pane"},

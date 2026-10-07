@@ -51,7 +51,7 @@ func TestListLoadsWithConfigDefaults(t *testing.T) {
 		c.List.PageSize = 25
 	})
 	got := h.fakes["alpha"].LastList()
-	if got.Filter != "assigned" || got.PageSize != 25 || got.Page != 1 {
+	if got.Filter != "assigned" || got.PageSize != 25 || got.Page != 1 { // 5 issues fit in one chunk
 		t.Errorf("list request = %+v", got)
 	}
 	if len(got.Select) == 0 {
@@ -60,61 +60,132 @@ func TestListLoadsWithConfigDefaults(t *testing.T) {
 	if !strings.Contains(h.view(), "Issue number 5 summary") {
 		t.Errorf("issues not rendered:\n%s", h.view())
 	}
-	if !strings.Contains(h.view(), "assigned") || !strings.Contains(h.view(), "page 1") {
-		t.Errorf("status bar should show filter and page:\n%s", lastLine(h.view()))
+	if !strings.Contains(lastLine(h.view()), "assigned · 5 issues") {
+		t.Errorf("status bar should show the filter and the count:\n%s", lastLine(h.view()))
 	}
 }
 
-func TestFilterChangeReloadsPageOne(t *testing.T) {
-	h := listHarness(t, 60, nil)
-	h.keys("]") // to page 2
-	if h.fakes["alpha"].LastList().Page != 2 {
-		t.Fatal("precondition: on page 2")
-	}
+func TestFilterChangeReloadsFromTheStart(t *testing.T) {
+	h := listHarness(t, 60, func(c *config.Config) { c.List.PageSize = 50 })
+	f := h.fakes["alpha"]
+	before := len(f.ListCalls)
 	h.keys("f")
 	if h.m.modal == nil {
-		t.Fatal("F should open the filter picker")
+		t.Fatal("f should open the filter picker")
 	}
 	h.keys("m", "o", "enter") // "monitored"
-	got := h.fakes["alpha"].LastList()
-	if got.Filter != "monitored" || got.Page != 1 {
-		t.Errorf("after filter change: %+v", got)
+	calls := f.ListCalls[before:]
+	if len(calls) != 2 || calls[0].Filter != "monitored" || calls[0].Page != 1 || calls[1].Page != 2 {
+		t.Errorf("a new filter should load from chunk 1: %+v", calls)
 	}
 }
 
-func TestPaging(t *testing.T) {
-	h := listHarness(t, 60, nil) // page size 50 → 2 pages
-	calls := func() int { return len(h.fakes["alpha"].ListCalls) }
-
-	h.keys("[")
-	if calls() != 1 {
-		t.Error("H on page 1 must not request anything")
+func TestLoadsTheWholeFilterInChunks(t *testing.T) {
+	h := listHarness(t, 120, func(c *config.Config) { c.List.PageSize = 50 })
+	f := h.fakes["alpha"]
+	if got := len(f.ListCalls); got != 3 {
+		t.Errorf("120 issues in chunks of 50 should take 3 requests, took %d", got)
 	}
-	h.keys("]")
-	if l := h.fakes["alpha"].LastList(); l.Page != 2 || calls() != 2 {
-		t.Fatalf("L: %+v (%d calls)", l, calls())
+	if got := len(h.m.cur.list.issues); got != 120 {
+		t.Fatalf("list holds %d issues, want 120", got)
 	}
-	if !strings.Contains(h.view(), "Issue number 10 summary") || strings.Contains(h.view(), "Issue number 60 summary") {
-		t.Error("page 2 should show the last 10 issues")
+	if !strings.Contains(lastLine(h.view()), "120 issues") {
+		t.Errorf("status = %q", lastLine(h.view()))
 	}
-	h.keys("]") // page 2 is short → last page
-	if calls() != 2 {
-		t.Error("L past the last page must be a no-op")
-	}
-	h.keys("[")
-	if l := h.fakes["alpha"].LastList(); l.Page != 1 {
-		t.Errorf("H: %+v", l)
+	h.keys("G")
+	if !strings.Contains(h.view(), "Issue number 1 summary") {
+		t.Error("the last chunk's issues should be reachable")
 	}
 }
 
-func TestPagingOntoEmptyPageStays(t *testing.T) {
-	h := listHarness(t, 50, nil) // exactly one full page
-	h.keys("]")
-	if h.m.cur.list.page != 1 {
-		t.Errorf("an empty next page should keep page 1, got %d", h.m.cur.list.page)
+func TestExactChunkMultipleStopsOnEmptyChunk(t *testing.T) {
+	h := listHarness(t, 100, func(c *config.Config) { c.List.PageSize = 50 })
+	if got := len(h.fakes["alpha"].ListCalls); got != 3 || len(h.m.cur.list.issues) != 100 {
+		t.Errorf("100 issues in chunks of 50: %d requests, %d issues", got, len(h.m.cur.list.issues))
 	}
-	if !strings.Contains(h.view(), "Issue number 50 summary") {
-		t.Error("issues of page 1 should still be shown")
+}
+
+func TestLoadStopsAtMaxIssues(t *testing.T) {
+	h := listHarness(t, 120, func(c *config.Config) {
+		c.List.PageSize = 50
+		c.List.MaxIssues = 70
+	})
+	if got := len(h.fakes["alpha"].ListCalls); got != 2 {
+		t.Errorf("a cap of 70 should stop after 2 chunks, took %d", got)
+	}
+	if got := len(h.m.cur.list.issues); got != 70 {
+		t.Errorf("list holds %d issues, want 70", got)
+	}
+	if !strings.Contains(lastLine(h.view()), "(limit 70)") {
+		t.Errorf("status should say the cap was hit: %q", lastLine(h.view()))
+	}
+}
+
+// chunk returns issues for a hand-delivered load response.
+func chunk(from, to int) []mantis.Issue {
+	var out []mantis.Issue
+	for id := from; id >= to; id-- {
+		out = append(out, mantis.Issue{ID: id, Summary: fmt.Sprintf("Issue number %d summary", id)})
+	}
+	return out
+}
+
+func TestFirstLoadShowsChunksAsTheyArrive(t *testing.T) {
+	h := listHarness(t, 0, func(c *config.Config) { c.List.PageSize = 2 })
+	l := h.m.cur.list
+	_ = l.load(h.m, 0, true, false) // responses are delivered by hand below
+	if next := l.onChunk(h.m, issuesLoadedMsg{host: "alpha", req: l.req, page: 1, issues: chunk(9, 8)}); next == nil {
+		t.Fatal("a full chunk should ask for the next one")
+	}
+	if len(l.issues) != 2 || !strings.Contains(l.context(), "loading") {
+		t.Errorf("first chunk should show at once with a loading note: %d issues, %q", len(l.issues), l.context())
+	}
+	l.onChunk(h.m, issuesLoadedMsg{host: "alpha", req: l.req, page: 2, issues: chunk(7, 7)})
+	if len(l.issues) != 3 || l.inFlight || h.m.loading != 0 {
+		t.Errorf("after the short chunk: %d issues, inFlight %v, spinner %d", len(l.issues), l.inFlight, h.m.loading)
+	}
+}
+
+func TestRefreshSwapsInOnlyWhenComplete(t *testing.T) {
+	h := listHarness(t, 3, func(c *config.Config) { c.List.PageSize = 2 })
+	l := h.m.cur.list
+	h.keys("j") // cursor on #2
+	_ = l.load(h.m, 0, false, false)
+	l.onChunk(h.m, issuesLoadedMsg{host: "alpha", req: l.req, page: 1, issues: chunk(9, 8)})
+	if len(l.issues) != 3 || l.issues[0].ID != 3 {
+		t.Fatalf("a refresh must keep the old list until the last chunk: %v", ids(l.issues))
+	}
+	l.onChunk(h.m, issuesLoadedMsg{host: "alpha", req: l.req, page: 2, issues: chunk(2, 2)}) // short chunk: the last
+	if got := ids(l.issues); len(got) != 3 || got[0] != 9 || l.currentID() != 2 {
+		t.Errorf("after the last chunk: %v, cursor #%d (want it kept on #2)", got, l.currentID())
+	}
+}
+
+func TestFailedChunkKeepsTheOldList(t *testing.T) {
+	h := listHarness(t, 3, func(c *config.Config) { c.List.PageSize = 2 })
+	l := h.m.cur.list
+	_ = l.load(h.m, 0, false, false)
+	l.onChunk(h.m, issuesLoadedMsg{host: "alpha", req: l.req, page: 1, issues: chunk(9, 8)})
+	cmd := l.onChunk(h.m, issuesLoadedMsg{host: "alpha", req: l.req, page: 2, err: errors.New("boom")})
+	if got := ids(l.issues); len(got) != 3 || got[0] != 3 {
+		t.Errorf("a failed chunk must keep the old list, got %v", got)
+	}
+	if cmd == nil || l.inFlight || h.m.loading != 0 {
+		t.Errorf("the error should be reported and the load ended (inFlight %v, spinner %d)", l.inFlight, h.m.loading)
+	}
+}
+
+func TestSupersededLoadIsIgnored(t *testing.T) {
+	h := listHarness(t, 3, nil)
+	l := h.m.cur.list
+	_ = l.load(h.m, 0, true, false)
+	old := l.req
+	_ = l.load(h.m, 0, true, false)
+	if h.m.loading != 1 {
+		t.Errorf("replacing a load should not stack spinners, loading = %d", h.m.loading)
+	}
+	if l.onChunk(h.m, issuesLoadedMsg{host: "alpha", req: old, page: 1, issues: chunk(9, 9)}); len(l.issues) != 3 {
+		t.Error("a response for a replaced load must be ignored")
 	}
 }
 

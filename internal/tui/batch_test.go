@@ -137,27 +137,20 @@ func TestBatchDeleteConfirmsCount(t *testing.T) {
 	}
 }
 
-func TestSelectionSurvivesPagingAndRefresh(t *testing.T) {
+func TestSelectionSurvivesRefresh(t *testing.T) {
 	h := batchHarness(t, 60)
-	h.keys("space") // #60
-	h.keys("]")
-	if _, ok := h.m.cur.list.selected[60]; !ok {
-		t.Fatal("selection lost after paging")
-	}
-	if !strings.Contains(lastLine(h.view()), "1 selected") {
-		t.Errorf("status = %q", lastLine(h.view()))
-	}
-	h.keys("space", "R") // select #10 on page 2, then refresh
-	if len(h.m.cur.list.selected) != 2 {
-		t.Errorf("selection after refresh = %v", h.m.cur.list.selected)
+	h.keys("space", "G", "space") // #60 and #1
+	h.keys("R")
+	if len(h.m.cur.list.selected) != 2 || !strings.Contains(lastLine(h.view()), "2 selected") {
+		t.Fatalf("selection after refresh = %v, status %q", h.m.cur.list.selected, lastLine(h.view()))
 	}
 	h.keys("s", "n", "e", "w", "enter")
 	got := map[int]bool{}
 	for _, p := range h.fakes["alpha"].Patches {
 		got[p.ID] = true
 	}
-	if !got[60] || !got[10] || len(got) != 2 {
-		t.Errorf("batch should include the off-page issue: patched %v", got)
+	if !got[60] || !got[1] || len(got) != 2 {
+		t.Errorf("the change should cover both selected issues: patched %v", got)
 	}
 }
 

@@ -21,29 +21,32 @@ const requestTimeout = 30 * time.Second
 
 // listModel is the issue list for one host.
 type listModel struct {
-	sess     *Session
-	cfg      config.ListConfig
-	icons    config.Icons
-	filter   string
-	page     int
-	pageSize int
+	sess      *Session
+	cfg       config.ListConfig
+	icons     config.Icons
+	filter    string
+	pageSize  int // issues per request
+	maxIssues int
 
 	issues   []mantis.Issue
 	cursor   int // index into rows()
 	offset   int // first visible row
 	grouped  bool
 	search   string
-	selected map[int]mantis.Issue // by id; survives paging and refresh
+	selected map[int]mantis.Issue // by id; survives refreshes
 	loaded   bool
 	loadErr  error // why the first load failed; shown until a load succeeds
-	req      int   // latest load request; older responses are ignored
+	req      int   // latest load; responses for older loads are ignored
+	chain    loadChain
+	capped   bool // the last load stopped at maxIssues
+	spinning bool // the running load shows the spinner
 
 	meID   int
 	colors map[string]string
 
 	interval time.Duration // auto-refresh; 0 disables
 	tickGen  int           // current auto-refresh chain
-	inFlight bool
+	inFlight bool          // a load is running
 
 	pv   preview
 	seen *config.Seen
@@ -52,13 +55,20 @@ type listModel struct {
 	lastClickAt time.Time
 }
 
+// loadChain is one load of the whole filter, a chunk at a time.
+type loadChain struct {
+	keepID      int  // issue to put the cursor on when first shown; 0 keeps the current one
+	progressive bool // show chunks as they arrive (first load, new filter)
+	applied     bool // the list already shows part of this load
+	acc         []mantis.Issue
+	ids         map[int]bool
+}
+
 type (
 	issuesLoadedMsg struct {
 		host   string
 		req    int
 		page   int
-		keepID int // issue to keep the cursor on, 0 for the first row
-		silent bool
 		issues []mantis.Issue
 		err    error
 	}
@@ -84,48 +94,118 @@ func (msg refreshTickMsg) hostName() string { return msg.host }
 
 func newListModel(cfg *config.Config, sess *Session, seen *config.Seen) *listModel {
 	return &listModel{
-		sess:     sess,
-		cfg:      cfg.List,
-		icons:    cfg.Icons,
-		filter:   cfg.List.DefaultFilter,
-		grouped:  cfg.List.GroupByProject,
-		page:     1,
-		pageSize: cfg.List.PageSize,
-		interval: cfg.List.AutoRefresh.Duration,
-		selected: map[int]mantis.Issue{},
-		pv:       newPreview(cfg.List.Preview),
-		seen:     seen,
+		sess:      sess,
+		cfg:       cfg.List,
+		icons:     cfg.Icons,
+		filter:    cfg.List.DefaultFilter,
+		grouped:   cfg.List.GroupByProject,
+		pageSize:  cfg.List.PageSize,
+		maxIssues: cfg.List.MaxIssues,
+		interval:  cfg.List.AutoRefresh.Duration,
+		selected:  map[int]mantis.Issue{},
+		pv:        newPreview(cfg.List.Preview),
+		seen:      seen,
 	}
 }
 
 func (l *listModel) init(m *Model) tea.Cmd {
-	return tea.Batch(l.load(m, 1, 0), l.loadMeta(), l.scheduleRefresh())
+	return tea.Batch(l.load(m, 0, true, false), l.loadMeta(), l.scheduleRefresh())
 }
 
 func (l *listModel) host() string { return l.sess.Host.Name }
 
-// load fetches a page, keeping the cursor on keepID when it is still there.
-func (l *listModel) load(m *Model, page, keepID int) tea.Cmd {
-	return tea.Batch(m.startLoading(), l.fetch(page, keepID, false))
-}
-
-// fetch requests a page; silent requests (auto-refresh) show no spinner.
-func (l *listModel) fetch(page, keepID int, silent bool) tea.Cmd {
+// load fetches the whole filter, a chunk at a time, replacing any load still
+// running. A progressive load shows chunks as they arrive; otherwise the
+// list keeps showing the old issues until the last chunk is in. A silent
+// load (auto-refresh) shows no spinner. keepID is the issue to put the
+// cursor on; 0 keeps it where it is.
+func (l *listModel) load(m *Model, keepID int, progressive, silent bool) tea.Cmd {
+	l.endLoad(m) // a superseded load's responses are ignored from here on
 	l.req++
 	l.inFlight = true
+	l.chain = loadChain{keepID: keepID, progressive: progressive, ids: map[int]bool{}}
+	var spin tea.Cmd
+	if !silent {
+		l.spinning = true
+		spin = m.startLoading()
+	}
+	return tea.Batch(spin, l.fetchChunk(1))
+}
+
+func (l *listModel) endLoad(m *Model) {
+	l.inFlight = false
+	if l.spinning {
+		l.spinning = false
+		m.stopLoading()
+	}
+}
+
+func (l *listModel) fetchChunk(page int) tea.Cmd {
 	req, host, api := l.req, l.host(), l.sess.API
 	opts := mantis.ListOptions{Filter: l.filter, Page: page, PageSize: l.pageSize, Select: mantis.ListFields}
-	fetch := func() tea.Msg {
+	return func() tea.Msg {
 		ctx, cancel := context.WithTimeout(context.Background(), requestTimeout)
 		defer cancel()
 		res, err := api.ListIssues(ctx, opts)
-		msg := issuesLoadedMsg{host: host, req: req, page: page, keepID: keepID, silent: silent, err: err}
+		msg := issuesLoadedMsg{host: host, req: req, page: page, err: err}
 		if err == nil {
 			msg.issues = res.Issues
 		}
 		return msg
 	}
-	return fetch
+}
+
+// onChunk adds a chunk to the running load and asks for the next one until
+// the filter or the cap runs out.
+func (l *listModel) onChunk(m *Model, msg issuesLoadedMsg) tea.Cmd {
+	if msg.req != l.req {
+		return nil // superseded by a newer load
+	}
+	c := &l.chain
+	if msg.err != nil {
+		l.endLoad(m)
+		if !l.loaded {
+			l.loadErr = msg.err
+		}
+		return errCmd(l.host(), msg.err)
+	}
+	for _, is := range msg.issues { // an issue updated mid-load can move between chunks
+		if !c.ids[is.ID] {
+			c.ids[is.ID] = true
+			c.acc = append(c.acc, is)
+		}
+	}
+	capped := len(c.acc) >= l.maxIssues
+	if capped {
+		c.acc = c.acc[:l.maxIssues]
+	}
+	done := capped || len(msg.issues) < l.pageSize
+	if c.progressive || done {
+		keep := l.currentID()
+		if !c.applied && c.keepID != 0 {
+			keep = c.keepID
+		}
+		c.applied = true
+		l.setIssues(m, c.acc, keep)
+	}
+	if !done {
+		return l.fetchChunk(msg.page + 1)
+	}
+	l.capped = capped
+	l.endLoad(m)
+	return nil
+}
+
+// setIssues shows issues, keeping the cursor on keepID when it is there.
+func (l *listModel) setIssues(m *Model, issues []mantis.Issue, keepID int) {
+	l.issues = append([]mantis.Issue(nil), issues...)
+	l.loaded, l.loadErr = true, nil
+	for _, is := range l.issues { // keep selection snapshots fresh
+		if _, ok := l.selected[is.ID]; ok {
+			l.selected[is.ID] = is
+		}
+	}
+	l.cursorTo(m, keepID)
 }
 
 // scheduleRefresh starts the next auto-refresh tick, replacing any earlier chain.
@@ -148,7 +228,7 @@ func (l *listModel) onTick(m *Model, msg refreshTickMsg) tea.Cmd {
 	if m.cur != hv || hv.screen != screenList || m.busy() || l.inFlight {
 		return next
 	}
-	return tea.Batch(next, l.fetch(l.page, l.currentID(), true))
+	return tea.Batch(next, l.load(m, 0, false, true))
 }
 
 func (l *listModel) loadMeta() tea.Cmd {
@@ -166,9 +246,15 @@ func (l *listModel) loadMeta() tea.Cmd {
 }
 
 func (l *listModel) context() string {
-	s := fmt.Sprintf("%s · page %d", l.filter, l.page)
+	s := l.filter
 	if l.loaded {
 		s += fmt.Sprintf(" · %d issues", len(l.issues))
+		switch {
+		case l.inFlight && l.chain.progressive:
+			s += " (loading…)"
+		case l.capped:
+			s += fmt.Sprintf(" (limit %d)", l.maxIssues)
+		}
 		if n := l.unreadCount(); n > 0 {
 			s += fmt.Sprintf(" · %d unread", n)
 		}
@@ -190,30 +276,7 @@ func (l *listModel) currentID() int {
 func (l *listModel) handleMsg(m *Model, msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case issuesLoadedMsg:
-		if !msg.silent {
-			m.stopLoading()
-		}
-		if msg.req != l.req {
-			return nil // superseded by a newer request
-		}
-		l.inFlight = false
-		if msg.err != nil {
-			if !l.loaded {
-				l.loadErr = msg.err
-			}
-			return errCmd(l.host(), msg.err)
-		}
-		l.loadErr = nil
-		if msg.page > 1 && len(msg.issues) == 0 {
-			return infoCmd(l.host(), "no more issues")
-		}
-		l.page, l.issues, l.loaded = msg.page, msg.issues, true
-		for _, is := range l.issues { // keep selection snapshots fresh
-			if _, ok := l.selected[is.ID]; ok {
-				l.selected[is.ID] = is
-			}
-		}
-		l.cursorTo(m, msg.keepID)
+		return l.onChunk(m, msg)
 	case listMetaMsg:
 		if msg.err != nil {
 			return errCmd(l.host(), msg.err)
@@ -257,16 +320,7 @@ func (l *listModel) handleAction(m *Model, a action) tea.Cmd {
 	case actPageUp:
 		l.move(m, -max(bodyRows(m)/2, 1))
 	case actRefresh:
-		return l.load(m, l.page, l.currentID())
-	case actNextPage:
-		if len(l.issues) < l.pageSize {
-			return infoCmd(l.host(), "already on the last page")
-		}
-		return l.load(m, l.page+1, 0)
-	case actPrevPage:
-		if l.page > 1 {
-			return l.load(m, l.page-1, 0)
-		}
+		return l.load(m, 0, false, false)
 	case actFilter:
 		m.modal = l.filterPicker()
 	case actOpen:
@@ -431,7 +485,7 @@ func (msg filterChosenMsg) hostName() string { return msg.host }
 
 func (l *listModel) setFilter(m *Model, f string) tea.Cmd {
 	l.filter = f
-	return l.load(m, 1, 0)
+	return l.load(m, 0, true, false)
 }
 
 // move steps the cursor over issue rows, skipping group headers.
@@ -580,7 +634,7 @@ func (l *listModel) listView(m *Model, width, height int) string {
 		return styleMuted.Render("  Loading issues…")
 	}
 	if len(l.issues) == 0 {
-		return styleMuted.Render(fmt.Sprintf("  No issues (filter: %s, page %d). F changes the filter.", l.filter, l.page))
+		return styleMuted.Render(fmt.Sprintf("  No issues match the %q filter. f changes the filter.", l.filter))
 	}
 	if len(l.rows()) == 0 {
 		return searchLine + styleMuted.Render("  No issues on this page match the search. esc clears it.")

@@ -96,7 +96,7 @@ func (l *listModel) nextUnread(m *Model, dir int) tea.Cmd {
 			return nil
 		}
 	}
-	return infoCmd(l.host(), "no unread issues on this page")
+	return infoCmd(l.host(), "no unread issues")
 }
 
 // toggleRead marks the targets read, or unread when the issue under the
@@ -125,10 +125,10 @@ func (l *listModel) toggleRead(m *Model) tea.Cmd {
 	return tea.Batch(m.saveSeen(), infoCmd(l.host(), fmt.Sprintf("marked %s %s", targetLabel(targets), word)))
 }
 
-// markPageRead marks every issue on the loaded page read.
-func (l *listModel) markPageRead(m *Model) tea.Cmd {
+// markAllRead marks every loaded issue read.
+func (l *listModel) markAllRead(m *Model) tea.Cmd {
 	for _, is := range l.issues {
 		l.seen.Mark(l.host(), is.ID, is.UpdatedAt)
 	}
-	return tea.Batch(m.saveSeen(), infoCmd(l.host(), "marked the page read"))
+	return tea.Batch(m.saveSeen(), infoCmd(l.host(), "marked all read"))
 }

@@ -59,8 +59,8 @@ func (m *Model) newPalette() *palette {
 				return m.cur.list.setFilter(m, f)
 			}})
 		}
-		p.entries = append(p.entries, paletteEntry{label: "Mark page read", run: func(m *Model) tea.Cmd {
-			return m.cur.list.markPageRead(m)
+		p.entries = append(p.entries, paletteEntry{label: "Mark all read", run: func(m *Model) tea.Cmd {
+			return m.cur.list.markAllRead(m)
 		}})
 	}
 	for _, h := range m.opts.Hosts {

@@ -30,7 +30,8 @@ or pass `--config <path>`):
 ```toml
 [list]
 default_filter = "assigned"   # all | assigned | reported | monitored | unassigned
-page_size = 50
+page_size = 100               # issues per request
+max_issues = 1000             # the TUI list loads the whole filter up to this
 auto_refresh = "120s"         # "0" disables
 group_by_project = false
 preview = true                # split view on terminals ≥ 140 columns
@@ -90,6 +91,10 @@ current screen.
 
 ### Issue list
 
+The list holds every issue the filter matches (up to `list.max_issues`). The
+first chunk shows at once and the rest loads in the background; refreshes
+swap the list in only when they finish, so it never shrinks mid-refresh.
+
 Actions that change issues (`s` `p` `v` `c` `a` `D`) apply to the selected
 issues, or to the issue under the cursor when nothing is selected. Pickers
 name their target ("Status for 3 issues").
@@ -99,10 +104,9 @@ name their target ("Status for 3 issues").
 | `j`/`k`, `up`/`down` | move |
 | `ctrl+d`/`pgdown`, `ctrl+u`/`pgup` | half page down / up |
 | `gg`/`home`, `G`/`end` | first / last issue |
-| `]` / `[` | next / previous page |
 | `enter`/`l` | view issue |
 | `f` | filter (all, assigned, reported, monitored, unassigned) |
-| `/` | search this page (id, summary, category, handler) |
+| `/` | search the list (id, summary, category, handler) |
 | `esc` | clear the search, then the selection |
 | `n` / `N` | next / previous unread issue |
 | `u` | toggle read / unread |
@@ -142,7 +146,7 @@ first run with a host nothing is unread; from then on, other people's
 changes are. Your own edits and notes never mark an issue unread.
 
 **Command palette.** `:` or `ctrl+p` lists every command on the current
-screen with its key, plus each filter, each other host and "Mark page read".
+screen with its key, plus each filter, each other host and "Mark all read".
 Type to narrow it down. Type a number (`1234` or `#1234`) to open that issue,
 even if it isn't in the list.
 

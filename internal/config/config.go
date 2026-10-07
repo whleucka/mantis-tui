@@ -40,6 +40,7 @@ type Config struct {
 type ListConfig struct {
 	DefaultFilter  string   `toml:"default_filter"`
 	PageSize       int      `toml:"page_size"`
+	MaxIssues      int      `toml:"max_issues"`
 	AutoRefresh    Duration `toml:"auto_refresh"`
 	GroupByProject bool     `toml:"group_by_project"`
 	Preview        bool     `toml:"preview"`
@@ -96,7 +97,8 @@ func Defaults() *Config {
 	return &Config{
 		List: ListConfig{
 			DefaultFilter: "all",
-			PageSize:      50,
+			PageSize:      100,
+			MaxIssues:     1000,
 			AutoRefresh:   Duration{120 * time.Second},
 			Preview:       true,
 		},
@@ -159,6 +161,9 @@ func (c *Config) validate() error {
 	}
 	if c.List.PageSize < 1 {
 		return fmt.Errorf("list.page_size must be at least 1, got %d", c.List.PageSize)
+	}
+	if c.List.MaxIssues < 1 {
+		return fmt.Errorf("list.max_issues must be at least 1, got %d", c.List.MaxIssues)
 	}
 	seen := map[string]bool{}
 	for i := range c.Hosts {

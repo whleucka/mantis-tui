@@ -35,7 +35,7 @@ func TestLoadAppliesDefaults(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cfg.List.DefaultFilter != "all" || cfg.List.PageSize != 50 {
+	if cfg.List.DefaultFilter != "all" || cfg.List.PageSize != 100 {
 		t.Errorf("list defaults = %+v", cfg.List)
 	}
 	if cfg.List.AutoRefresh.Duration != 120*time.Second || cfg.Issue.AutoRefresh.Duration != 120*time.Second {
@@ -43,6 +43,9 @@ func TestLoadAppliesDefaults(t *testing.T) {
 	}
 	if cfg.Icons.Immediate != "🔥" || cfg.Icons.Monitor != "👁️" {
 		t.Errorf("icon defaults = %+v", cfg.Icons)
+	}
+	if cfg.List.PageSize != 100 || cfg.List.MaxIssues != 1000 {
+		t.Errorf("chunk defaults = %d / %d", cfg.List.PageSize, cfg.List.MaxIssues)
 	}
 	if !cfg.List.Preview || !cfg.UI.Mouse {
 		t.Error("list.preview and ui.mouse should default to true")
@@ -86,6 +89,7 @@ func TestLoadRejectsInvalidValues(t *testing.T) {
 	tests := map[string]string{
 		"bad filter":      "[list]\ndefault_filter = \"mine\"\n" + twoHosts,
 		"bad page size":   "[list]\npage_size = 0\n" + twoHosts,
+		"bad max issues":  "[list]\nmax_issues = 0\n" + twoHosts,
 		"bad duration":    "[list]\nauto_refresh = \"soon\"\n" + twoHosts,
 		"missing url":     "[[hosts]]\nname = \"x\"\nenv = \"MANTIS_X\"\n",
 		"non-http url":    "[[hosts]]\nname = \"x\"\nurl = \"ftp://x\"\nenv = \"MANTIS_X\"\n",
@@ -212,7 +216,7 @@ func TestAutoDetect(t *testing.T) {
 	if h.Name != "wh" || h.URL != "https://mantis.williamhleucka.com" || h.Token != "tok-wh" {
 		t.Errorf("host = %+v", h)
 	}
-	if cfg.List.PageSize != 50 {
+	if cfg.List.PageSize != 100 {
 		t.Errorf("auto-detected config should carry defaults, got %+v", cfg.List)
 	}
 }

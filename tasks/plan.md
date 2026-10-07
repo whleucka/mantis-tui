@@ -106,7 +106,7 @@ The full task details are in `tasks/todo.md`.
 - [x] Task 26: Keys that suit a terminal app
 
 ### Phase 8: Whole-filter list, sorting, display (v1.3)
-- [ ] Task 27: The list holds the whole filter
+- [x] Task 27: The list holds the whole filter
 - [ ] Task 28: Sorting
 - [ ] Task 29: Relative times, status colours, handler column
 
