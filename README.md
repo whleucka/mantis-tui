@@ -35,7 +35,8 @@ max_issues = 1000             # the TUI list loads the whole filter up to this
 sort = "updated"              # updated | priority | severity | status | id | summary
 auto_refresh = "120s"         # "0" disables
 group_by_project = false
-preview = true                # split view on terminals ≥ 140 columns
+preview = true                # show a preview of the issue under the cursor
+preview_layout = "auto"       # auto | right | bottom
 
 [issue]
 auto_refresh = "120s"
@@ -139,11 +140,13 @@ name their target ("Status for 3 issues").
 If a change to several issues partly fails, only the issues that failed stay
 selected, so you can retry them.
 
-**Split view.** On terminals at least 140 columns wide, the right side
-shows a preview of the issue under the cursor: its details, description and
-notes. It loads once the cursor rests on a row and is cached until the issue
-changes. `P` hides or shows it, and `list.preview = false` starts with it
-hidden.
+**Split view.** The preview shows the issue under the cursor: its details,
+description and notes. It loads once the cursor rests on a row and is cached
+until the issue changes. With `preview_layout = "auto"` it sits on the right
+on terminals at least 140 columns wide, and below the list on a tall,
+portrait-shaped terminal (at least 40 rows, and rows × 2 ≥ columns). `right`
+or `bottom` forces a side, needing only 100 columns or 24 rows. `P` hides or
+shows it, and `list.preview = false` starts with it hidden.
 
 **Unread issues.** An issue that changed since you last opened or previewed
 it shows a `•` and a bold summary, and the status bar counts them. On the

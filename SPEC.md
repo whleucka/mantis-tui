@@ -274,6 +274,17 @@ Both default to `true`.
   moving back and forth costs nothing, and an auto-refresh that shows a newer
   `updated_at` refetches the preview.
 
+### Portrait layout (added after v1.4)
+- `list.preview_layout`: `auto` (default), `right` or `bottom`.
+- `auto` puts the preview on the right from 140 columns. Otherwise, on a
+  portrait-shaped terminal (rows × 2 ≥ columns, since a cell is about twice
+  as tall as wide) with at least 40 rows, it goes **below** the list: the
+  list gets the top 40% (at least 8 rows), then a horizontal rule, then the
+  preview. Otherwise the preview is hidden.
+- `right` needs only 100 columns, and `bottom` only 24 rows.
+- The mouse wheel scrolls whichever part it is over, and clicks in the
+  preview do nothing.
+
 ### Vim-style open and back
 - `l` opens the issue under the cursor (like `enter`), and `h` goes back from
   the issue view to the list (like `q` / `esc`). Paging stays on `L` / `H`.

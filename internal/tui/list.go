@@ -110,7 +110,7 @@ func newListModel(cfg *config.Config, sess *Session, seen *config.Seen) *listMod
 		maxIssues: cfg.List.MaxIssues,
 		interval:  cfg.List.AutoRefresh.Duration,
 		selected:  map[int]mantis.Issue{},
-		pv:        newPreview(cfg.List.Preview),
+		pv:        newPreview(cfg.List.Preview, cfg.List.PreviewLayout),
 		seen:      seen,
 		now:       time.Now,
 		known:     map[int]bool{},
@@ -334,9 +334,9 @@ func (l *listModel) handleAction(m *Model, a action) tea.Cmd {
 			l.selected = map[int]mantis.Issue{}
 		}
 	case actPageDown:
-		l.move(m, max(bodyRows(m)/2, 1))
+		l.move(m, max(l.bodyRows(m)/2, 1))
 	case actPageUp:
-		l.move(m, -max(bodyRows(m)/2, 1))
+		l.move(m, -max(l.bodyRows(m)/2, 1))
 	case actRefresh:
 		return l.load(m, 0, false, false)
 	case actFilter:
@@ -552,11 +552,12 @@ func (l *listModel) cursorTo(m *Model, id int) {
 	l.scrollToCursor(m)
 }
 
-// bodyRows is how many issue rows fit under the header.
-func bodyRows(m *Model) int { return max(m.height-2, 1) }
+// bodyRows is how many issue rows fit under the header, in the list's
+// part of the screen.
+func (l *listModel) bodyRows(m *Model) int { return max(l.bodyLayout(m).lh-1, 1) }
 
 func (l *listModel) scrollToCursor(m *Model) {
-	rows := bodyRows(m)
+	rows := l.bodyRows(m)
 	if l.cursor < l.offset {
 		l.offset = l.cursor
 	}
@@ -638,12 +639,12 @@ func (l *listModel) priorityIcon(name string) string {
 }
 
 func (l *listModel) view(m *Model, width, height int) string {
-	lw, pw := l.previewWidths(width)
-	list := l.listView(m, lw, height)
-	if pw == 0 {
+	lay := l.layout(width, height)
+	list := l.listView(m, lay.lw, lay.lh)
+	if !lay.shown() {
 		return list
 	}
-	return withPreview(list, l.previewView(m.currentIssue(), pw), lw, pw, height)
+	return withPreview(list, l.previewView(m.currentIssue(), lay.pw), lay)
 }
 
 func (l *listModel) listView(m *Model, width, height int) string {

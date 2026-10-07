@@ -26,6 +26,9 @@ var Filters = []string{"all", "assigned", "reported", "monitored", "unassigned"}
 // NotifyModes are the ways the TUI can announce new issues.
 var NotifyModes = []string{"auto", "herdr", "terminal", "off"}
 
+// PreviewLayouts are where the TUI can put the preview pane.
+var PreviewLayouts = []string{"auto", "right", "bottom"}
+
 // SortFields are the fields the TUI list can sort by.
 var SortFields = []string{"updated", "priority", "severity", "status", "id", "summary"}
 
@@ -51,6 +54,7 @@ type ListConfig struct {
 	AutoRefresh    Duration `toml:"auto_refresh"`
 	GroupByProject bool     `toml:"group_by_project"`
 	Preview        bool     `toml:"preview"`
+	PreviewLayout  string   `toml:"preview_layout"`
 }
 
 // IssueConfig configures the single-issue view.
@@ -110,6 +114,7 @@ func Defaults() *Config {
 			Sort:          "updated",
 			AutoRefresh:   Duration{120 * time.Second},
 			Preview:       true,
+			PreviewLayout: "auto",
 		},
 		Issue: IssueConfig{AutoRefresh: Duration{120 * time.Second}},
 		UI:    UIConfig{Mouse: true, Notify: "auto"},
@@ -173,6 +178,9 @@ func (c *Config) validate() error {
 	}
 	if !slices.Contains(SortFields, c.List.Sort) {
 		return fmt.Errorf("list.sort %q must be one of %s", c.List.Sort, strings.Join(SortFields, ", "))
+	}
+	if !slices.Contains(PreviewLayouts, c.List.PreviewLayout) {
+		return fmt.Errorf("list.preview_layout %q must be one of %s", c.List.PreviewLayout, strings.Join(PreviewLayouts, ", "))
 	}
 	if !slices.Contains(NotifyModes, c.UI.Notify) {
 		return fmt.Errorf("ui.notify %q must be one of %s", c.UI.Notify, strings.Join(NotifyModes, ", "))

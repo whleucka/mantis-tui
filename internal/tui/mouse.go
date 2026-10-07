@@ -59,7 +59,7 @@ func (m *Model) onMouse(msg tea.MouseMsg) tea.Cmd {
 	case m.cur.screen == screenList:
 		l := m.cur.list
 		if wheel {
-			l.wheel(m, mouse.X, wheelDelta(mouse.Button))
+			l.wheel(m, mouse.X, mouse.Y, wheelDelta(mouse.Button))
 		} else if click {
 			return l.click(m, mouse.X, mouse.Y)
 		}
@@ -103,8 +103,14 @@ func (l *listModel) rowsTop() int {
 	return 1
 }
 
-func (l *listModel) wheel(m *Model, x, delta int) {
-	if lw, pw := l.previewWidths(m.width); pw > 0 && x > lw {
+// inPreview reports whether screen cell x,y is in the preview or its rule.
+func (l *listModel) inPreview(m *Model, x, y int) bool {
+	lay := l.bodyLayout(m)
+	return (lay.right && x >= lay.lw) || (lay.below && y >= lay.lh)
+}
+
+func (l *listModel) wheel(m *Model, x, y, delta int) {
+	if l.inPreview(m, x, y) {
 		if delta < 0 {
 			l.pv.vp.ScrollUp(wheelStep)
 		} else {
@@ -118,12 +124,12 @@ func (l *listModel) wheel(m *Model, x, delta int) {
 // click moves the cursor to the clicked row, or opens it when the row was
 // already clicked moments ago.
 func (l *listModel) click(m *Model, x, y int) tea.Cmd {
-	if lw, pw := l.previewWidths(m.width); pw > 0 && x >= lw {
+	if l.inPreview(m, x, y) || y >= l.bodyLayout(m).lh {
 		return nil
 	}
 	rs := l.rows()
 	i := l.offset + y - l.rowsTop()
-	if !l.loaded || y < l.rowsTop() || i < 0 || i >= len(rs) || i >= l.offset+bodyRows(m) || rs[i].idx < 0 {
+	if !l.loaded || y < l.rowsTop() || i < 0 || i >= len(rs) || i >= l.offset+l.bodyRows(m) || rs[i].idx < 0 {
 		return nil
 	}
 	id := l.issues[rs[i].idx].ID

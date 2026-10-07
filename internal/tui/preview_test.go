@@ -61,7 +61,7 @@ func TestPreviewNeedsAWideTerminal(t *testing.T) {
 		t.Errorf("no preview means no fetch, got %d GetIssue calls", got)
 	}
 	h.keys("P", "P") // toggling off and on again on a narrow terminal
-	if !strings.Contains(h.view(), "at least 140 columns") {
+	if !strings.Contains(h.view(), "needs a bigger terminal") {
 		t.Errorf("turning the preview on when narrow should explain why it is hidden:\n%s", lastLine(h.view()))
 	}
 }
@@ -176,4 +176,99 @@ func TestNoteFromListRefreshesPreview(t *testing.T) {
 	if !strings.Contains(h.view(), "a note from the list") {
 		t.Errorf("the preview should show the new note:\n%s", h.view())
 	}
+}
+
+func TestPreviewLayout(t *testing.T) {
+	for _, tt := range []struct {
+		mode         string
+		w, h         int
+		right, below bool
+	}{
+		{"auto", 160, 40, true, false},
+		{"auto", 120, 40, false, false}, // landscape and narrow: no room
+		{"auto", 100, 80, false, true},  // portrait: below
+		{"auto", 100, 39, false, false}, // too short for below
+		{"auto", 120, 50, false, false}, // 50 rows × 2 < 120 columns: not portrait
+		{"right", 110, 40, true, false},
+		{"right", 99, 80, false, false},
+		{"bottom", 160, 30, false, true},
+		{"bottom", 160, 23, false, false},
+	} {
+		l := &listModel{pv: newPreview(true, tt.mode)}
+		lay := l.layout(tt.w, tt.h)
+		if lay.right != tt.right || lay.below != tt.below {
+			t.Errorf("%s %dx%d: right=%v below=%v, want %v %v", tt.mode, tt.w, tt.h, lay.right, lay.below, tt.right, tt.below)
+			continue
+		}
+		switch {
+		case lay.right && lay.lw+1+lay.pw != tt.w:
+			t.Errorf("%s %dx%d: widths %d+1+%d", tt.mode, tt.w, tt.h, lay.lw, lay.pw)
+		case lay.below && lay.lh+1+lay.ph != tt.h:
+			t.Errorf("%s %dx%d: heights %d+1+%d", tt.mode, tt.w, tt.h, lay.lh, lay.ph)
+		}
+	}
+	if (&listModel{pv: newPreview(false, "auto")}).layout(200, 100).shown() {
+		t.Error("a preview that is off is never shown")
+	}
+}
+
+func TestPortraitPreviewBelowTheList(t *testing.T) {
+	h := previewHarness(t, 40, nil)
+	h.send(winSize(100, 60))
+	lay := h.m.cur.list.bodyLayout(h.m)
+	if !lay.below {
+		t.Fatalf("100x60 should put the preview below: %+v", lay)
+	}
+	lines := strings.Split(ansi.Strip(h.view()), "\n")
+	if len(lines) != 60 || !strings.HasPrefix(lines[lay.lh], "────") {
+		t.Fatalf("expected a rule at row %d of 60:\n%s", lay.lh, strings.Join(lines, "\n"))
+	}
+	if !strings.Contains(strings.Join(lines[lay.lh+1:], "\n"), "Body of issue 40") {
+		t.Errorf("the preview should be under the rule:\n%s", h.view())
+	}
+
+	h.keys("G") // the cursor must stay inside the list's part
+	lines = strings.Split(ansi.Strip(h.view()), "\n")
+	found := false
+	for _, line := range lines[:lay.lh] {
+		if strings.HasPrefix(line, "▸") {
+			found = true
+		}
+	}
+	if !found {
+		t.Errorf("after G the cursor row should be visible above the preview:\n%s", h.view())
+	}
+	if !strings.Contains(strings.Join(lines[lay.lh+1:], "\n"), "Body of issue 1") {
+		t.Errorf("the preview should follow the cursor to #1")
+	}
+}
+
+func TestPortraitMouse(t *testing.T) {
+	h := previewHarness(t, 3, nil)
+	f := h.fakes["alpha"]
+	is := f.Issues[3]
+	is.UpdatedAt = is.UpdatedAt.Add(time.Minute)
+	is.Description = strings.Repeat("long line\n", 100)
+	f.Issues[3] = is
+	h.send(winSize(100, 60))
+	h.keys("R")
+	lay := h.m.cur.list.bodyLayout(h.m)
+	h.send(wheel(10, lay.lh+5, true))
+	if h.m.cur.list.pv.vp.YOffset() != wheelStep || h.m.cur.list.currentID() != 3 {
+		t.Errorf("wheel below the rule should scroll the preview (offset %d, cursor #%d)", h.m.cur.list.pv.vp.YOffset(), h.m.cur.list.currentID())
+	}
+	h.send(click(10, lay.lh+3))
+	if h.m.cur.list.currentID() != 3 || h.m.cur.screen != screenList {
+		t.Error("a click in the preview must not move the cursor or open anything")
+	}
+	h.send(click(10, 2)) // second issue row
+	if h.m.cur.list.currentID() != 2 {
+		t.Errorf("a click in the list part still selects: #%d", h.m.cur.list.currentID())
+	}
+}
+
+func TestPortraitPreviewGolden(t *testing.T) {
+	h := previewHarness(t, 4, nil)
+	h.send(winSize(90, 50))
+	golden(t, "list_preview_below", h.view())
 }
