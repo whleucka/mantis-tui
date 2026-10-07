@@ -95,6 +95,8 @@ current screen.
 The list holds every issue the filter matches (up to `list.max_issues`). The
 first chunk shows at once and the rest loads in the background; refreshes
 swap the list in only when they finish, so it never shrinks mid-refresh.
+Times within the last week show as relative ("3h ago"). On a wide list a
+HANDLER column appears.
 
 Actions that change issues (`s` `p` `v` `c` `a` `D`) apply to the selected
 issues, or to the issue under the cursor when nothing is selected. Pickers

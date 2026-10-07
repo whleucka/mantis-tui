@@ -28,9 +28,10 @@ type preview struct {
 	vp    viewport.Model
 
 	// what the viewport currently holds, so it is only rebuilt on change
-	shown      *mantis.Issue // the cached copy; a refetch replaces it
-	shownID    int
-	shownWidth int
+	shown       *mantis.Issue // the cached copy; a refetch replaces it
+	shownID     int
+	shownWidth  int
+	shownColors bool // status colours had arrived
 }
 
 type (
@@ -84,7 +85,7 @@ func (l *listModel) syncPreview(m *Model) tea.Cmd {
 		return nil
 	}
 	if c := l.fresh(*is); c != nil {
-		l.pv.show(c, max(pw-2, 10), max(m.height-1, 1)) // one column of padding each side
+		l.pv.show(c, max(pw-2, 10), max(m.height-1, 1), m.look(l.host())) // one column of padding each side
 		return nil
 	}
 	if l.pv.want == is.ID {
@@ -98,20 +99,20 @@ func (l *listModel) syncPreview(m *Model) tea.Cmd {
 
 // show puts is in the viewport, rebuilding it only when the cached copy or
 // the size changed.
-func (p *preview) show(is *mantis.Issue, w, h int) {
+func (p *preview) show(is *mantis.Issue, w, h int, lk issueLook) {
 	p.vp.SetHeight(h)
-	if is == p.shown && w == p.shownWidth {
+	if is == p.shown && w == p.shownWidth && (lk.colors != nil) == p.shownColors {
 		return
 	}
 	p.vp.SetWidth(w)
 	offset := p.vp.YOffset()
-	p.vp.SetContent(renderIssue(is, tabPreview, w))
+	p.vp.SetContent(renderIssue(is, tabPreview, w, lk))
 	if is.ID == p.shownID {
 		p.vp.SetYOffset(offset) // same issue refreshed: keep the reading position
 	} else {
 		p.vp.GotoTop()
 	}
-	p.shown, p.shownID, p.shownWidth = is, is.ID, w
+	p.shown, p.shownID, p.shownWidth, p.shownColors = is, is.ID, w, lk.colors != nil
 }
 
 // onPreviewTick fetches the issue if the cursor is still resting on it.

@@ -506,10 +506,17 @@ choice, the header arrow and the palette commands.
 status colours in the issue view and preview; a HANDLER column when the
 list is at least 140 columns wide.
 **Acceptance criteria:**
-- [ ] Relative-time boundaries are tested against a fixed clock
-- [ ] The issue view's status uses the server colour
-- [ ] HANDLER shows at 160 columns without the preview, and hides at 120
+- [x] Relative-time boundaries are tested against a fixed clock
+- [x] The issue view's status uses the server colour
+- [x] HANDLER shows at 160 columns without the preview, and hides at 120
 **Verification:** `go test -race ./internal/tui/`, plus a herdr check of all three tasks
 **Dependencies:** 27
 **Scope:** S
+
+**Live check (herdr pane, dev server, 2026-10-07, about 114 columns):** after
+a PATCH to #32 through the dev server, the default sort put #32 first with
+"now" in UPDATED, and older rows showed dates. `S` `pri` `enter` sorted by
+priority with ↓ in the header and "by priority ↓" in the status bar;
+choosing it again reversed to ↑. HANDLER wasn't checked live because the
+pane is under 140 columns (it's covered by `TestHandlerColumnNeedsAWideList`).
 

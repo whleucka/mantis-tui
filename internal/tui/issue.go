@@ -31,7 +31,8 @@ type issueModel struct {
 	req    int
 	loaded bool
 
-	tabLine int // content line of the Notes/History labels; -1 before load
+	tabLine int       // content line of the Notes/History labels; -1 before load
+	look    issueLook // clock and colours for the last render
 
 	interval time.Duration
 	tickGen  int
@@ -161,6 +162,7 @@ func (iv *issueModel) context() string {
 
 // render rebuilds the viewport content for the current size and tab.
 func (iv *issueModel) render(m *Model) {
+	iv.look = m.look(iv.sess.Host.Name)
 	w, h := max(m.width, 20), max(m.height-1, 1)
 	iv.width = w
 	iv.vp.SetWidth(w)
@@ -177,27 +179,45 @@ func (iv *issueModel) content(w int) string {
 		}
 		return styleMuted.Render(fmt.Sprintf("Loading issue #%d…", iv.id))
 	}
-	s, line := renderIssueTabs(iv.issue, iv.tab, w)
+	s, line := renderIssueTabs(iv.issue, iv.tab, w, iv.look)
 	iv.tabLine = line
 	return s
 }
 
+// issueLook is what rendering an issue needs besides the issue.
+type issueLook struct {
+	now    time.Time
+	colors map[string]string // status name → hex, from the server
+}
+
+// look gathers the clock and the host's status colours.
+func (m *Model) look(host string) issueLook {
+	lk := issueLook{now: m.now()}
+	if hv := m.hosts[host]; hv != nil {
+		lk.colors = hv.list.colors
+	}
+	return lk
+}
+
 // renderIssue lays out an issue's header, body and the notes or history tab
 // in w columns. The issue view and the list's preview pane share it.
-func renderIssue(is *mantis.Issue, tab, w int) string {
-	s, _ := renderIssueTabs(is, tab, w)
+func renderIssue(is *mantis.Issue, tab, w int, lk issueLook) string {
+	s, _ := renderIssueTabs(is, tab, w, lk)
 	return s
 }
 
 // renderIssueTabs is renderIssue that also returns the line holding the tab
 // labels, for mouse clicks.
-func renderIssueTabs(is *mantis.Issue, tab, w int) (string, int) {
+func renderIssueTabs(is *mantis.Issue, tab, w int, lk issueLook) (string, int) {
 	text := lipgloss.NewStyle().Width(max(w-2, 10))
 	var b strings.Builder
 
 	b.WriteString(styleTitle.Render(fmt.Sprintf("#%d %s", is.ID, is.Summary)) + "\n\n")
 
 	status := is.Status.Label
+	if hex := statusColor(*is, lk.colors); hex != "" {
+		status = lipgloss.NewStyle().Foreground(lipgloss.Color(hex)).Render(status)
+	}
 	if is.Resolution.Name != "" && is.Resolution.Name != "open" {
 		status += " (" + is.Resolution.Label + ")"
 	}
@@ -210,7 +230,7 @@ func renderIssueTabs(is *mantis.Issue, tab, w int) (string, int) {
 		{"Status", status}, {"Priority", is.Priority.Label},
 		{"Severity", is.Severity.Label}, {"Reproducibility", is.Reproducibility.Label},
 		{"Reporter", is.Reporter.Display()}, {"Handler", handler},
-		{"Created", timeOf(is.CreatedAt)}, {"Updated", timeOf(is.UpdatedAt)},
+		{"Created", timeOf(is.CreatedAt, lk.now)}, {"Updated", timeOf(is.UpdatedAt, lk.now)},
 	}
 	if len(is.Tags) > 0 {
 		names := make([]string, len(is.Tags))
@@ -261,7 +281,7 @@ func renderIssueTabs(is *mantis.Issue, tab, w int) (string, int) {
 			b.WriteString(styleMuted.Render("No notes. "+keyOf(actAddNote)+" adds one.") + "\n")
 		}
 		for _, n := range is.Notes {
-			meta := []string{n.Reporter.Display(), timeOf(n.CreatedAt)}
+			meta := []string{n.Reporter.Display(), timeOf(n.CreatedAt, lk.now)}
 			if n.Private() {
 				meta = append(meta, "private")
 			}
@@ -285,15 +305,8 @@ func renderIssueTabs(is *mantis.Issue, tab, w int) (string, int) {
 			if h.Change != "" {
 				line += ": " + h.Change
 			}
-			b.WriteString(styleMuted.Render(timeOf(h.CreatedAt)+"  "+fmt.Sprintf("%-12s", h.User.Name)) + " " + line + "\n")
+			b.WriteString(styleMuted.Render(stamp(h.CreatedAt)+"  "+fmt.Sprintf("%-12s", h.User.Name)) + " " + line + "\n")
 		}
 	}
 	return strings.TrimRight(b.String(), "\n"), tabLine
-}
-
-func timeOf(t time.Time) string {
-	if t.IsZero() {
-		return ""
-	}
-	return t.Local().Format("2006-01-02 15:04")
 }

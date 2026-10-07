@@ -108,7 +108,7 @@ The full task details are in `tasks/todo.md`.
 ### Phase 8: Whole-filter list, sorting, display (v1.3)
 - [x] Task 27: The list holds the whole filter
 - [x] Task 28: Sorting
-- [ ] Task 29: Relative times, status colours, handler column
+- [x] Task 29: Relative times, status colours, handler column
 
 ## Findings During Build
 

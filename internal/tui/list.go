@@ -54,6 +54,8 @@ type listModel struct {
 
 	lastClickID int // for double clicks
 	lastClickAt time.Time
+
+	now func() time.Time // the model's clock, for relative times
 }
 
 // loadChain is one load of the whole filter, a chunk at a time.
@@ -107,6 +109,7 @@ func newListModel(cfg *config.Config, sess *Session, seen *config.Seen) *listMod
 		selected:  map[int]mantis.Issue{},
 		pv:        newPreview(cfg.List.Preview),
 		seen:      seen,
+		now:       time.Now,
 	}
 }
 
@@ -572,8 +575,14 @@ func columnsFor(width int) []column {
 		{key: "severity", title: "SEVERITY", width: 9, cell: func(_ *listModel, is mantis.Issue) string { return is.Severity.Label }},
 		{key: "status", title: "STATUS", width: 13, cell: func(_ *listModel, is mantis.Issue) string { return is.Status.Label }},
 		{title: "CATEGORY", width: 12, cell: func(_ *listModel, is mantis.Issue) string { return is.Category.Name }},
+		{title: "HANDLER", width: 12, cell: func(_ *listModel, is mantis.Issue) string {
+			if is.Handler == nil {
+				return ""
+			}
+			return is.Handler.Name
+		}},
 		{key: "summary", title: "SUMMARY", width: 0, cell: func(_ *listModel, is mantis.Issue) string { return is.Summary }},
-		{key: "updated", title: "UPDATED", width: 10, cell: func(_ *listModel, is mantis.Issue) string { return dateOf(is.UpdatedAt) }},
+		{key: "updated", title: "UPDATED", width: 10, cell: func(l *listModel, is mantis.Issue) string { return dateOf(is.UpdatedAt, l.now()) }},
 		{title: "", width: 2, cell: func(l *listModel, is mantis.Issue) string {
 			if l.meID != 0 && service.IsMonitoring(is, l.meID) {
 				return l.icons.Monitor
@@ -588,6 +597,9 @@ func columnsFor(width int) []column {
 				return
 			}
 		}
+	}
+	if width < 140 {
+		drop("HANDLER")
 	}
 	if width < 110 {
 		drop("CATEGORY")
@@ -615,13 +627,6 @@ func (l *listModel) priorityIcon(name string) string {
 		return l.icons.Low
 	}
 	return l.icons.None
-}
-
-func dateOf(t time.Time) string {
-	if t.IsZero() {
-		return ""
-	}
-	return t.Local().Format("2006-01-02")
 }
 
 func (l *listModel) view(m *Model, width, height int) string {
@@ -698,7 +703,7 @@ func (l *listModel) listView(m *Model, width, height int) string {
 				text = styleUnread.Render(text)
 			}
 			if c.title == "STATUS" && i != l.cursor {
-				if hex := l.colors[is.Status.Name]; hex != "" {
+				if hex := statusColor(is, l.colors); hex != "" {
 					text = lipgloss.NewStyle().Foreground(lipgloss.Color(hex)).Render(text)
 				}
 			}

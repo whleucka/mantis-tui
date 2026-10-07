@@ -24,6 +24,9 @@ type harness struct {
 	saved []string // SaveLastHost calls
 }
 
+// testNow is the harness clock.
+var testNow = time.Date(2026, 10, 7, 9, 0, 0, 0, time.UTC)
+
 func testHosts() []config.Host {
 	return []config.Host{
 		{Name: "alpha", URL: "https://alpha.example.test", Token: "token-alpha-secret"},
@@ -74,6 +77,7 @@ func newHarnessWith(t *testing.T, initial *config.Host, setup func(host string, 
 		},
 	})
 	h.m = m
+	m.now = func() time.Time { return testNow } // relative times must not depend on the day the tests run
 	h.send(tea.WindowSizeMsg{Width: 120, Height: 40})
 	h.exec(m.Init())
 	return h

@@ -4,6 +4,8 @@ import (
 	"strings"
 
 	"charm.land/lipgloss/v2"
+
+	"github.com/whleucka/mantis-tui/internal/mantis"
 )
 
 var (
@@ -25,3 +27,12 @@ var (
 )
 
 func contains(s, sub string) bool { return strings.Contains(s, sub) }
+
+// statusColor is the hex colour for is's status: the server's
+// status_colors entry, or the colour the issue itself carries.
+func statusColor(is mantis.Issue, colors map[string]string) string {
+	if hex := colors[is.Status.Name]; hex != "" {
+		return hex
+	}
+	return is.Status.Color
+}

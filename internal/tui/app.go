@@ -444,6 +444,7 @@ func (m *Model) selectHost(name string) tea.Cmd {
 	if !ok {
 		sess := m.opts.NewSession(*host)
 		hv = &hostView{sess: sess, list: newListModel(m.opts.Config, sess, m.seen)}
+		hv.list.now = func() time.Time { return m.now() }
 		if m.seen.Begin(name, time.Now()) {
 			cmds = append(cmds, m.saveSeen())
 		}
