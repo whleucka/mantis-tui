@@ -520,3 +520,23 @@ priority with ↓ in the header and "by priority ↓" in the status bar;
 choosing it again reversed to ↑. HANDLER wasn't checked live because the
 pane is under 140 columns (it's covered by `TestHandlerColumnNeedsAWideList`).
 
+---
+
+## Phase 9: New-issue notifications (v1.4)
+
+### Task 30: Watch every host and notify about new issues
+**Description:** Background host views for every configured host, refresh
+rules that keep polling outside the list screen, new-issue detection per
+list, status-bar and window-title signals, and a notifier (herdr, OSC 9 or
+off) chosen from `[ui] notify`.
+**Acceptance criteria:**
+- [ ] The first complete load (and the first after a filter change) never notifies; a later refresh with a new id does, once
+- [ ] Issues you reported, and issues created from the TUI, don't notify
+- [ ] A new issue on a background host shows "1 new on beta: …" while you're on alpha
+- [ ] The herdr notifier gets the title and body as separate arguments, with control characters removed; terminal mode writes OSC 9; `off` sends nothing
+- [ ] The window title shows the unread count across hosts
+- [ ] `auto` resolves to herdr inside herdr and to terminal outside it
+**Verification:** `make race && make lint`, plus a herdr check with the dev server
+**Dependencies:** 27–29
+**Scope:** M
+

@@ -110,6 +110,9 @@ The full task details are in `tasks/todo.md`.
 - [x] Task 28: Sorting
 - [x] Task 29: Relative times, status colours, handler column
 
+### Phase 9: New-issue notifications (v1.4)
+- [ ] Task 30: Watch every host and notify about new issues
+
 ## Findings During Build
 
 - On 2.27, `GET /issues` includes the full `history` for every issue in a

@@ -398,6 +398,38 @@ Unchanged: `j` `k` `gg` `G` `home` `end` `enter` `l` `q` `esc` `h` `/`
   the preview is open), the list adds a HANDLER column with the handler's
   username.
 
+## v1.4: New-issue notifications
+
+- **Every host is watched.** Once the first host is chosen, the TUI also
+  loads every other configured host in the background and auto-refreshes
+  each one's list on `list.auto_refresh`, with its own filter. Background
+  loads show no spinner and report no errors. A refresh is skipped only while
+  a load is running, while `$EDITOR` is open, or while a modal is open over
+  that host's list. `list.auto_refresh = "0"` turns all of it off.
+- **New issue** means an issue id that appears in a host's list after its
+  first complete load in the session (or after a filter change), and that
+  the list hasn't shown before in this session. Issues you reported, and
+  issues you just created from the TUI, don't count. So "new" includes an
+  old ticket that was just assigned to you when the filter is `assigned`.
+- **Each refresh that finds new issues:**
+  - shows "2 new: #41 Login broken, #42 …" in the status bar (with "on
+    <host>" for another host);
+  - sends one notification for the host, naming up to three issues and
+    "and N more".
+- **The window title** is `(N) mantis-tui` while N issues are unread across
+  all hosts.
+- **`[ui] notify`**: `auto` (default), `herdr`, `terminal` or `off`.
+  - `herdr` runs `herdr notification show <title> --body=<text> --sound
+    request` (from `$HERDR_BIN_PATH`, else `herdr` on `PATH`), with a 5s
+    timeout.
+  - `terminal` writes an OSC 9 desktop-notification sequence, which iTerm2,
+    WezTerm, Ghostty, kitty and Windows Terminal support. Others ignore it.
+  - `auto` is `herdr` when `HERDR_ENV=1` and herdr can be found, otherwise
+    `terminal`.
+  - `off` still shows the status-bar message and the title count.
+- Issue summaries are untrusted, so control characters are removed from
+  notification text before it reaches herdr or the terminal.
+
 ## API Client Contract (`internal/mantis`)
 
 - `Client{BaseURL, Token, HTTP *http.Client}`. Every method takes a
