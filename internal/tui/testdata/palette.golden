@@ -1,0 +1,40 @@
+          ID SEVERITY  STATUS        CATEGORY     SUMMARY                                                 UPDATED
+▸  🔵      3 minor     assigned      General      Issue number 3 summary                                  2026-09-04 👁️
+   🔺      2 minor     assigned      General      Issue number 2 summary                                  2026-09-03
+   ⚠️      1 minor     assigned      General      Issue number 1 summary                                  2026-09-02
+
+
+
+
+                              ╭──────────────────────────────────────────────────────────╮
+                              │ : st▏                                                    │
+                              │ Change status                                          s │
+                              │ Batch status                                          bs │
+                              │ Switch host                                       ctrl+h │
+                              │ Change severity                                        V │
+                              │ First issue                                      gg/home │
+                              │ Last issue                                         G/end │
+                              │ Toggle selection                                   space │
+                              │ Select page                                       ctrl+a │
+                              │ Clear selection                                   ctrl+x │
+                              │ Batch severity                                        bv │
+                              │ Host: beta                                               │
+                              │ enter run · type a number to open an issue · esc close   │
+                              ╰──────────────────────────────────────────────────────────╯
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ alpha  all · page 1 · 3 issues

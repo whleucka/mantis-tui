@@ -50,6 +50,7 @@ const (
 	actNextUnread     action = "next-unread"
 	actToggleRead     action = "toggle-read"
 	actMarkUnreadBack action = "mark-unread-back"
+	actPalette        action = "palette"
 )
 
 // binding maps key sequences to an action. Each entry in keys is one
@@ -70,6 +71,7 @@ type keymap struct {
 func defaultKeymap() keymap {
 	common := []binding{
 		{actHelp, []string{"?"}, "toggle help"},
+		{actPalette, []string{":", "ctrl+p"}, "command palette"},
 		{actSwitchHost, []string{"ctrl+h"}, "switch host"},
 		{actRefresh, []string{"r"}, "refresh"},
 		{actUp, []string{"k", "up"}, "up"},

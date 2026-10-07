@@ -123,3 +123,11 @@ func (l *listModel) toggleRead(m *Model) tea.Cmd {
 	}
 	return tea.Batch(m.saveSeen(), infoCmd(l.host(), fmt.Sprintf("marked %s %s", targetLabel(targets), word)))
 }
+
+// markPageRead marks every issue on the loaded page read.
+func (l *listModel) markPageRead(m *Model) tea.Cmd {
+	for _, is := range l.issues {
+		l.seen.Mark(l.host(), is.ID, is.UpdatedAt)
+	}
+	return tea.Batch(m.saveSeen(), infoCmd(l.host(), "marked the page read"))
+}

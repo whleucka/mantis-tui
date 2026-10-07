@@ -403,9 +403,9 @@ screen's bindings plus extra commands without keys. Typing a number offers
 "Open issue #N". Split the action dispatch out of `handleKey` so the palette
 runs actions the same way keys do.
 **Acceptance criteria:**
-- [ ] Every bound action of the current screen is listed with its key
-- [ ] `:` `1` `2` `3` `enter` opens #123 even when it isn't on the page
-- [ ] Filter and host commands work from the palette
+- [x] Every bound action of the current screen is listed with its key
+- [x] `:` `1` `2` `3` `enter` opens #123 even when it isn't on the page
+- [x] Filter and host commands work from the palette
 **Verification:** `go test -race ./internal/tui/`
 **Dependencies:** 22 (for "mark page read")
 **Files:** `internal/tui/palette.go`, `internal/tui/app.go`, `internal/tui/keymap.go`

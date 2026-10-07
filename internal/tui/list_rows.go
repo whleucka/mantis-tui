@@ -65,7 +65,13 @@ func matches(is mantis.Issue, terms []string) bool {
 	if is.Handler != nil {
 		hay += " " + is.Handler.Name + " " + is.Handler.RealName
 	}
-	words := strings.Fields(strings.ToLower(hay))
+	return fuzzyWords(strings.ToLower(hay), terms)
+}
+
+// fuzzyWords reports whether every term is a subsequence of some word of
+// hay. The list search and the command palette share it.
+func fuzzyWords(hay string, terms []string) bool {
+	words := strings.Fields(hay)
 	for _, t := range terms {
 		found := false
 		for _, w := range words {
@@ -78,7 +84,7 @@ func matches(is mantis.Issue, terms []string) bool {
 			return false
 		}
 	}
-	return true
+	return len(terms) > 0
 }
 
 func subsequence(needle, hay string) bool {

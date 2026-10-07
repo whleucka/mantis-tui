@@ -250,6 +250,9 @@ func (m *Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		return m, nil
 
+	case paletteRunMsg:
+		return m, msg.run(m)
+
 	case seenFetchedMsg:
 		return m, m.markSeen(msg.host, msg.issue)
 
@@ -322,8 +325,20 @@ func (m *Model) handleKey(msg tea.KeyPressMsg) tea.Cmd {
 	if waiting {
 		return m.chord.waitCmd()
 	}
+	return m.dispatch(a)
+}
+
+// dispatch runs an action on the current screen, whether it came from a key
+// or the command palette.
+func (m *Model) dispatch(a action) tea.Cmd {
+	if m.cur == nil {
+		return nil
+	}
 	switch a {
 	case "":
+		return nil
+	case actPalette:
+		m.modal = m.newPalette()
 		return nil
 	case actSwitchHost:
 		m.modal = m.hostPicker()

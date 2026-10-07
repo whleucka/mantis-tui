@@ -107,6 +107,7 @@ current screen.
 | `m` | toggle monitoring (👁️ marks monitored issues) |
 | `o` | open in browser |
 | `ctrl+h` | switch host |
+| `:` / `ctrl+p` | command palette |
 | `?` | toggle help |
 | `q` | quit |
 
@@ -137,6 +138,7 @@ can retry them.
 | `dn` | delete note |
 | `s` `p` `V` `c` `S` `a` `m` `o` | same as in the list |
 | `r` | refresh |
+| `:` / `ctrl+p` | command palette |
 | `q`/`esc`/`h` | back to the list |
 | `u` | mark unread and go back to the list |
 
