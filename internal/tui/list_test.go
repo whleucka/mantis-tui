@@ -201,3 +201,21 @@ func lastLine(s string) string {
 	lines := strings.Split(strings.TrimRight(s, "\n"), "\n")
 	return ansi.Strip(lines[len(lines)-1])
 }
+
+func TestFailedFirstLoadSaysSoInTheList(t *testing.T) {
+	hosts := testHosts()
+	h := newHarnessWith(t, &hosts[0], func(_ string, f *mantistest.Fake) {
+		f.Errs = map[string]error{"ListIssues": errors.New("connection refused")}
+	}, nil)
+	h.keys("j") // any key clears the status bar message
+	out := h.view()
+	if strings.Contains(out, "Loading issues") || !strings.Contains(out, "connection refused") || !strings.Contains(out, "R to retry") {
+		t.Fatalf("a failed first load must not look like it is still loading:\n%s", out)
+	}
+	h.fakes["alpha"].Errs = nil
+	h.fakes["alpha"].Issues[1] = mantis.Issue{ID: 1, Summary: "Back again"}
+	h.keys("R")
+	if !strings.Contains(h.view(), "Back again") {
+		t.Errorf("R should retry:\n%s", h.view())
+	}
+}

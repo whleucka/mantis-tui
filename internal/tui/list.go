@@ -35,7 +35,8 @@ type listModel struct {
 	search   string
 	selected map[int]mantis.Issue // by id; survives paging and refresh
 	loaded   bool
-	req      int // latest load request; older responses are ignored
+	loadErr  error // why the first load failed; shown until a load succeeds
+	req      int   // latest load request; older responses are ignored
 
 	meID   int
 	colors map[string]string
@@ -197,8 +198,12 @@ func (l *listModel) handleMsg(m *Model, msg tea.Msg) tea.Cmd {
 		}
 		l.inFlight = false
 		if msg.err != nil {
+			if !l.loaded {
+				l.loadErr = msg.err
+			}
 			return errCmd(l.host(), msg.err)
 		}
+		l.loadErr = nil
 		if msg.page > 1 && len(msg.issues) == 0 {
 			return infoCmd(l.host(), "no more issues")
 		}
@@ -569,6 +574,9 @@ func (l *listModel) listView(m *Model, width, height int) string {
 		height--
 	}
 	if !l.loaded {
+		if l.loadErr != nil {
+			return styleError.Render("  Could not load issues: "+m.redact(l.loadErr.Error())) + "\n" + styleMuted.Render("  R to retry, f to change the filter, H to switch host")
+		}
 		return styleMuted.Render("  Loading issues…")
 	}
 	if len(l.issues) == 0 {
