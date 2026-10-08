@@ -32,6 +32,7 @@ func (o *globalOpts) runTUI(cmd *cobra.Command) error {
 	}
 
 	statePath := config.DefaultStatePath(os.Getenv)
+	cwd, _ := os.Getwd()
 	model := tui.New(tui.Options{
 		Config:  cfg,
 		Hosts:   res.Hosts,
@@ -39,9 +40,10 @@ func (o *globalOpts) runTUI(cmd *cobra.Command) error {
 		NewSession: func(h config.Host) *tui.Session {
 			return tui.NewSession(h, mantis.NewClient(h.URL, h.Token))
 		},
-		OpenURL: o.deps.openURL,
-		Seen:    config.LoadSeen(config.DefaultSeenPath(os.Getenv)),
-		Notify:  notifierFor(cfg.UI.Notify, os.Getenv, exec.LookPath),
+		OpenURL:   o.deps.openURL,
+		Seen:      config.LoadSeen(config.DefaultSeenPath(os.Getenv)),
+		Notify:    notifierFor(cfg.UI.Notify, os.Getenv, exec.LookPath),
+		RunInPane: paneRunnerFor(os.Getenv, exec.LookPath, cwd, execRun),
 		SaveLastHost: func(name string) error {
 			st, _ := config.LoadState(statePath)
 			st.LastHost = name

@@ -60,7 +60,13 @@ type ListConfig struct {
 // IssueConfig configures the single-issue view.
 type IssueConfig struct {
 	AutoRefresh Duration `toml:"auto_refresh"`
+	// Ask is the shell command the ask key runs in a new herdr pane, with
+	// {id}, {host} and {url} filled in. Empty disables the key.
+	Ask string `toml:"ask"`
 }
+
+// DefaultAsk starts Claude Code on the issue.
+const DefaultAsk = `claude 'Use the mantis agent to look up issue #{id} on host {host} ({url}).'`
 
 // UIConfig configures the TUI as a whole.
 type UIConfig struct {
@@ -116,7 +122,7 @@ func Defaults() *Config {
 			Preview:       true,
 			PreviewLayout: "auto",
 		},
-		Issue: IssueConfig{AutoRefresh: Duration{120 * time.Second}},
+		Issue: IssueConfig{AutoRefresh: Duration{120 * time.Second}, Ask: DefaultAsk},
 		UI:    UIConfig{Mouse: true, Notify: "auto"},
 		Icons: Icons{
 			Immediate: "🔥",

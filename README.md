@@ -40,6 +40,7 @@ preview_layout = "auto"       # auto | right | bottom
 
 [issue]
 auto_refresh = "120s"
+ask = "claude 'Use the mantis agent to look up issue #{id} on host {host} ({url}).'"
 
 [ui]
 mouse = true                  # hold shift to select text with the mouse
@@ -124,6 +125,7 @@ name their target ("Status for 3 issues").
 | `r` | add a note (reply) |
 | `m` | toggle monitoring (👁️ marks monitored issues) |
 | `o` | open in browser |
+| `A` | ask Claude about the issue in a new herdr pane |
 | `y` | copy the issue URL (OSC 52, works over SSH) |
 | `C` | create issue |
 | `D` | delete issue(s) |
@@ -173,6 +175,12 @@ load or a filter change. The window title shows the unread count across all
 hosts, e.g. `(3) mantis-tui`. Setting `list.auto_refresh = "0"` turns all of
 this off.
 
+**Ask Claude.** Inside [herdr](https://herdr.dev), `A` splits a new pane
+off mantis-tui (to the right on a wide terminal, below on a tall one) and
+runs `issue.ask` in it, with `{id}`, `{host}` and `{url}` filled in. The
+default starts Claude Code on the issue. Any shell command works; set
+`ask = ""` to turn the key off.
+
 **Mouse.** Click a row to move to it and click it again to open it. The
 wheel scrolls the list, the preview, the issue view, help and pickers.
 Clicking a picker option or a palette command chooses it, and clicking
@@ -190,7 +198,7 @@ selection, so hold `shift` to select text, or set `ui.mouse = false`.
 | `tab` | switch between notes and history |
 | `r` | add a note (reply) |
 | `dn` | delete a note |
-| `s` `p` `v` `c` `a` `e` `m` `o` `y` | same as in the list, for this issue |
+| `s` `p` `v` `c` `a` `e` `m` `o` `y` `A` | same as in the list, for this issue |
 | `R` | refresh |
 | `u` | mark unread and go back to the list |
 | `q`/`esc`/`h` | back to the list |

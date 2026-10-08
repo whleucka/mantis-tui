@@ -10,24 +10,15 @@ import (
 // notifierFor resolves the [ui] notify mode. "auto" uses herdr inside herdr
 // (HERDR_ENV=1 and the binary can be found), and the terminal otherwise.
 func notifierFor(mode string, getenv func(string) string, lookPath func(string) (string, error)) tui.Notifier {
-	herdrBin := func() string {
-		if p := getenv("HERDR_BIN_PATH"); p != "" {
-			return p
-		}
-		if p, err := lookPath("herdr"); err == nil {
-			return p
-		}
-		return ""
-	}
 	if mode == "auto" {
 		mode = "terminal"
-		if getenv("HERDR_ENV") == "1" && herdrBin() != "" {
+		if getenv("HERDR_ENV") == "1" && herdrBin(getenv, lookPath) != "" {
 			mode = "herdr"
 		}
 	}
 	n := tui.Notifier{Mode: mode}
 	if mode == "herdr" {
-		bin := herdrBin()
+		bin := herdrBin(getenv, lookPath)
 		if bin == "" {
 			bin = "herdr" // let the run fail visibly in the status bar
 		}
@@ -42,4 +33,16 @@ func notifierFor(mode string, getenv func(string) string, lookPath func(string) 
 // takes --body's text as the next argument; it has no "--" separator.
 func herdrArgs(title, body string) []string {
 	return []string{"notification", "show", title, "--body", body, "--sound", "request"}
+}
+
+// herdrBin is the herdr binary herdr itself advertises, else the one on
+// PATH, else "".
+func herdrBin(getenv func(string) string, lookPath func(string) (string, error)) string {
+	if p := getenv("HERDR_BIN_PATH"); p != "" {
+		return p
+	}
+	if p, err := lookPath("herdr"); err == nil {
+		return p
+	}
+	return ""
 }

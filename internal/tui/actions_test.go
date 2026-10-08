@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"context"
 	"errors"
 	"strings"
 	"testing"
@@ -178,5 +179,52 @@ func TestActionsFromIssueView(t *testing.T) {
 	h.keys("D")
 	if h.m.modal != nil {
 		t.Error("D is not bound in the issue view")
+	}
+}
+
+func TestAskRunsTheTemplateInAPane(t *testing.T) {
+	h := actionsHarness(t)
+	var got string
+	var gotRight bool
+	h.m.opts.RunInPane = func(_ context.Context, command string, right bool) error {
+		got, gotRight = command, right
+		return nil
+	}
+	h.m.opts.Config.Issue.Ask = "ask {id} on {host} at {url}"
+	h.keys("A")
+	if want := "ask 5 on alpha at https://alpha.example.test/view.php?id=5"; got != want {
+		t.Errorf("command = %q, want %q", got, want)
+	}
+	if !gotRight {
+		t.Error("a 120x40 terminal should split to the right")
+	}
+	if !strings.Contains(h.view(), "asking about #5") {
+		t.Errorf("status should confirm:\n%s", h.view())
+	}
+
+	h.send(winSize(80, 50))
+	h.keys("A")
+	if gotRight {
+		t.Error("an 80x50 terminal should split below")
+	}
+}
+
+func TestAskReportsWhyItCannot(t *testing.T) {
+	for _, tt := range []struct {
+		name, template string
+		run            func(context.Context, string, bool) error
+		want           string
+	}{
+		{"outside herdr", "claude", nil, "needs herdr"},
+		{"disabled", "", func(context.Context, string, bool) error { return nil }, "issue.ask is empty"},
+		{"pane failed", "claude", func(context.Context, string, bool) error { return errors.New("split broke") }, "split broke"},
+	} {
+		h := actionsHarness(t)
+		h.m.opts.RunInPane = tt.run
+		h.m.opts.Config.Issue.Ask = tt.template
+		h.keys("A")
+		if !strings.Contains(h.view(), tt.want) {
+			t.Errorf("%s: status should say %q:\n%s", tt.name, tt.want, h.view())
+		}
 	}
 }

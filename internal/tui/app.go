@@ -2,6 +2,7 @@
 package tui
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -24,6 +25,9 @@ type Options struct {
 	OpenURL      func(url string) error
 	Seen         *config.Seen // read state; nil keeps it in memory only
 	Notify       Notifier
+	// RunInPane runs a shell command in a new terminal pane, to the right
+	// or below; nil when there is no multiplexer to split.
+	RunInPane func(ctx context.Context, command string, right bool) error
 }
 
 // screen is what fills the main area for the current host.

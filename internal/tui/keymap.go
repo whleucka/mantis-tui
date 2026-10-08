@@ -48,6 +48,7 @@ const (
 	actPrevUnread     action = "prev-unread"
 	actToggleRead     action = "toggle-read"
 	actMarkUnreadBack action = "mark-unread-back"
+	actAsk            action = "ask"
 )
 
 // binding maps key sequences to an action. Each entry in keys is one
@@ -98,6 +99,7 @@ func defaultKeymap() keymap {
 		{actAssign, []string{"a"}, "assign"},
 		{actSummary, []string{"e"}, "edit summary"},
 		{actMonitor, []string{"m"}, "toggle monitoring"},
+		{actAsk, []string{"A"}, "ask Claude in a new pane"},
 	}
 	list := append(append([]binding{}, common...),
 		binding{actQuit, []string{"q"}, "quit"},

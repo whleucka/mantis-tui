@@ -4,8 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	tea "charm.land/bubbletea/v2"
 
@@ -106,6 +108,8 @@ func (m *Model) issueAction(a action) tea.Cmd {
 		return m.toggleMonitor(*is)
 	case actBrowser:
 		return m.openInBrowser(is.ID)
+	case actAsk:
+		return m.ask(is.ID)
 	case actCopyURL:
 		url := service.IssueURL(m.cur.sess.Host.URL, is.ID)
 		return tea.Batch(m.clipboard(url), infoCmd(m.cur.sess.Host.Name, "copied "+url))
@@ -327,6 +331,38 @@ func (m *Model) openInBrowser(id int) tea.Cmd {
 			return errMsg{host: host, err: err}
 		}
 		return infoMsg{host: host, text: "opened " + url}
+	}
+}
+
+// askTimeout bounds opening the pane; the command itself keeps running there.
+const askTimeout = 10 * time.Second
+
+// ask runs [issue] ask about issue id in a new pane: to the right when the
+// terminal is wider than it is tall (cells are about twice as tall as wide),
+// below otherwise.
+func (m *Model) ask(id int) tea.Cmd {
+	host := m.cur.sess.Host.Name
+	template := m.opts.Config.Issue.Ask
+	run := m.opts.RunInPane
+	if template == "" {
+		return errCmd(host, errors.New("issue.ask is empty in the config"))
+	}
+	if run == nil {
+		return errCmd(host, errors.New("asking needs herdr to open a pane"))
+	}
+	command := strings.NewReplacer(
+		"{id}", strconv.Itoa(id),
+		"{host}", host,
+		"{url}", service.IssueURL(m.cur.sess.Host.URL, id),
+	).Replace(template)
+	right := m.width >= 2*m.height
+	return func() tea.Msg {
+		ctx, cancel := context.WithTimeout(context.Background(), askTimeout)
+		defer cancel()
+		if err := run(ctx, command, right); err != nil {
+			return errMsg{host: host, err: err}
+		}
+		return infoMsg{host: host, text: fmt.Sprintf("asking about #%d in a new pane", id)}
 	}
 }
 
