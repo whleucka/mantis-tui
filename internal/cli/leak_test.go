@@ -26,6 +26,8 @@ var allCommands = [][]string{
 	{"create", "--project", "4", "--category", "General", "--summary", "s", "-d", "d"},
 	{"delete", "33", "--yes"},
 	{"open", "33"},
+	{"files", "33"},
+	{"download", "33", "6"}, // no file route in either test, so nothing is written
 }
 
 func checkNoLeak(t *testing.T, args []string, stdout, stderr string, err error) {

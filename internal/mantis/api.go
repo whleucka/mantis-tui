@@ -12,6 +12,7 @@ type API interface {
 	Me(ctx context.Context) (*User, error)
 	ListIssues(ctx context.Context, opts ListOptions) (*IssueList, error)
 	GetIssue(ctx context.Context, id int) (*IssueResult, error)
+	GetFile(ctx context.Context, issueID, fileID int) (*File, error)
 	Projects(ctx context.Context) ([]Project, error)
 	Project(ctx context.Context, id int) (*Project, error)
 	ProjectUsers(ctx context.Context, projectID int) ([]User, error)

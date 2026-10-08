@@ -587,3 +587,35 @@ and #26 only; picking #26 opened it, and `h` went back to #33, then to the
 list. `E` → Description (later folded into `e`), with `$VISUAL` set to a script that edits the first
 line, PATCHed the new text (confirmed with a GET), showed "#33 description
 updated" and removed the temp file.
+
+---
+
+## Phase 11: Attachments and images (v1.6)
+
+### Task 33: Download attachments: API, service, CLI `files` and `download`
+**Description:** `GetFile` on the client, the fake and the dev server (which
+generates PNGs for image types). A service layer that lists issue and note
+files, makes safe names and downloads atomically into a private directory.
+CLI `files` and `download`, and file ids in `show`.
+**Acceptance criteria:**
+- [x] `GetFile` decodes base64 content, and an empty envelope is `ErrNotFound`
+- [x] Hostile names (`../../etc/passwd`, control characters, dotfiles) become one harmless component
+- [x] Downloads are `0600` in a `0700` directory, leave no temp files, and reuse a cached file of the right size
+- [x] `download` with an unknown file id is a usage error; neither command leaks the token
+**Verification:** `make race && make lint`; read-only `files 19112` on chainlogic
+**Dependencies:** None
+**Scope:** M
+
+### Task 34: Open attachments in the TUI, images with kitten icat
+**Description:** `g a` in the issue view, download into the cache, images
+through a `tea.ExecCommand` that runs `kitten icat`, other files through
+`xdg-open` for safe types only.
+**Acceptance criteria:**
+- [x] The picker lists issue files, then note files with their note and author
+- [x] Images go to the viewer with refreshes paused; without graphics they fall back to the opener
+- [x] PDFs open; a `.sh` is only saved
+- [x] A cached file opens again without a request
+- [ ] Live: an image shows in kitty through herdr
+**Verification:** `make race && make lint`, plus a herdr check with the dev server
+**Dependencies:** 33
+**Scope:** M

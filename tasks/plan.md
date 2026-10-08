@@ -117,6 +117,10 @@ The full task details are in `tasks/todo.md`.
 - [x] Task 31: Edit the description, steps and additional information
 - [x] Task 32: Go to a related issue, with a back trail
 
+### Phase 11: Attachments and images (v1.6)
+- [ ] Task 33: Download attachments: API, service, CLI `files` and `download`
+- [ ] Task 34: Open attachments in the TUI, images with kitten icat
+
 ## Findings During Build
 
 - On 2.27, `GET /issues` includes the full `history` for every issue in a

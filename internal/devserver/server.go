@@ -4,8 +4,12 @@
 package devserver
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"image"
+	"image/color"
+	"image/png"
 	"io"
 	"log"
 	"net/http"
@@ -123,6 +127,7 @@ var (
 	reNotes    = regexp.MustCompile(`^/issues/(\d+)/notes$`)
 	reNote     = regexp.MustCompile(`^/issues/(\d+)/notes/(\d+)$`)
 	reMonitors = regexp.MustCompile(`^/issues/(\d+)/monitors$`)
+	reFile     = regexp.MustCompile(`^/issues/(\d+)/files/(\d+)$`)
 )
 
 // ServeHTTP implements http.Handler for /api/rest/*.
@@ -176,6 +181,10 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			delete(s.issues, id)
 			w.WriteHeader(204)
 		}
+		return
+	}
+	if m := reFile.FindStringSubmatch(path); m != nil && r.Method == "GET" {
+		s.file(w, atoi(m[1]), atoi(m[2]))
 		return
 	}
 	if m := reNotes.FindStringSubmatch(path); m != nil && r.Method == "POST" {
@@ -379,3 +388,40 @@ func writeJSON(w http.ResponseWriter, status int, v any) {
 }
 
 func atoi(s string) int { n, _ := strconv.Atoi(s); return n }
+
+// file serves an attachment of an issue or its notes. The fixtures carry no
+// content, so images get a generated picture and everything else a line of
+// text.
+func (s *Server) file(w http.ResponseWriter, issueID, fileID int) {
+	is := s.issues[issueID]
+	all := append([]mantis.Attachment{}, is.Attachments...)
+	for _, n := range is.Notes {
+		all = append(all, n.Attachments...)
+	}
+	for _, a := range all {
+		if a.ID != fileID {
+			continue
+		}
+		content := []byte(fmt.Sprintf("Contents of %s (file %d on issue #%d).\n", a.Filename, a.ID, issueID))
+		if strings.HasPrefix(a.ContentType, "image/") {
+			content = samplePNG(fileID)
+		}
+		a.Size = int64(len(content))
+		writeJSON(w, 200, map[string]any{"files": []mantis.File{{Attachment: a, Content: content}}})
+		return
+	}
+	writeJSON(w, 404, map[string]string{"message": fmt.Sprintf("File %d not found", fileID)})
+}
+
+// samplePNG draws a 480x270 gradient whose hue depends on seed.
+func samplePNG(seed int) []byte {
+	img := image.NewRGBA(image.Rect(0, 0, 480, 270))
+	for y := range 270 {
+		for x := range 480 {
+			img.Set(x, y, color.RGBA{R: uint8(x * 255 / 480), G: uint8(y * 255 / 270), B: uint8(seed * 70), A: 255})
+		}
+	}
+	var b bytes.Buffer
+	_ = png.Encode(&b, img)
+	return b.Bytes()
+}

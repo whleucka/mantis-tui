@@ -22,7 +22,10 @@ type Fake struct {
 	ProjectList  []mantis.Project
 	UsersByProj  map[int][]mantis.User
 	ConfigValues map[string]json.RawMessage
-	Errs         map[string]error
+	// FileContent is the content of each attachment by file id. Its
+	// metadata comes from the issue's or its notes' Attachments.
+	FileContent map[int][]byte
+	Errs        map[string]error
 	// ErrFor fails a call for one issue id only: ErrFor["UpdateIssue"][7].
 	ErrFor map[string]map[int]error
 
@@ -154,6 +157,26 @@ func (f *Fake) GetIssue(_ context.Context, id int) (*mantis.IssueResult, error) 
 	}
 	raw, _ := json.Marshal(map[string]any{"issues": []mantis.Issue{is}})
 	return &mantis.IssueResult{Issue: is, Raw: raw}, nil
+}
+
+// GetFile implements mantis.API for attachments of the issue or its notes.
+func (f *Fake) GetFile(_ context.Context, issueID, fileID int) (*mantis.File, error) {
+	if err := f.enterID("GetFile", fileID); err != nil {
+		return nil, err
+	}
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	is := f.Issues[issueID]
+	all := append([]mantis.Attachment{}, is.Attachments...)
+	for _, n := range is.Notes {
+		all = append(all, n.Attachments...)
+	}
+	for _, a := range all {
+		if a.ID == fileID {
+			return &mantis.File{Attachment: a, Content: f.FileContent[fileID]}, nil
+		}
+	}
+	return nil, &mantis.APIError{Status: 404, Message: "File not found"}
 }
 
 // Projects implements mantis.API.

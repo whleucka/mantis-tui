@@ -1,6 +1,7 @@
 package devserver
 
 import (
+	"bytes"
 	"context"
 	"io"
 	"log"
@@ -52,5 +53,21 @@ func TestDevServerRoundTrip(t *testing.T) {
 	}
 	if _, err := c.Config(ctx, "status_enum_string"); err != nil {
 		t.Errorf("config: %v", err)
+	}
+}
+
+func TestDevServerServesNoteAttachments(t *testing.T) {
+	srv, err := New("../mantis/testdata", log.New(io.Discard, "", 0))
+	if err != nil {
+		t.Fatal(err)
+	}
+	hs := httptest.NewServer(srv)
+	defer hs.Close()
+	f, err := mantis.NewClient(hs.URL, "any-token").GetFile(context.Background(), 33, 6)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.HasPrefix(f.Content, []byte("\x89PNG")) || f.Size != int64(len(f.Content)) {
+		t.Errorf("file 6 should be a PNG of its stated size: %d bytes, size %d", len(f.Content), f.Size)
 	}
 }

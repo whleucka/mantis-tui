@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/whleucka/mantis-tui/internal/mantis"
+	"github.com/whleucka/mantis-tui/internal/service"
 )
 
 func newShowCmd(opts *globalOpts) *cobra.Command {
@@ -78,7 +79,7 @@ func printIssue(w io.Writer, is mantis.Issue, notes, history bool) {
 		field("Relationship", fmt.Sprintf("%s #%d %s", r.Type.Label, r.Issue.ID, r.Issue.Summary))
 	}
 	for _, a := range is.Attachments {
-		field("Attachment", a.Filename)
+		field("Attachment", fileLabel(a))
 	}
 	for _, cf := range is.CustomFields {
 		field(cf.Field.Name, cf.Value)
@@ -108,6 +109,9 @@ func printIssue(w io.Writer, is mantis.Issue, notes, history bool) {
 				meta = " (" + strings.Join(tags, ", ") + ")"
 			}
 			fmt.Fprintf(w, "\n  [%s] %s%s, note %d\n%s\n", formatTime(n.CreatedAt), n.Reporter.Display(), meta, n.ID, indent(indent(n.Text)))
+			for _, a := range n.Attachments {
+				fmt.Fprintf(w, "    attachment: %s\n", fileLabel(a))
+			}
 		}
 	}
 	if history {
@@ -120,6 +124,11 @@ func printIssue(w io.Writer, is mantis.Issue, notes, history bool) {
 			fmt.Fprintf(w, "  %s  %-14s %s\n", formatTime(h.CreatedAt), h.User.Name, line)
 		}
 	}
+}
+
+// fileLabel names an attachment with the id that download takes.
+func fileLabel(a mantis.Attachment) string {
+	return fmt.Sprintf("%s (file %d, %s)", a.Filename, a.ID, service.HumanSize(a.Size))
 }
 
 func indent(s string) string {

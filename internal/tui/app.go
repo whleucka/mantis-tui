@@ -28,6 +28,12 @@ type Options struct {
 	// RunInPane runs a shell command in a new terminal pane, to the right
 	// or below; nil when there is no multiplexer to split.
 	RunInPane func(ctx context.Context, command string, right bool) error
+	// FilesDir caches downloaded attachments; OpenFile hands one to the
+	// desktop's default application.
+	FilesDir string
+	OpenFile func(path string) error
+	// ShowImage shows an image in the terminal; nil when it can't.
+	ShowImage ImageShower
 }
 
 // screen is what fills the main area for the current host.
@@ -251,6 +257,10 @@ func (m *Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, m.onNoteDeleted(msg)
 	case fieldEditedMsg:
 		return m, m.onFieldEdited(msg)
+	case fileReadyMsg:
+		return m, m.onFileReady(msg)
+	case imageShownMsg:
+		return m, m.onImageShown(msg)
 
 	case batchProgressMsg:
 		if msg.batch != m.batchID || !m.isCurrent(msg.host) {

@@ -11,6 +11,7 @@ import (
 	"charm.land/lipgloss/v2"
 
 	"github.com/whleucka/mantis-tui/internal/mantis"
+	"github.com/whleucka/mantis-tui/internal/service"
 )
 
 const (
@@ -156,6 +157,8 @@ func (iv *issueModel) handleAction(m *Model, a action) tea.Cmd {
 		return m.pickNoteToDelete(iv.issue)
 	case actRelated:
 		return m.goRelated(iv)
+	case actFiles:
+		return m.pickFile(iv)
 	default:
 		return m.issueAction(a)
 	}
@@ -249,7 +252,7 @@ func renderIssueTabs(is *mantis.Issue, tab, w int, lk issueLook) (string, int) {
 		pairs = append(pairs, [2]string{"Related", fmt.Sprintf("%s #%d %s", r.Type.Label, r.Issue.ID, r.Issue.Summary)})
 	}
 	for _, a := range is.Attachments {
-		pairs = append(pairs, [2]string{"Attachment", a.Filename})
+		pairs = append(pairs, [2]string{"Attachment", a.Filename + styleMuted.Render(" · "+service.HumanSize(a.Size))})
 	}
 	for _, cf := range is.CustomFields {
 		pairs = append(pairs, [2]string{cf.Field.Name, cf.Value})
@@ -298,7 +301,7 @@ func renderIssueTabs(is *mantis.Issue, tab, w int, lk issueLook) (string, int) {
 			b.WriteString(styleGroup.Render("── "+strings.Join(meta, " · ")) + "\n")
 			b.WriteString(text.Render(n.Text) + "\n")
 			for _, a := range n.Attachments {
-				b.WriteString(styleMuted.Render("attachment: "+a.Filename) + "\n")
+				b.WriteString(styleMuted.Render("attachment: "+a.Filename+" · "+service.HumanSize(a.Size)) + "\n")
 			}
 			b.WriteString("\n")
 		}

@@ -480,6 +480,51 @@ Unchanged: `j` `k` `gg` `G` `home` `end` `enter` `l` `q` `esc` `h` `/`
   list. Opening an issue any other way (list, `]` / `[`, palette, mouse)
   starts a fresh trail. `u` still goes straight to the list.
 
+## v1.6: Attachments and images
+
+Pasted screenshots are attachments on **notes**, not the issue, and the
+same endpoint serves both: `GET issues/{id}/files/{file_id}` returns
+`{"files":[{id, filename, size, content_type, content}]}` with the content
+in base64 (checked read-only on chainlogic, 2.28.4).
+
+### TUI
+- `g a` in the issue view lists the issue's files, then each note's, as
+  "<name>" with "<size> · issue" or "<size> · note N by <author>". No files:
+  "#N has no attachments". One: it opens at once. More: a picker.
+- The chosen file is saved to `$XDG_CACHE_HOME/mantis-tui/files/<host>/<issue>/`
+  (falling back to `~/.cache`), directories `0700`, files `0600`, named
+  `<file-id>-<safe name>`. A cached file of the expected size is reused
+  without a request. The safe name drops directories, control characters
+  and leading dots, and is at most 100 bytes.
+- **Images** (by content type or extension: PNG, JPEG, GIF, WebP, BMP) are
+  shown with `kitten icat` when `kitten` is on `PATH`. The TUI is suspended
+  as for `$EDITOR`. The viewer runs `icat --detect-support` first, then shows
+  the image on the alternate screen under a title line ("<name> · <where> ·
+  enter or esc to go back"), fitted to the terminal and never scaled up, with
+  `--hold`. Refreshes pause while it is up.
+- Without `kitten`, or when the terminal reports no graphics support, an
+  image is opened like any other file.
+- **Other files** are opened with `xdg-open` (`open` on macOS) only when
+  their extension is one a desktop views rather than runs: `.pdf`, `.txt`,
+  `.log`, `.md`, `.json`, `.csv` and the image types. Anything else is only
+  saved, and the status bar shows its path.
+- The issue view shows each attachment's size.
+
+### CLI
+- `mantis-tui files <id>`: a table of ID, SIZE, ATTACHED TO and NAME.
+  `--json` prints `[{id, filename, size, content_type, note_id}]`.
+- `mantis-tui download <id> [file-id...] [-o dir]`: saves the given files,
+  or all of them, into `dir` (default `.`, created `0700`) with the cache's
+  naming and modes, and prints one path per line. An unknown file id is a
+  usage error. A file already there with the expected size isn't fetched
+  again.
+- `show --notes` lists each note's attachments with their file ids, and
+  issue attachments show their id and size.
+
+### Out of scope
+Uploading attachments, and drawing images inline in the issue view (kitty's
+Unicode placeholders might allow it later, if herdr passes them through).
+
 ## API Client Contract (`internal/mantis`)
 
 - `Client{BaseURL, Token, HTTP *http.Client}`. Every method takes a

@@ -10,6 +10,7 @@ import (
 
 	"github.com/whleucka/mantis-tui/internal/config"
 	"github.com/whleucka/mantis-tui/internal/mantis"
+	"github.com/whleucka/mantis-tui/internal/service"
 	"github.com/whleucka/mantis-tui/internal/tui"
 )
 
@@ -44,6 +45,9 @@ func (o *globalOpts) runTUI(cmd *cobra.Command) error {
 		Seen:      config.LoadSeen(config.DefaultSeenPath(os.Getenv)),
 		Notify:    notifierFor(cfg.UI.Notify, os.Getenv, exec.LookPath),
 		RunInPane: paneRunnerFor(os.Getenv, exec.LookPath, cwd, execRun),
+		FilesDir:  config.DefaultFilesDir(os.Getenv),
+		OpenFile:  service.OpenFile,
+		ShowImage: imageShowerFor(exec.LookPath),
 		SaveLastHost: func(name string) error {
 			st, _ := config.LoadState(statePath)
 			st.LastHost = name
@@ -52,4 +56,13 @@ func (o *globalOpts) runTUI(cmd *cobra.Command) error {
 	})
 	_, err = tea.NewProgram(model, tea.WithContext(cmd.Context())).Run()
 	return err
+}
+
+// imageShowerFor shows images with kitten icat when kitten is installed.
+// Whether the terminal supports it is checked each time an image opens.
+func imageShowerFor(lookPath func(string) (string, error)) tui.ImageShower {
+	if path, err := lookPath("kitten"); err == nil {
+		return tui.KittyImages(path)
+	}
+	return nil
 }

@@ -50,6 +50,7 @@ const (
 	actAsk            action = "ask"
 	actEditField      action = "edit-field"
 	actRelated        action = "related"
+	actFiles          action = "files"
 )
 
 // binding maps key sequences to an action. Each entry in keys is one
@@ -136,6 +137,7 @@ func defaultKeymap() keymap {
 		binding{actNextTab, []string{"tab"}, "notes / history"},
 		binding{actDeleteNote, []string{"d n"}, "delete note"},
 		binding{actRelated, []string{"g r"}, "go to related issue"},
+		binding{actFiles, []string{"g a"}, "open an attachment"},
 		binding{actMarkUnreadBack, []string{"u"}, "mark unread, back to list"},
 	)
 	return keymap{list: list, issue: issue}

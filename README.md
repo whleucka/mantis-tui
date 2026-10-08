@@ -191,6 +191,16 @@ and the status bar names the temp file that holds your text.
 and every `#123` mentioned in its text and notes. If there's only one, it
 opens straight away. Back (`h`) returns to the issue you came from.
 
+**Attachments.** In the issue view, `ga` lists every file on the issue and
+on its notes (pasted screenshots usually live on notes). The chosen file is
+downloaded to `$XDG_CACHE_HOME/mantis-tui/files/<host>/<issue>/` (private,
+and reused next time). Images are shown full screen with `kitten icat` when
+kitty is installed and the terminal supports its graphics protocol (kitty,
+Ghostty, WezTerm, and herdr inside them); `enter` or `esc` returns. Other files, and
+images when graphics aren't available, open with `xdg-open`, but only PDFs,
+images, text, Markdown, JSON, CSV and logs. Anything else, such as a script,
+is only saved, and the status bar shows where.
+
 **Mouse.** Click a row to move to it and click it again to open it. The
 wheel scrolls the list, the preview, the issue view, help and pickers.
 Clicking a picker option or a palette command chooses it, and clicking
@@ -209,6 +219,7 @@ selection, so hold `shift` to select text, or set `ui.mouse = false`.
 | `r` | add a note (reply) |
 | `dn` | delete a note |
 | `gr` | go to a related or mentioned issue |
+| `ga` | open an attachment (images in the terminal) |
 | `s` `p` `v` `c` `a` `e` `m` `o` `y` `A` | same as in the list, for this issue |
 | `R` | refresh |
 | `u` | mark unread and go back to the list |
@@ -233,6 +244,8 @@ selection, so hold `shift` to select text, or set `ui.mouse = false`.
 mantis-tui hosts
 mantis-tui list [--filter assigned] [--project <id|name>] [--page N] [--page-size N]
 mantis-tui show <id> [--notes] [--history]
+mantis-tui files <id>
+mantis-tui download <id> [file-id...] [-o dir]
 mantis-tui create --project P --category C --summary S [-d text | --edit]
                   [--priority P] [--severity S] [--reproducibility R] [--assign user]
 mantis-tui update <id>... [--status S] [--priority P] [--severity S]
@@ -256,6 +269,10 @@ These flags work with every command: `--host <name>`, `--config <path>`,
   terminal, `note` opens your editor.
 - `delete` and `note delete` ask for confirmation on a terminal. Without a
   terminal, they refuse unless you pass `--yes`.
+- `files` lists attachments on the issue and on its notes, with the ids
+  that `download` takes (`show --notes` names them too). `download` saves
+  the given files, or all of them, as `<file-id>-<name>` with mode 0600 and
+  prints each path.
 - With `--json`, `list` and `show` print the server's JSON unchanged. Write
   commands print one result per issue:
   `[{"id":33,"ok":true}, {"id":7,"ok":false,"error":"…"}]`.
@@ -271,6 +288,7 @@ These flags work with every command: `--host <name>`, `--config <path>`,
 ```sh
 mantis-tui show 1234 --json | jq '.issues[0].status.name'
 git log -1 --format=%B | mantis-tui note 1234 -
+mantis-tui download 19112 -o /tmp/19112   # every attachment, screenshots included
 mantis-tui update 1201 1202 1203 --status resolved
 ```
 
