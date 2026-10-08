@@ -271,6 +271,12 @@ func (f *Fake) UpdateIssue(_ context.Context, id int, p mantis.IssuePatch) (*man
 	if p.Description != nil {
 		is.Description = *p.Description
 	}
+	if p.StepsToReproduce != nil {
+		is.StepsToReproduce = *p.StepsToReproduce
+	}
+	if p.AdditionalInformation != nil {
+		is.AdditionalInformation = *p.AdditionalInformation
+	}
 	if p.Category != nil {
 		is.Category = *p.Category
 	}

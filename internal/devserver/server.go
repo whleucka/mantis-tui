@@ -294,6 +294,12 @@ func (s *Server) patch(is *mantis.Issue, body []byte) error {
 	if p.Description != nil {
 		is.Description = *p.Description
 	}
+	if p.StepsToReproduce != nil {
+		is.StepsToReproduce = *p.StepsToReproduce
+	}
+	if p.AdditionalInformation != nil {
+		is.AdditionalInformation = *p.AdditionalInformation
+	}
 	if p.Category != nil {
 		is.Category = *p.Category
 	}

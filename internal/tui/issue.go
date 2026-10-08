@@ -26,6 +26,7 @@ type issueModel struct {
 	issue  *mantis.Issue
 	err    error
 	tab    int
+	trail  []int // issues opened before this one with g r; back returns to them
 	vp     viewport.Model
 	width  int
 	req    int
@@ -119,6 +120,9 @@ func (iv *issueModel) handleMsg(m *Model, msg issueLoadedMsg) tea.Cmd {
 func (iv *issueModel) handleAction(m *Model, a action) tea.Cmd {
 	switch a {
 	case actBack:
+		if n := len(iv.trail); n > 0 {
+			return m.openIssueTrail(iv.trail[n-1], iv.trail[:n-1:n-1])
+		}
 		m.cur.screen = screenList
 		m.cur.issue = nil
 	case actMarkUnreadBack:
@@ -150,6 +154,8 @@ func (iv *issueModel) handleAction(m *Model, a action) tea.Cmd {
 		return m.stepIssue(-1)
 	case actDeleteNote:
 		return m.pickNoteToDelete(iv.issue)
+	case actRelated:
+		return m.goRelated(iv)
 	default:
 		return m.issueAction(a)
 	}

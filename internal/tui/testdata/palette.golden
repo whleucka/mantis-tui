@@ -7,6 +7,7 @@
                               ╭──────────────────────────────────────────────────────────╮
                               │ : st▏                                                    │
                               │ Change status                                          s │
+                              │ Edit summary, description, steps or info               e │
                               │ Sort: status                                             │
                               │ Switch host                                            H │
                               │ Change severity                                        v │
@@ -25,7 +26,6 @@
                               │ Host: beta                                               │
                               │ enter run · type a number to open an issue · esc close   │
                               ╰──────────────────────────────────────────────────────────╯
-
 
 
 

@@ -121,7 +121,7 @@ name their target ("Status for 3 issues").
 | `ctrl+a` | select every shown issue |
 | `s` / `p` / `v` / `c` | change status / priority / severity / category |
 | `a` | assign |
-| `e` | edit the summary |
+| `e` | edit the summary, description, steps to reproduce or additional information |
 | `r` | add a note (reply) |
 | `m` | toggle monitoring (👁️ marks monitored issues) |
 | `o` | open in browser |
@@ -181,6 +181,16 @@ runs `issue.ask` in it, with `{id}`, `{host}` and `{url}` filled in. The
 default starts Claude Code on the issue. Any shell command works; set
 `ask = ""` to turn the key off.
 
+**Editing fields.** `e` asks which field to edit. The summary opens in a
+one-line prompt; the description, steps to reproduce and additional
+information open in `$EDITOR`, starting from the server's current text. Saving it empty or unchanged sends nothing.
+If someone else changed the field while you were editing, nothing is sent
+and the status bar names the temp file that holds your text.
+
+**Related issues.** In the issue view, `gr` lists the issue's relationships
+and every `#123` mentioned in its text and notes. If there's only one, it
+opens straight away. Back (`h`) returns to the issue you came from.
+
 **Mouse.** Click a row to move to it and click it again to open it. The
 wheel scrolls the list, the preview, the issue view, help and pickers.
 Clicking a picker option or a palette command chooses it, and clicking
@@ -198,10 +208,11 @@ selection, so hold `shift` to select text, or set `ui.mouse = false`.
 | `tab` | switch between notes and history |
 | `r` | add a note (reply) |
 | `dn` | delete a note |
+| `gr` | go to a related or mentioned issue |
 | `s` `p` `v` `c` `a` `e` `m` `o` `y` `A` | same as in the list, for this issue |
 | `R` | refresh |
 | `u` | mark unread and go back to the list |
-| `q`/`esc`/`h` | back to the list |
+| `q`/`esc`/`h` | back to the issue you came from with `gr`, else to the list |
 | `H`, `1`–`9`, `:`/`ctrl+p`, `?` | same as in the list |
 
 ### Notes and the create form

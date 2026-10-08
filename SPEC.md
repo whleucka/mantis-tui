@@ -443,6 +443,43 @@ Unchanged: `j` `k` `gg` `G` `home` `end` `enter` `l` `q` `esc` `h` `/`
 - Issue summaries are untrusted, so control characters are removed from
   notification text before it reaches herdr or the terminal.
 
+## v1.5: Long fields and related issues
+
+### Edit the description, steps and additional information
+- `e` (list and issue view) opens a picker: **Summary**, **Description**,
+  **Steps to reproduce**, **Additional information**. Each option shows the
+  field's first line, or "(empty)". It replaces v1.2's summary-only `e`.
+- **Summary** opens the existing one-line prompt. The others open in
+  `$EDITOR`.
+- The issue is fetched first, so every edit starts from the server's
+  current text, not a stale list row. The temp file follows the note rules (`0600`,
+  `mantis-<host>-<issue>-<field>-*.md`) with `# ` hint lines. Only the exact
+  hint lines are stripped, so Markdown headings in the text survive.
+- Saving it empty or unchanged sends nothing. A field can't be cleared from
+  the TUI.
+- Just before sending, the issue is fetched again. If that field changed on
+  the server while you were editing, nothing is sent and the status bar
+  names the temp file that holds your text. A failed PATCH also keeps the file.
+- A successful edit counts as seen (it never leaves the issue unread) and
+  refreshes the list row, the preview and the open issue view.
+- `IssuePatch` gains `steps_to_reproduce` and `additional_information`.
+
+### Go to a related issue
+- `g r` in the issue view collects the issue's targets:
+  1. its relationships, labelled "<type> #N <summary>" with the status;
+  2. `#N` mentions in the description, steps, additional information and
+     notes, labelled "#N" with where they appear ("description", "note 45
+     by jane"). A mention is `#` plus digits, with no letter, digit, `&` or
+     `#` just before it and no letter or digit after it. The issue itself
+     and ids already listed as relationships are skipped, and each id is
+     listed once.
+- No targets: "#N has no related or mentioned issues". One target: it
+  opens at once. More: a picker.
+- **Back goes back.** An issue opened with `g r` remembers where you came
+  from, so `h` / `q` / `esc` return to the previous issue, and then to the
+  list. Opening an issue any other way (list, `]` / `[`, palette, mouse)
+  starts a fresh trail. `u` still goes straight to the list.
+
 ## API Client Contract (`internal/mantis`)
 
 - `Client{BaseURL, Token, HTTP *http.Client}`. Every method takes a

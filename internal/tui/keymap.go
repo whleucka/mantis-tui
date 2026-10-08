@@ -23,7 +23,6 @@ const (
 	actCreate         action = "create"
 	actDelete         action = "delete"
 	actAssign         action = "assign"
-	actSummary        action = "summary"
 	actStatus         action = "status"
 	actSeverity       action = "severity"
 	actPriority       action = "priority"
@@ -49,6 +48,8 @@ const (
 	actToggleRead     action = "toggle-read"
 	actMarkUnreadBack action = "mark-unread-back"
 	actAsk            action = "ask"
+	actEditField      action = "edit-field"
+	actRelated        action = "related"
 )
 
 // binding maps key sequences to an action. Each entry in keys is one
@@ -97,7 +98,7 @@ func defaultKeymap() keymap {
 		{actSeverity, []string{"v"}, "change severity"},
 		{actCategory, []string{"c"}, "change category"},
 		{actAssign, []string{"a"}, "assign"},
-		{actSummary, []string{"e"}, "edit summary"},
+		{actEditField, []string{"e"}, "edit summary, description, steps or info"},
 		{actMonitor, []string{"m"}, "toggle monitoring"},
 		{actAsk, []string{"A"}, "ask Claude in a new pane"},
 	}
@@ -134,6 +135,7 @@ func defaultKeymap() keymap {
 		binding{actPrevIssue, []string{"["}, "previous issue"},
 		binding{actNextTab, []string{"tab"}, "notes / history"},
 		binding{actDeleteNote, []string{"d n"}, "delete note"},
+		binding{actRelated, []string{"g r"}, "go to related issue"},
 		binding{actMarkUnreadBack, []string{"u"}, "mark unread, back to list"},
 	)
 	return keymap{list: list, issue: issue}

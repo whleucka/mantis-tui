@@ -79,7 +79,7 @@ func TestCategoryAndAssign(t *testing.T) {
 
 func TestSummaryPrompt(t *testing.T) {
 	h := actionsHarness(t)
-	h.keys("e")
+	h.keys("e", "enter")
 	if !strings.Contains(h.view(), "Issue number 5 summary") {
 		t.Error("summary prompt should be prefilled")
 	}
@@ -95,7 +95,7 @@ func TestSummaryPrompt(t *testing.T) {
 
 func TestSummaryPromptRejectsEmpty(t *testing.T) {
 	h := actionsHarness(t)
-	h.keys("e", "ctrl+u", "enter")
+	h.keys("e", "enter", "ctrl+u", "enter")
 	if h.m.modal == nil {
 		t.Error("empty summary should keep the prompt open")
 	}

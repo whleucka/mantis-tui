@@ -102,8 +102,8 @@ func (m *Model) issueAction(a action) tea.Cmd {
 		return m.pickCategory(targets)
 	case actAssign:
 		return m.pickUser(targets)
-	case actSummary:
-		m.modal = m.summaryPrompt(*is)
+	case actEditField:
+		return m.pickEditField(is.ID)
 	case actMonitor:
 		return m.toggleMonitor(*is)
 	case actBrowser:

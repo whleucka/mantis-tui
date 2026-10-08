@@ -102,6 +102,18 @@ func TestUpdateIssueAcceptsSingularEnvelope(t *testing.T) {
 	}
 }
 
+func TestUpdateIssueLongFields(t *testing.T) {
+	srv := newFakeServer(t, 200, []byte(`{"issues":[{"id":5}]}`))
+	_, err := newTestClient(srv.URL).UpdateIssue(context.Background(), 5, IssuePatch{
+		StepsToReproduce:      ptr("1. open it"),
+		AdditionalInformation: ptr("seen on 2.27"),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	jsonEqual(t, bodyJSON(t, srv), `{"steps_to_reproduce":"1. open it","additional_information":"seen on 2.27"}`)
+}
+
 func TestUpdateIssueEmptyMonitorsIsSent(t *testing.T) {
 	srv := newFakeServer(t, 200, []byte(`{"issues":[{"id":5}]}`))
 	empty := []Ref{}

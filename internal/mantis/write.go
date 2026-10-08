@@ -21,15 +21,17 @@ type NewIssue struct {
 
 // IssuePatch is a partial issue update; nil fields are left unchanged.
 type IssuePatch struct {
-	Summary         *string `json:"summary,omitempty"`
-	Description     *string `json:"description,omitempty"`
-	Status          *Ref    `json:"status,omitempty"`
-	Resolution      *Ref    `json:"resolution,omitempty"`
-	Priority        *Ref    `json:"priority,omitempty"`
-	Severity        *Ref    `json:"severity,omitempty"`
-	Reproducibility *Ref    `json:"reproducibility,omitempty"`
-	Category        *Ref    `json:"category,omitempty"`
-	Handler         *Ref    `json:"handler,omitempty"`
+	Summary               *string `json:"summary,omitempty"`
+	Description           *string `json:"description,omitempty"`
+	StepsToReproduce      *string `json:"steps_to_reproduce,omitempty"`
+	AdditionalInformation *string `json:"additional_information,omitempty"`
+	Status                *Ref    `json:"status,omitempty"`
+	Resolution            *Ref    `json:"resolution,omitempty"`
+	Priority              *Ref    `json:"priority,omitempty"`
+	Severity              *Ref    `json:"severity,omitempty"`
+	Reproducibility       *Ref    `json:"reproducibility,omitempty"`
+	Category              *Ref    `json:"category,omitempty"`
+	Handler               *Ref    `json:"handler,omitempty"`
 	// Monitors replaces the whole monitor list; a pointer to an empty slice
 	// clears it.
 	Monitors *[]Ref `json:"monitors,omitempty"`

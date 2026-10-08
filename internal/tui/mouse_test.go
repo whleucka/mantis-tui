@@ -198,7 +198,7 @@ func TestHelpWheelAndModalsWithoutMouse(t *testing.T) {
 	if hm.offset != 1 {
 		t.Errorf("wheel should scroll help, offset = %d", hm.offset)
 	}
-	h.keys("esc", "e") // summary prompt: a text modal that ignores the mouse
+	h.keys("esc", "e", "enter") // summary prompt: a text modal that ignores the mouse
 	h.send(click(1, 1), wheel(1, 1, true))
 	if h.m.modal == nil {
 		t.Error("the mouse must not close a text prompt")

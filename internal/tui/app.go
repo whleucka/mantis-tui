@@ -249,6 +249,8 @@ func (m *Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, m.onNoteAdded(msg)
 	case noteDeletedMsg:
 		return m, m.onNoteDeleted(msg)
+	case fieldEditedMsg:
+		return m, m.onFieldEdited(msg)
 
 	case batchProgressMsg:
 		if msg.batch != m.batchID || !m.isCurrent(msg.host) {
@@ -518,8 +520,13 @@ func (m *Model) stopLoading() {
 }
 
 // openIssue switches the current host to the issue view for id.
-func (m *Model) openIssue(id int) tea.Cmd {
+func (m *Model) openIssue(id int) tea.Cmd { return m.openIssueTrail(id, nil) }
+
+// openIssueTrail is openIssue for an issue reached from the issues in
+// trail, which back walks through before the list.
+func (m *Model) openIssueTrail(id int, trail []int) tea.Cmd {
 	iv := newIssueModel(m.cur.sess, id, m.opts.Config.Issue.AutoRefresh.Duration)
+	iv.trail = trail
 	m.cur.issue, m.cur.screen = iv, screenIssue
 	iv.render(m)
 	return tea.Batch(iv.load(m), iv.scheduleRefresh())

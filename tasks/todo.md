@@ -549,3 +549,41 @@ reported the pane title as `(2) mantis-tui`, and no "notification failed"
 appeared, so both herdr calls succeeded. The first attempt used a stale
 `bin/` build; rebuild before live checks.
 
+
+---
+
+## Phase 10: Long fields and related issues (v1.5)
+
+### Task 31: Edit the description, steps and additional information
+**Description:** `e` picks the summary (inline prompt) or a long field, fetches the issue, opens `$EDITOR`
+on the current text, re-fetches to detect a concurrent change, then PATCHes
+it. `IssuePatch` gains `steps_to_reproduce` and `additional_information`,
+and the fake and the dev server apply them.
+**Acceptance criteria:**
+- [x] The editor starts from the server's text, and the PATCH carries only the chosen field
+- [x] Empty or unchanged text sends nothing
+- [x] A change on the server during the edit sends nothing and keeps the temp file; so does a failed PATCH
+- [x] A successful edit refreshes the open issue and leaves it read
+**Verification:** `make race && make lint`, plus a dev-server check in herdr
+**Dependencies:** None
+**Scope:** S
+
+### Task 32: Go to a related issue, with a back trail
+**Description:** `g r` in the issue view collects relationships and `#N`
+mentions, then opens the only one or offers a picker. Issues opened this
+way remember the trail, so back returns to the previous issue.
+**Acceptance criteria:**
+- [x] Relationships come first; mentions are found in every long field and note, de-duplicated, without the issue itself
+- [x] `&#123;`, `abc#12` and `#12abc` are not mentions
+- [x] None says so, one opens at once, more show a picker
+- [x] Back walks the trail, then reaches the list; `]` / `[` start a fresh trail
+**Verification:** `make race && make lint`, plus a dev-server check in herdr
+**Dependencies:** None
+**Scope:** S
+
+**Live check (herdr pane, dev server, 2026-10-08):** #33's description was
+set to mention #32 and #26 plus an `&#123;` entity. `gr` on #33 offered #32
+and #26 only; picking #26 opened it, and `h` went back to #33, then to the
+list. `E` → Description (later folded into `e`), with `$VISUAL` set to a script that edits the first
+line, PATCHed the new text (confirmed with a GET), showed "#33 description
+updated" and removed the temp file.
