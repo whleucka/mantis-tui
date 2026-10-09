@@ -346,4 +346,4 @@ make it         # read-only smoke test against a real host:
   real host. Point a config host at `http://127.0.0.1:8989`, with any token.
 - `scripts/record-fixtures.sh` re-records the fixtures from a real server
   using only GET requests, and scrubs personal data.
-- [`SPEC.md`](../SPEC.md) is the specification, and [`tasks/`](../tasks) holds the build plan.
+- [`tasks/`](../tasks) holds the original build plan.
