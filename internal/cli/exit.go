@@ -8,7 +8,7 @@ import (
 	"github.com/whleucka/mantis-tui/internal/service"
 )
 
-// Exit codes, as documented in SPEC.md.
+// Exit codes, as documented in docs/usage.md.
 const (
 	exitOK       = 0
 	exitAPI      = 1
