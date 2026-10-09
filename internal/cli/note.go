@@ -2,6 +2,7 @@ package cli
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"strings"
@@ -19,9 +20,10 @@ func newNoteCmd(opts *globalOpts) *cobra.Command {
 		edit    bool
 		timeLog string
 		private bool
+		uploads uploadFlags
 	)
 	cmd := &cobra.Command{
-		Use:   "note <id> [-m <text> | --edit | -]",
+		Use:   "note <id> [-m <text> | --edit | -] [--file PATH]... [--clipboard]",
 		Short: "Add a note to an issue (or: note delete <id> <note-id>)",
 		Args: func(cmd *cobra.Command, args []string) error {
 			return asUsage(cobra.RangeArgs(1, 2)(cmd, args))
@@ -47,6 +49,8 @@ func newNoteCmd(opts *globalOpts) *cobra.Command {
 				return usageErrorf("use only one of -m, --edit or -")
 			case withMessage && strings.TrimSpace(message) == "":
 				return usageErrorf("-m must not be empty")
+			case sources == 0 && uploads.any():
+				// just the attachments: no text, no editor
 			case sources == 0 && !opts.deps.isTerminal():
 				return usageErrorf("no note text: pass -m <text>, --edit, or - to read stdin")
 			case sources == 0:
@@ -72,6 +76,13 @@ func newNoteCmd(opts *globalOpts) *cobra.Command {
 				}
 			}
 
+			ctx, cancel := opts.ctx(cmd)
+			files, err := uploads.load(ctx, opts, s)
+			cancel()
+			if err != nil {
+				return err
+			}
+
 			text := strings.TrimSpace(message)
 			var ed *editor.Session
 			switch {
@@ -80,7 +91,7 @@ func newNoteCmd(opts *globalOpts) *cobra.Command {
 				if err != nil {
 					return fmt.Errorf("read stdin: %w", err)
 				}
-				if text = strings.TrimSpace(string(b)); text == "" {
+				if text = strings.TrimSpace(string(b)); text == "" && len(files) == 0 {
 					return editor.ErrEmpty
 				}
 			case edit:
@@ -98,15 +109,17 @@ func newNoteCmd(opts *globalOpts) *cobra.Command {
 					ed.Cleanup()
 					return err
 				}
-				if text, err = ed.Text(); err != nil {
+				text, err = ed.Text()
+				filesOnly := errors.Is(err, editor.ErrEmpty) && len(files) > 0
+				if err != nil && !filesOnly {
 					ed.Cleanup()
 					return err
 				}
 			}
 
-			ctx, cancel := opts.ctx(cmd)
+			ctx, cancel = opts.ctx(cmd)
 			defer cancel()
-			note, err := s.client.AddNote(ctx, id, mantis.NewNote{Text: text, Private: private, TimeTracking: timeLog})
+			note, err := s.client.AddNote(ctx, id, mantis.NewNote{Text: text, Private: private, TimeTracking: timeLog, Files: files})
 			if err != nil {
 				if ed != nil {
 					fmt.Fprintf(cmd.ErrOrStderr(), "note not sent; your text is saved in %s\n", ed.Path)
@@ -119,9 +132,9 @@ func newNoteCmd(opts *globalOpts) *cobra.Command {
 
 			out := cmd.OutOrStdout()
 			if opts.json {
-				return json.NewEncoder(out).Encode([]map[string]any{{"id": id, "ok": true, "note_id": note.ID}})
+				return json.NewEncoder(out).Encode([]map[string]any{{"id": id, "ok": true, "note_id": note.ID, "files": len(files)}})
 			}
-			fmt.Fprintf(out, "#%d note %d added\n", id, note.ID)
+			fmt.Fprintf(out, "#%d note %d added%s\n", id, note.ID, withFiles(len(files)))
 			return nil
 		},
 	}
@@ -130,6 +143,7 @@ func newNoteCmd(opts *globalOpts) *cobra.Command {
 	f.BoolVar(&edit, "edit", false, "write the note in $VISUAL/$EDITOR")
 	f.StringVar(&timeLog, "time", "", "time spent, H:MM")
 	f.BoolVar(&private, "private", false, "make the note private")
+	uploads.register(f)
 
 	cmd.AddCommand(newNoteDeleteCmd(opts))
 	return cmd

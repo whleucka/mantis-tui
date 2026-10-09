@@ -558,6 +558,67 @@ through (checked by hand with `kitten icat --unicode-placeholder`).
 - Thumbnails keep the size they were made at. A terminal narrower than a
   thumbnail crops it.
 
+## v1.8: Uploading attachments
+
+Files go up the same way the web UI sends them: with a new issue, or with
+a new note. A screenshot added later is just a note with an image, maybe
+with no text. There is no separate "attach to issue" action. Checked on
+wh (see the plan's findings):
+- `POST issues` and `POST issues/{id}/notes` take
+  `files: [{name, content}]`, with the content in base64.
+- A note may have empty text when it has files.
+- A request body over PHP's `post_max_size` is answered `200` with HTML,
+  and nothing is attached.
+
+### Limits, checked before sending
+- Each file must be at most `max_file_size` from `/config`, or 5,000,000
+  bytes (Mantis's default) when the server doesn't say.
+- The whole request's base64 must fit in 8 MB, PHP's default
+  `post_max_size`.
+- A file's extension must not be in `disallowed_files`, and must be in
+  `allowed_files` when that is set. Both are comma-separated and
+  case-insensitive.
+- A violation is a clear local error naming the file and the limit, and
+  nothing is sent.
+- When files were sent, a response whose note or issue has fewer
+  attachments than were sent is an error ("the server kept 0 of 1 files").
+
+### Clipboard
+- The image in the clipboard comes from `wl-paste` on Wayland, or
+  `xclip -selection clipboard` elsewhere. PNG is preferred, then JPEG.
+  There is no image when neither tool is installed, the clipboard holds
+  text, or reading it fails. That's never an error.
+- It is named `screenshot-YYYYMMDD-HHMMSS.png` (or `.jpg`) in local time.
+
+### TUI
+- **Note form** (`r`): below private and time, the attachments section:
+  - "Clipboard image": a checkbox with "<w>×<h>, <size>" and, with inline
+    images on, an 8-row thumbnail. It shows only when the clipboard holds
+    an image, and starts checked.
+  - "Files": a path input. `tab` completes the path (`~` expands); `enter`
+    adds the file to the list below it, checking it exists and is a regular
+    file; `backspace` on an empty input removes the last file.
+  - `↑`/`↓` move between rows, `space` toggles the clipboard image, and
+    `enter` anywhere but a non-empty Files input opens `$EDITOR`.
+- The editor hints list the attachments. Saving an empty note with
+  attachments asks "Send N attachment(s) without text?"; without them it
+  discards the note, as before.
+- **Create form**: a new "Attachments" row after Description, showing the
+  files ("(none, enter to add)" when empty). `enter` opens the same
+  attachments section in a modal, and `esc` closes it. A clipboard image
+  is found when the form opens and starts checked, so the row shows it
+  without opening the modal.
+- The limits are checked when the note or issue is sent, and an error keeps
+  the form (the note's text stays in its temp file, as for other failures).
+- After sending, the status bar says "#N note M added with 2 files".
+
+### CLI
+- `note <id> --file PATH` (repeatable) and `--clipboard` (an error when
+  the clipboard holds no image). With files and no `-m`, `--edit` or `-`,
+  the note is sent with no text and no editor opens.
+- `create ... --file PATH --clipboard` attaches them to the new issue.
+- `--json` output adds `"files": N`.
+
 ## API Client Contract (`internal/mantis`)
 
 - `Client{BaseURL, Token, HTTP *http.Client}`. Every method takes a

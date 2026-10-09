@@ -3,12 +3,14 @@
 package cli
 
 import (
+	"context"
 	"io"
 	"os"
 	"time"
 
 	"github.com/spf13/cobra"
 
+	"github.com/whleucka/mantis-tui/internal/mantis"
 	"github.com/whleucka/mantis-tui/internal/service"
 )
 
@@ -27,10 +29,11 @@ type deps struct {
 	openURL    func(url string) error
 	stdin      io.Reader
 	isTerminal func() bool // is stdin an interactive terminal?
+	clipboard  func(context.Context) *mantis.FileUpload
 }
 
 func defaultDeps() deps {
-	return deps{openURL: service.OpenBrowser, stdin: os.Stdin, isTerminal: stdinIsTerminal}
+	return deps{openURL: service.OpenBrowser, stdin: os.Stdin, isTerminal: stdinIsTerminal, clipboard: service.Clipboard}
 }
 
 func stdinIsTerminal() bool {

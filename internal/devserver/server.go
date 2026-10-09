@@ -34,6 +34,8 @@ type Server struct {
 	me      mantis.User
 	nextID  int
 	nextNID int
+	nextFID int
+	uploads map[int][]byte // content of files uploaded since start, by id
 	logger  *log.Logger
 
 	// Delay is added to every response.
@@ -43,7 +45,7 @@ type Server struct {
 // New loads fixtures from dir (internal/mantis/testdata).
 func New(dir string, logger *log.Logger) (*Server, error) {
 	read := func(name string) ([]byte, error) { return os.ReadFile(filepath.Join(dir, name+".json")) }
-	s := &Server{issues: map[int]mantis.Issue{}, static: map[string][]byte{}, enums: map[string][]mantis.EnumValue{}, logger: logger}
+	s := &Server{issues: map[int]mantis.Issue{}, static: map[string][]byte{}, enums: map[string][]mantis.EnumValue{}, uploads: map[int][]byte{}, logger: logger}
 
 	for path, name := range map[string]string{
 		"/users/me": "me", "/projects": "projects", "/config": "config_enums",
@@ -74,10 +76,15 @@ func New(dir string, logger *log.Logger) (*Server, error) {
 	}
 	_ = json.Unmarshal(s.static["/users/me"], &s.me)
 
-	// Advertise time tracking so the TUI's time field can be exercised.
+	// Advertise time tracking so the TUI's time field can be exercised, and
+	// wh's upload limits.
 	var cfgEnv map[string][]json.RawMessage
 	if json.Unmarshal(s.static["/config"], &cfgEnv) == nil {
-		cfgEnv["configs"] = append(cfgEnv["configs"], json.RawMessage(`{"option":"time_tracking_enabled","value":1}`))
+		cfgEnv["configs"] = append(cfgEnv["configs"],
+			json.RawMessage(`{"option":"time_tracking_enabled","value":1}`),
+			json.RawMessage(fmt.Sprintf(`{"option":"max_file_size","value":%d}`, maxFileSize)),
+			json.RawMessage(`{"option":"allowed_files","value":""}`),
+			json.RawMessage(`{"option":"disallowed_files","value":"svg"}`))
 		s.static["/config"], _ = json.Marshal(cfgEnv)
 	}
 
@@ -109,6 +116,12 @@ func New(dir string, logger *log.Logger) (*Server, error) {
 			s.nextID = max(s.nextID, is.ID)
 			for _, n := range is.Notes {
 				s.nextNID = max(s.nextNID, n.ID)
+				for _, a := range n.Attachments {
+					s.nextFID = max(s.nextFID, a.ID)
+				}
+			}
+			for _, a := range is.Attachments {
+				s.nextFID = max(s.nextFID, a.ID)
 			}
 		}
 	}
@@ -139,7 +152,11 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	body, _ := io.ReadAll(r.Body)
 	if r.Method != "GET" {
-		s.logger.Printf("%s %s %s", r.Method, path, body)
+		logged := body
+		if len(logged) > 300 { // uploads are mostly base64
+			logged = append(logged[:300:300], fmt.Sprintf("… (%d bytes)", len(body))...)
+		}
+		s.logger.Printf("%s %s %s", r.Method, path, logged)
 	}
 	time.Sleep(s.Delay) // make spinners visible during manual checks
 
@@ -330,12 +347,16 @@ func (s *Server) create(w http.ResponseWriter, body []byte) {
 		writeJSON(w, 400, map[string]string{"message": "summary is required"})
 		return
 	}
+	if msg := refusal(in.Files); msg != "" {
+		writeJSON(w, 400, map[string]string{"message": msg})
+		return
+	}
 	s.nextID++
 	now := time.Now()
 	is := mantis.Issue{
 		ID: s.nextID, Summary: in.Summary, Description: in.Description,
 		Project: in.Project, Category: in.Category, Reporter: s.me,
-		CreatedAt: now, UpdatedAt: now,
+		CreatedAt: now, UpdatedAt: now, Attachments: s.store(in.Files),
 	}
 	is.Status, _ = s.enumRef("status", &mantis.Ref{Name: "new"})
 	for kind, pair := range map[string]struct {
@@ -364,21 +385,56 @@ func (s *Server) addNote(w http.ResponseWriter, id int, body []byte) {
 		Text         string               `json:"text"`
 		ViewState    mantis.Ref           `json:"view_state"`
 		TimeTracking *mantis.TimeTracking `json:"time_tracking"`
+		Files        []mantis.FileUpload  `json:"files"`
 	}
-	if err := json.Unmarshal(body, &in); err != nil || strings.TrimSpace(in.Text) == "" {
+	if err := json.Unmarshal(body, &in); err != nil || (strings.TrimSpace(in.Text) == "" && len(in.Files) == 0) {
 		writeJSON(w, 400, map[string]string{"message": "note text is required"})
+		return
+	}
+	if msg := refusal(in.Files); msg != "" {
+		writeJSON(w, 400, map[string]string{"message": msg})
 		return
 	}
 	s.nextNID++
 	n := mantis.Note{
 		ID: s.nextNID, Reporter: s.me, Text: in.Text, TimeTracking: in.TimeTracking,
 		ViewState: mantis.EnumValue{Name: in.ViewState.Name, Label: in.ViewState.Name},
-		CreatedAt: time.Now(), UpdatedAt: time.Now(),
+		CreatedAt: time.Now(), UpdatedAt: time.Now(), Attachments: s.store(in.Files),
 	}
 	is.Notes = append(is.Notes, n)
 	is.UpdatedAt = time.Now()
 	s.issues[id] = is
 	writeJSON(w, 201, map[string]any{"note": n, "issue": is})
+}
+
+// maxFileSize is wh's max_file_size.
+const maxFileSize = 5 << 20
+
+// refusal is the message wh refuses an upload with, or "".
+func refusal(files []mantis.FileUpload) string {
+	for _, f := range files {
+		if strings.EqualFold(filepath.Ext(f.Name), ".svg") {
+			return fmt.Sprintf("File '%s' type not allowed", f.Name)
+		}
+		if len(f.Content) > maxFileSize {
+			return fmt.Sprintf("File '%s' is too big", f.Name)
+		}
+	}
+	return ""
+}
+
+// store keeps uploaded files and returns them as attachments.
+func (s *Server) store(files []mantis.FileUpload) []mantis.Attachment {
+	var out []mantis.Attachment
+	for _, f := range files {
+		s.nextFID++
+		s.uploads[s.nextFID] = f.Content
+		out = append(out, mantis.Attachment{
+			ID: s.nextFID, Filename: f.Name, Size: int64(len(f.Content)),
+			ContentType: http.DetectContentType(f.Content), CreatedAt: time.Now(),
+		})
+	}
+	return out
 }
 
 func writeJSON(w http.ResponseWriter, status int, v any) {
@@ -403,7 +459,9 @@ func (s *Server) file(w http.ResponseWriter, issueID, fileID int) {
 			continue
 		}
 		content := []byte(fmt.Sprintf("Contents of %s (file %d on issue #%d).\n", a.Filename, a.ID, issueID))
-		if strings.HasPrefix(a.ContentType, "image/") {
+		if up, ok := s.uploads[fileID]; ok {
+			content = up
+		} else if strings.HasPrefix(a.ContentType, "image/") {
 			content = samplePNG(fileID)
 		}
 		a.Size = int64(len(content))

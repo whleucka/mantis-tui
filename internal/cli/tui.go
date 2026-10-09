@@ -48,6 +48,7 @@ func (o *globalOpts) runTUI(cmd *cobra.Command) error {
 		FilesDir:     config.DefaultFilesDir(os.Getenv),
 		OpenFile:     service.OpenFile,
 		ShowImage:    imageShowerFor(exec.LookPath),
+		Clipboard:    service.Clipboard,
 		InlineImages: true,
 		SaveLastHost: func(name string) error {
 			st, _ := config.LoadState(statePath)

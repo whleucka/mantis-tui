@@ -28,7 +28,21 @@ var Kinds = []string{Status, Priority, Severity, Reproducibility, Resolution}
 const (
 	statusColorsOption = "status_colors"
 	timeTrackingOption = "time_tracking_enabled"
+	maxFileSizeOption  = "max_file_size"
+	allowedOption      = "allowed_files"
+	disallowedOption   = "disallowed_files"
 )
+
+// DefaultMaxFileSize is Mantis's default max_file_size, assumed when the
+// server doesn't report one.
+const DefaultMaxFileSize = 5_000_000
+
+// UploadLimits are the server's rules for attachments.
+type UploadLimits struct {
+	MaxFileSize int64
+	Allowed     []string // extensions, lower case without the dot; empty allows any
+	Disallowed  []string
+}
 
 // Cache lazily loads and caches metadata for one host. It is safe for
 // concurrent use; each item is fetched at most once unless the fetch fails.
@@ -48,6 +62,7 @@ type enumSet struct {
 	values       map[string][]mantis.EnumValue
 	colors       map[string]string
 	timeTracking bool
+	uploads      UploadLimits
 }
 
 // New returns an empty cache backed by api.
@@ -93,6 +108,38 @@ func (c *Cache) TimeTrackingEnabled(ctx context.Context) (bool, error) {
 	return set.timeTracking, nil
 }
 
+// Uploads returns the server's attachment limits.
+func (c *Cache) Uploads(ctx context.Context) (UploadLimits, error) {
+	set, err := c.loadEnums(ctx)
+	if err != nil {
+		return UploadLimits{}, err
+	}
+	return set.uploads, nil
+}
+
+// uploadLimits decodes the limits, which Mantis sends as a number and
+// comma-separated extension lists.
+func uploadLimits(raw map[string]json.RawMessage) UploadLimits {
+	l := UploadLimits{MaxFileSize: DefaultMaxFileSize}
+	var n int64
+	if json.Unmarshal(raw[maxFileSizeOption], &n) == nil && n > 0 {
+		l.MaxFileSize = n
+	}
+	exts := func(v json.RawMessage) []string {
+		var s string
+		_ = json.Unmarshal(v, &s)
+		var out []string
+		for _, e := range strings.Split(s, ",") {
+			if e = strings.ToLower(strings.TrimPrefix(strings.TrimSpace(e), ".")); e != "" {
+				out = append(out, e)
+			}
+		}
+		return out
+	}
+	l.Allowed, l.Disallowed = exts(raw[allowedOption]), exts(raw[disallowedOption])
+	return l
+}
+
 // truthy decodes Mantis ON/OFF config values, which arrive as 0/1 or "ON"/"OFF".
 func truthy(raw json.RawMessage) bool {
 	var n int
@@ -112,7 +159,7 @@ func (c *Cache) loadEnums(ctx context.Context) (enumSet, error) {
 		for _, k := range Kinds {
 			options = append(options, k+"_enum_string")
 		}
-		raw, err := c.api.Config(ctx, append(options, statusColorsOption, timeTrackingOption)...)
+		raw, err := c.api.Config(ctx, append(options, statusColorsOption, timeTrackingOption, maxFileSizeOption, allowedOption, disallowedOption)...)
 		if err != nil {
 			return enumSet{}, err
 		}
@@ -130,6 +177,7 @@ func (c *Cache) loadEnums(ctx context.Context) (enumSet, error) {
 			_ = json.Unmarshal(v, &set.colors) // colors are cosmetic; ignore odd shapes
 		}
 		set.timeTracking = truthy(raw[timeTrackingOption])
+		set.uploads = uploadLimits(raw)
 		return set, nil
 	})
 }

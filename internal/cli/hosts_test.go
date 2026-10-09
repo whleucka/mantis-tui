@@ -2,12 +2,15 @@ package cli
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/whleucka/mantis-tui/internal/mantis"
 )
 
 // runCLI executes the root command in-process and returns stdout, stderr and the error.
@@ -23,6 +26,7 @@ func testDeps() deps {
 		openURL:    func(u string) error { return fmt.Errorf("test tried to open a browser: %s", u) },
 		stdin:      strings.NewReader(""),
 		isTerminal: func() bool { return false },
+		clipboard:  func(context.Context) *mantis.FileUpload { return nil },
 	}
 }
 
@@ -38,6 +42,9 @@ func runCLIWith(t *testing.T, d deps, args ...string) (string, string, error) {
 	}
 	if d.isTerminal == nil {
 		d.isTerminal = def.isTerminal
+	}
+	if d.clipboard == nil {
+		d.clipboard = def.clipboard
 	}
 	var stdout, stderr bytes.Buffer
 	cmd := newRootCmd(d)

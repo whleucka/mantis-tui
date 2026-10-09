@@ -3,9 +3,11 @@ package devserver
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"log"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/whleucka/mantis-tui/internal/mantis"
@@ -69,5 +71,37 @@ func TestDevServerServesNoteAttachments(t *testing.T) {
 	}
 	if !bytes.HasPrefix(f.Content, []byte("\x89PNG")) || f.Size != int64(len(f.Content)) {
 		t.Errorf("file 6 should be a PNG of its stated size: %d bytes, size %d", len(f.Content), f.Size)
+	}
+}
+
+func TestDevServerKeepsUploads(t *testing.T) {
+	srv, err := New("../mantis/testdata", log.New(io.Discard, "", 0))
+	if err != nil {
+		t.Fatal(err)
+	}
+	hs := httptest.NewServer(srv)
+	defer hs.Close()
+	c, ctx := mantis.NewClient(hs.URL, "any-token"), context.Background()
+
+	n, err := c.AddNote(ctx, 33, mantis.NewNote{Files: []mantis.FileUpload{{Name: "shot.png", Content: []byte("\x89PNG shot")}}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	f, err := c.GetFile(ctx, 33, n.Attachments[0].ID)
+	if err != nil || string(f.Content) != "\x89PNG shot" || f.Filename != "shot.png" {
+		t.Fatalf("uploaded file = %+v, %v", f, err)
+	}
+
+	is, err := c.CreateIssue(ctx, mantis.NewIssue{Summary: "s", Files: []mantis.FileUpload{{Name: "a.log", Content: []byte("log")}}})
+	if err != nil || len(is.Attachments) != 1 {
+		t.Fatalf("create = %+v, %v", is, err)
+	}
+
+	if _, err := c.AddNote(ctx, 33, mantis.NewNote{}); err == nil {
+		t.Error("a note with no text and no files is refused")
+	}
+	_, err = c.AddNote(ctx, 33, mantis.NewNote{Files: []mantis.FileUpload{{Name: "x.svg", Content: []byte("<svg/>")}}})
+	if !strings.Contains(fmt.Sprint(err), "File 'x.svg' type not allowed") {
+		t.Errorf("svg: %v", err)
 	}
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"strings"
 	"testing"
 )
 
@@ -203,4 +204,59 @@ func TestWriteEndpointsPropagateErrors(t *testing.T) {
 func errorsIsUnauthorized(err error) bool {
 	var apiErr *APIError
 	return errors.As(err, &apiErr) && apiErr.Is(ErrUnauthorized)
+}
+
+func TestAddNoteWithFiles(t *testing.T) {
+	srv := newFakeServer(t, 201, []byte(`{"note":{"id":63,"text":"","attachments":[{"id":7,"filename":"shot.png"}]}}`))
+	n, err := newTestClient(srv.URL).AddNote(context.Background(), 33, NewNote{
+		Files: []FileUpload{{Name: "shot.png", Content: []byte("\x89PNG")}},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	jsonEqual(t, bodyJSON(t, srv), `{"text":"","view_state":{"name":"public"},"files":[{"name":"shot.png","content":"iVBORw=="}]}`)
+	if n.ID != 63 || len(n.Attachments) != 1 {
+		t.Errorf("note = %+v", n)
+	}
+}
+
+// An oversized request can be answered with success and nothing attached.
+func TestUploadsTheServerDroppedAreAnError(t *testing.T) {
+	files := []FileUpload{{Name: "a.png", Content: []byte("a")}, {Name: "b.log", Content: []byte("b")}}
+
+	srv := newFakeServer(t, 201, []byte(`{"note":{"id":64,"attachments":[{"id":8}]}}`))
+	n, err := newTestClient(srv.URL).AddNote(context.Background(), 33, NewNote{Text: "x", Files: files})
+	if err == nil || !strings.Contains(err.Error(), "note 64 added to issue 33, but the server kept 1 of 2 files") {
+		t.Errorf("err = %v", err)
+	}
+	if n == nil || n.ID != 64 {
+		t.Errorf("the note that was added is still returned: %+v", n)
+	}
+
+	srv = newFakeServer(t, 201, []byte(`{"issue":{"id":40}}`))
+	is, err := newTestClient(srv.URL).CreateIssue(context.Background(), NewIssue{Summary: "s", Files: files})
+	if err == nil || !strings.Contains(err.Error(), "issue 40 created, but the server kept 0 of 2 files") {
+		t.Errorf("err = %v", err)
+	}
+	if is == nil || is.ID != 40 {
+		t.Errorf("issue = %+v", is)
+	}
+}
+
+func TestCreateIssueWithFiles(t *testing.T) {
+	srv := newFakeServer(t, 201, []byte(`{"issue":{"id":41,"attachments":[{"id":9,"filename":"shot.png"}]}}`))
+	if _, err := newTestClient(srv.URL).CreateIssue(context.Background(), NewIssue{
+		Summary: "s", Project: Ref{ID: 1}, Category: Ref{Name: "General"},
+		Files: []FileUpload{{Name: "shot.png", Content: []byte("\x89PNG")}},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	var body map[string]any
+	if err := json.Unmarshal(srv.lastBody, &body); err != nil {
+		t.Fatal(err)
+	}
+	files, _ := body["files"].([]any)
+	if len(files) != 1 || files[0].(map[string]any)["content"] != "iVBORw==" {
+		t.Errorf("files = %v", body["files"])
+	}
 }

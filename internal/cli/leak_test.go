@@ -22,8 +22,11 @@ var allCommands = [][]string{
 	{"unmonitor", "33"},
 	{"note", "33", "-m", "hello", "--time", "0:30"},
 	{"note", "33", "--edit"},
+	{"note", "33", "--clipboard"},                // no image: a usage error
+	{"note", "33", "--file", "/nonexistent.png"}, // unreadable: a usage error
 	{"note", "delete", "33", "61", "--yes"},
 	{"create", "--project", "4", "--category", "General", "--summary", "s", "-d", "d"},
+	{"create", "--project", "4", "--category", "General", "--summary", "s", "-d", "d", "--clipboard"},
 	{"delete", "33", "--yes"},
 	{"open", "33"},
 	{"files", "33"},

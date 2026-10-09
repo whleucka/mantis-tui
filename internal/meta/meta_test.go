@@ -3,6 +3,7 @@ package meta
 import (
 	"context"
 	"errors"
+	"reflect"
 	"sync"
 	"testing"
 
@@ -162,5 +163,28 @@ func TestTimeTrackingEnabled(t *testing.T) {
 	fake := newFake() // option missing from the response
 	if got, _ := New(fake).TimeTrackingEnabled(context.Background()); got {
 		t.Error("missing option should mean disabled")
+	}
+}
+
+func TestUploads(t *testing.T) {
+	fake := newFake()
+	fake.ConfigValues["max_file_size"] = []byte("5242880")
+	fake.ConfigValues["allowed_files"] = []byte(`""`)
+	fake.ConfigValues["disallowed_files"] = []byte(`"svg, .PHP ,"`)
+	got, err := New(fake).Uploads(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := UploadLimits{MaxFileSize: 5242880, Disallowed: []string{"svg", "php"}}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("limits = %+v, want %+v", got, want)
+	}
+	if fake.Calls("Config") != 1 {
+		t.Error("upload limits should share the enums /config call")
+	}
+
+	got, _ = New(newFake()).Uploads(context.Background()) // options missing
+	if got.MaxFileSize != DefaultMaxFileSize || got.Allowed != nil || got.Disallowed != nil {
+		t.Errorf("defaults = %+v", got)
 	}
 }

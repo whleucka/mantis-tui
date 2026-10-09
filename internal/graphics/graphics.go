@@ -46,19 +46,33 @@ func Query() string {
 		"\x1b[16t\x1b[14t"
 }
 
-// Load decodes a PNG, JPEG or GIF file, refusing one over MaxPixels before
-// decoding its pixels.
+// Load decodes a PNG, JPEG or GIF file; see Decode.
 func Load(path string) (image.Image, error) {
 	b, err := os.ReadFile(path) //nolint:gosec // a file this program downloaded into its cache
 	if err != nil {
 		return nil, err //nolint:wrapcheck // already names the path
 	}
+	return Decode(b)
+}
+
+// Size reports a PNG, JPEG or GIF image's pixel size from its header.
+func Size(b []byte) (w, h int, err error) {
 	cfg, _, err := image.DecodeConfig(bytes.NewReader(b))
 	if err != nil {
-		return nil, fmt.Errorf("decode image: %w", err)
+		return 0, 0, fmt.Errorf("decode image: %w", err)
 	}
-	if cfg.Width <= 0 || cfg.Height <= 0 || cfg.Width*cfg.Height > MaxPixels {
-		return nil, fmt.Errorf("%dx%d: %w", cfg.Width, cfg.Height, ErrTooLarge)
+	return cfg.Width, cfg.Height, nil
+}
+
+// Decode decodes a PNG, JPEG or GIF image, refusing one over MaxPixels
+// before decoding its pixels.
+func Decode(b []byte) (image.Image, error) {
+	w, h, err := Size(b)
+	if err != nil {
+		return nil, err
+	}
+	if w <= 0 || h <= 0 || w*h > MaxPixels {
+		return nil, fmt.Errorf("%dx%d: %w", w, h, ErrTooLarge)
 	}
 	img, _, err := image.Decode(bytes.NewReader(b))
 	if err != nil {

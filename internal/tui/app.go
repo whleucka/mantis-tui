@@ -15,6 +15,7 @@ import (
 	"github.com/whleucka/mantis-tui/internal/config"
 	"github.com/whleucka/mantis-tui/internal/editor"
 	"github.com/whleucka/mantis-tui/internal/graphics"
+	"github.com/whleucka/mantis-tui/internal/mantis"
 )
 
 // Options configure the TUI.
@@ -36,6 +37,8 @@ type Options struct {
 	OpenFile func(path string) error
 	// ShowImage shows an image in the terminal; nil when it can't.
 	ShowImage ImageShower
+	// Clipboard returns the image in the clipboard, or nil.
+	Clipboard func(context.Context) *mantis.FileUpload
 	// InlineImages asks the terminal at startup whether it can draw
 	// thumbnails in the issue view.
 	InlineImages bool
@@ -103,11 +106,17 @@ func (hv *hostView) handleMsg(m *Model, msg tea.Msg) tea.Cmd {
 			return hv.create.revalidate(msg)
 		}
 		return nil
+	case createClipMsg:
+		if hv.create == msg.form && msg.form.attach.clip == nil {
+			msg.form.attach.setClip(msg.clip)
+		}
+		return nil
 	case createdMsg:
 		if hv.create == nil {
 			return nil
 		}
-		if msg.err != nil {
+		created := msg.issue != nil && msg.issue.ID != 0
+		if msg.err != nil && !created {
 			hv.create.errText = m.redact(msg.err.Error())
 			return nil
 		}
@@ -116,8 +125,11 @@ func (hv *hostView) handleMsg(m *Model, msg tea.Msg) tea.Cmd {
 		if m.cur != hv {
 			return hv.list.load(m, msg.issue.ID, false, true)
 		}
-		return tea.Batch(hv.list.load(m, msg.issue.ID, false, true), m.openIssue(msg.issue.ID),
-			infoCmd(hv.sess.Host.Name, fmt.Sprintf("#%d created", msg.issue.ID)))
+		status := infoCmd(hv.sess.Host.Name, fmt.Sprintf("#%d created%s", msg.issue.ID, withFiles(msg.files)))
+		if msg.err != nil { // created, but not all of its files
+			status = errCmd(hv.sess.Host.Name, msg.err)
+		}
+		return tea.Batch(hv.list.load(m, msg.issue.ID, false, true), m.openIssue(msg.issue.ID), status)
 	case refreshTickMsg:
 		if msg.target == "issue" {
 			if hv.issue == nil {
@@ -292,6 +304,9 @@ func (m *Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case modalReadyMsg:
 		if m.isCurrent(msg.host) && m.modal == nil {
 			m.modal = msg.modal
+			if o, ok := msg.modal.(interface{ opened(*Model) tea.Cmd }); ok {
+				return m, o.opened(m)
+			}
 		}
 		return m, nil
 

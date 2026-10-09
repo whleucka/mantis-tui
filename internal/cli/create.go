@@ -14,8 +14,9 @@ import (
 func newCreateCmd(opts *globalOpts) *cobra.Command {
 	var in service.CreateInput
 	var edit bool
+	var uploads uploadFlags
 	cmd := &cobra.Command{
-		Use:   "create --project P --category C --summary S [-d text | --edit]",
+		Use:   "create --project P --category C --summary S [-d text | --edit] [--file PATH]... [--clipboard]",
 		Short: "Create an issue",
 		Args:  exactArgs(0),
 		RunE: func(cmd *cobra.Command, _ []string) error {
@@ -51,6 +52,10 @@ func newCreateCmd(opts *globalOpts) *cobra.Command {
 			if _, err := s.resolve.NewIssue(ctx, probe); err != nil {
 				return err
 			}
+			files, err := uploads.load(ctx, opts, s)
+			if err != nil {
+				return err
+			}
 
 			var ed *editor.Session
 			if edit {
@@ -78,6 +83,7 @@ func newCreateCmd(opts *globalOpts) *cobra.Command {
 			if err != nil {
 				return err
 			}
+			req.Files = files
 			created, err := s.client.CreateIssue(ctx, req)
 			if err != nil {
 				if ed != nil {
@@ -92,9 +98,9 @@ func newCreateCmd(opts *globalOpts) *cobra.Command {
 			url := service.IssueURL(s.host.URL, created.ID)
 			out := cmd.OutOrStdout()
 			if opts.json {
-				return json.NewEncoder(out).Encode([]map[string]any{{"id": created.ID, "ok": true, "url": url}})
+				return json.NewEncoder(out).Encode([]map[string]any{{"id": created.ID, "ok": true, "url": url, "files": len(files)}})
 			}
-			fmt.Fprintf(out, "#%d created: %s\n", created.ID, url)
+			fmt.Fprintf(out, "#%d created%s: %s\n", created.ID, withFiles(len(files)), url)
 			return nil
 		},
 	}
@@ -108,6 +114,7 @@ func newCreateCmd(opts *globalOpts) *cobra.Command {
 	f.StringVar(&in.Severity, "severity", "", "severity")
 	f.StringVar(&in.Reproducibility, "reproducibility", "", "reproducibility")
 	f.StringVar(&in.Assignee, "assign", "", "assignee: username, real name or id")
+	uploads.register(f)
 	return cmd
 }
 

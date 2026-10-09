@@ -241,9 +241,21 @@ selection, so hold `shift` to select text, or set `ui.mouse = false`.
   mantis-tui inserted are removed. Saving an empty file cancels the note. If
   sending fails, your text is kept in a temp file and the status bar shows
   its path.
+- **Attachments:** the note form also attaches files.
+  - If the clipboard holds an image (`wl-paste` on Wayland, `xclip` on X11),
+    it's offered as "clipboard image" with its size, ticked, and drawn as a
+    small thumbnail when inline images work. `space` unticks it. So
+    `grim -g "$(slurp)" - | wl-copy`, then `r`, posts a screenshot.
+  - Under "Files", type a path: `tab` completes it, `enter` adds it, and
+    `backspace` on an empty path removes the last one.
+  - Saving an empty note that has attachments asks whether to send them
+    without text.
+  - Files are checked against the server's `max_file_size` and file-type
+    lists before anything is sent.
 - **Create (`C`):** `tab`/arrow keys move between fields. `enter` picks a
-  value. `e` writes the description in your editor. `alt+enter` (or `ctrl+s`)
-  creates the issue, and `esc` cancels.
+  value. `e` writes the description in your editor. `enter` on Attachments
+  picks files the same way, and a clipboard image is ticked there from the
+  start. `alt+enter` (or `ctrl+s`) creates the issue, and `esc` cancels.
 
 ## CLI
 
@@ -255,10 +267,12 @@ mantis-tui files <id>
 mantis-tui download <id> [file-id...] [-o dir]
 mantis-tui create --project P --category C --summary S [-d text | --edit]
                   [--priority P] [--severity S] [--reproducibility R] [--assign user]
+                  [--file PATH]... [--clipboard]
 mantis-tui update <id>... [--status S] [--priority P] [--severity S]
                   [--category C] [--summary S] [--resolution R]
 mantis-tui assign <id>... <user>
 mantis-tui note <id> [-m text | --edit | -] [--time H:MM] [--private]
+                [--file PATH]... [--clipboard]
 mantis-tui note delete <id> <note-id> [--yes]
 mantis-tui monitor <id>...   |   mantis-tui unmonitor <id>...
 mantis-tui delete <id>... [--yes]
@@ -273,7 +287,12 @@ These flags work with every command: `--host <name>`, `--config <path>`,
   the valid ones.
 - A user can be given as a username, real name or numeric id.
 - `note -` reads the note text from stdin. With no text source on a
-  terminal, `note` opens your editor.
+  terminal, `note` opens your editor, unless there are attachments: then
+  the note is sent with just them.
+- `--file` (repeatable) and `--clipboard` attach files to a new note or
+  issue. They're checked against the server's limits before anything is
+  sent or an editor opens. `--clipboard` with no image in the clipboard is
+  an error.
 - `delete` and `note delete` ask for confirmation on a terminal. Without a
   terminal, they refuse unless you pass `--yes`.
 - `files` lists attachments on the issue and on its notes, with the ids
@@ -296,6 +315,7 @@ These flags work with every command: `--host <name>`, `--config <path>`,
 mantis-tui show 1234 --json | jq '.issues[0].status.name'
 git log -1 --format=%B | mantis-tui note 1234 -
 mantis-tui download 19112 -o /tmp/19112   # every attachment, screenshots included
+mantis-tui note 19112 -m "after the fix" --clipboard --file app.log
 mantis-tui update 1201 1202 1203 --status resolved
 ```
 

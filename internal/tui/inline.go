@@ -3,6 +3,7 @@ package tui
 import (
 	"context"
 	"fmt"
+	"image"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -39,6 +40,7 @@ type inlineImages struct {
 	thumbs    map[string]*thumb // by thumbKey; failed loads stay as not ready
 	holder    [lastThumbID + 1]string
 	next      int
+	clipSeq   int // clipboard thumbnails made, for their keys
 }
 
 func newInlineImages() inlineImages {
@@ -146,8 +148,14 @@ func makeThumb(path string, id int, cell graphics.Cell, maxCols int) (seq string
 	if err != nil {
 		return "", 0, 0, fmt.Errorf("%s: %w", filepath.Base(path), err)
 	}
+	return thumbOf(img, id, cell, maxCols, thumbRows)
+}
+
+// thumbOf scales img into at most maxCols×maxRows cells and returns the
+// sequence that sends it as image id, and the cells it covers.
+func thumbOf(img image.Image, id int, cell graphics.Cell, maxCols, maxRows int) (seq string, cols, rows int, err error) {
 	b := img.Bounds()
-	w, h, cols, rows := graphics.Fit(b.Dx(), b.Dy(), cell, maxCols, thumbRows)
+	w, h, cols, rows := graphics.Fit(b.Dx(), b.Dy(), cell, maxCols, maxRows)
 	seq, err = graphics.Transmit(id, graphics.Thumbnail(img, w, h, cols, rows, cell), cols, rows)
 	return seq, cols, rows, err
 }

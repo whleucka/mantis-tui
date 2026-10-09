@@ -7,16 +7,24 @@ import (
 
 // NewIssue is the body of a create-issue request.
 type NewIssue struct {
-	Summary               string `json:"summary"`
-	Description           string `json:"description"`
-	StepsToReproduce      string `json:"steps_to_reproduce,omitempty"`
-	AdditionalInformation string `json:"additional_information,omitempty"`
-	Project               Ref    `json:"project"`
-	Category              Ref    `json:"category"`
-	Priority              *Ref   `json:"priority,omitempty"`
-	Severity              *Ref   `json:"severity,omitempty"`
-	Reproducibility       *Ref   `json:"reproducibility,omitempty"`
-	Handler               *Ref   `json:"handler,omitempty"`
+	Summary               string       `json:"summary"`
+	Description           string       `json:"description"`
+	StepsToReproduce      string       `json:"steps_to_reproduce,omitempty"`
+	AdditionalInformation string       `json:"additional_information,omitempty"`
+	Project               Ref          `json:"project"`
+	Category              Ref          `json:"category"`
+	Priority              *Ref         `json:"priority,omitempty"`
+	Severity              *Ref         `json:"severity,omitempty"`
+	Reproducibility       *Ref         `json:"reproducibility,omitempty"`
+	Handler               *Ref         `json:"handler,omitempty"`
+	Files                 []FileUpload `json:"files,omitempty"`
+}
+
+// FileUpload is a file sent with a new issue or note. Content goes over
+// the wire in base64, which encoding/json does for a []byte.
+type FileUpload struct {
+	Name    string `json:"name"`
+	Content []byte `json:"content"`
 }
 
 // IssuePatch is a partial issue update; nil fields are left unchanged.
@@ -42,6 +50,7 @@ type NewNote struct {
 	Text         string
 	Private      bool
 	TimeTracking string // "H:MM"; empty for none
+	Files        []FileUpload
 }
 
 // CreateIssue files a new issue and returns it.
@@ -50,7 +59,20 @@ func (c *Client) CreateIssue(ctx context.Context, in NewIssue) (*Issue, error) {
 	if err := c.do(ctx, "POST", "issues", nil, in, &env); err != nil {
 		return nil, fmt.Errorf("create issue: %w", err)
 	}
-	return env.first(), nil
+	is := env.first()
+	if err := checkKept(len(in.Files), len(is.Attachments)); err != nil {
+		return is, fmt.Errorf("issue %d created, but %w", is.ID, err)
+	}
+	return is, nil
+}
+
+// checkKept fails when the server kept fewer files than were sent: an
+// oversized request can be answered with success and nothing attached.
+func checkKept(sent, kept int) error {
+	if kept < sent {
+		return fmt.Errorf("the server kept %d of %d files", kept, sent)
+	}
+	return nil
 }
 
 // UpdateIssue applies a partial update and returns the updated issue.
@@ -79,7 +101,8 @@ func (c *Client) AddNote(ctx context.Context, issueID int, n NewNote) (*Note, er
 		Text         string        `json:"text"`
 		ViewState    Ref           `json:"view_state"`
 		TimeTracking *timeTracking `json:"time_tracking,omitempty"`
-	}{Text: n.Text, ViewState: Ref{Name: "public"}}
+		Files        []FileUpload  `json:"files,omitempty"`
+	}{Text: n.Text, ViewState: Ref{Name: "public"}, Files: n.Files}
 	if n.Private {
 		body.ViewState.Name = "private"
 	}
@@ -92,6 +115,9 @@ func (c *Client) AddNote(ctx context.Context, issueID int, n NewNote) (*Note, er
 	}
 	if err := c.do(ctx, "POST", fmt.Sprintf("issues/%d/notes", issueID), nil, body, &env); err != nil {
 		return nil, fmt.Errorf("add note to issue %d: %w", issueID, err)
+	}
+	if err := checkKept(len(n.Files), len(env.Note.Attachments)); err != nil {
+		return &env.Note, fmt.Errorf("note %d added to issue %d, but %w", env.Note.ID, issueID, err)
 	}
 	return &env.Note, nil
 }

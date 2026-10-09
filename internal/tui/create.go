@@ -16,11 +16,11 @@ import (
 )
 
 // formFields are the create form's fields, in focus order.
-var formFields = []string{"project", "category", "summary", "priority", "severity", "reproducibility", "assignee", "description"}
+var formFields = []string{"project", "category", "summary", "priority", "severity", "reproducibility", "assignee", "description", "attachments"}
 
 var fieldLabels = map[string]string{
 	"project": "Project", "category": "Category", "summary": "Summary", "priority": "Priority",
-	"severity": "Severity", "reproducibility": "Reproducibility", "assignee": "Assignee", "description": "Description",
+	"severity": "Severity", "reproducibility": "Reproducibility", "assignee": "Assignee", "description": "Description", "attachments": "Attachments",
 }
 
 // createForm builds a new issue. Values hold names (as the CLI takes them);
@@ -32,6 +32,7 @@ type createForm struct {
 	projectID int
 	focus     int
 	summary   textinput.Model
+	attach    *attachSection
 	errText   string
 	dirty     bool
 }
@@ -53,13 +54,21 @@ type (
 	createdMsg struct {
 		host  string
 		issue *mantis.Issue
+		files int
 		err   error
+	}
+	// createClipMsg offers the clipboard image to the open create form.
+	createClipMsg struct {
+		host string
+		form *createForm
+		clip *mantis.FileUpload
 	}
 )
 
 func (msg createSetMsg) hostName() string        { return msg.host }
 func (msg createRevalidateMsg) hostName() string { return msg.host }
 func (msg createdMsg) hostName() string          { return msg.host }
+func (msg createClipMsg) hostName() string       { return msg.host }
 
 // openCreate starts the form, preset to the project of the issue under the cursor.
 func (m *Model) openCreate() tea.Cmd {
@@ -70,8 +79,13 @@ func (m *Model) openCreate() tea.Cmd {
 	f.summary = textinput.New()
 	f.summary.Placeholder = "one-line summary"
 	f.summary.SetWidth(max(m.width-26, 20))
+	f.attach = newAttachSection(m.width)
 	m.cur.create, m.cur.screen = f, screenCreate
-	return nil
+	clipboard, host := m.opts.Clipboard, m.cur.sess.Host.Name
+	if clipboard == nil {
+		return nil
+	}
+	return func() tea.Msg { return createClipMsg{host: host, form: f, clip: clipboard(context.Background())} }
 }
 
 func (f *createForm) field() string { return formFields[f.focus] }
@@ -107,6 +121,12 @@ func (f *createForm) update(m *Model, msg tea.KeyPressMsg) tea.Cmd {
 	case "description":
 		if msg.String() == "enter" || msg.String() == "e" {
 			return f.editDescription(m)
+		}
+	case "attachments":
+		if msg.String() == "enter" {
+			am := newAttachModal(f.attach, "Attachments for the new issue")
+			m.modal = am
+			return am.opened(m)
 		}
 	default:
 		if msg.String() == "enter" {
@@ -279,16 +299,27 @@ func (f *createForm) submit(m *Model) tea.Cmd {
 			return nil
 		}
 	}
-	host, resolve, api := f.sess.Host.Name, f.sess.Resolve, f.sess.API
+	host, resolve, api, cache := f.sess.Host.Name, f.sess.Resolve, f.sess.API, f.sess.Meta
+	clip, paths := f.attach.selection()
+	timeout := uploadTimeout(f.attach.count())
 	return m.call(func(ctx context.Context) tea.Msg {
-		ctx, cancel := timed(ctx)
+		ctx, cancel := context.WithTimeout(ctx, timeout)
 		defer cancel()
 		req, err := resolve.NewIssue(ctx, in)
 		if err != nil {
 			return createdMsg{host: host, err: err}
 		}
+		if clip != nil || len(paths) > 0 {
+			limits, err := cache.Uploads(ctx)
+			if err != nil {
+				return createdMsg{host: host, err: err}
+			}
+			if req.Files, err = gatherUploads(clip, paths, limits); err != nil {
+				return createdMsg{host: host, err: err}
+			}
+		}
 		is, err := api.CreateIssue(ctx, req)
-		return createdMsg{host: host, issue: is, err: err}
+		return createdMsg{host: host, issue: is, files: len(req.Files), err: err}
 	})
 }
 
@@ -320,6 +351,11 @@ func (f *createForm) view(width, _ int) string {
 			if value == "" {
 				value = styleMuted.Render("(nobody)")
 			}
+		case "attachments":
+			value = strings.Join(f.attach.names(), ", ")
+			if value == "" {
+				value = styleMuted.Render("(none, enter to add)")
+			}
 		default:
 			if value == "" {
 				value = styleMuted.Render("(choose)")
@@ -338,6 +374,6 @@ func (f *createForm) view(width, _ int) string {
 	if f.errText != "" {
 		b.WriteString("\n" + styleError.Render(f.errText) + "\n")
 	}
-	b.WriteString("\n" + styleMuted.Render("tab/↑↓ move · enter choose · e edit description · alt+enter (or ctrl+s) create · esc cancel"))
+	b.WriteString("\n" + styleMuted.Render("tab/↑↓ move · enter choose · e edit description · enter on Attachments adds files · alt+enter (or ctrl+s) create · esc cancel"))
 	return b.String()
 }

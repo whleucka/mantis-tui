@@ -125,6 +125,11 @@ The full task details are in `tasks/todo.md`.
 - [x] Task 35: `internal/graphics`: fit, scale, kitty transmit and placeholder text
 - [x] Task 36: Thumbnails in the issue view: detection, background loading, cleanup
 
+### Phase 13: Uploading attachments (v1.8)
+- [ ] Task 37: Upload API, server limits and the clipboard (mantis, meta, service, fake, dev server)
+- [ ] Task 38: CLI `--file` and `--clipboard` on `note` and `create`
+- [ ] Task 39: TUI attachments section in the note and create forms
+
 ## Findings During Build
 
 - On 2.27, `GET /issues` includes the full `history` for every issue in a
@@ -146,6 +151,23 @@ The full task details are in `tasks/todo.md`.
 - On 2.27, attachments are attached to **notes**, not the issue. `Note`
   has an `Attachments` field, and the issue view lists them under their
   note.
+
+- Uploads, checked on wh (2.27, approved, throwaway issue #36 deleted
+  afterwards):
+  - `POST issues/{id}/notes` with `files: [{name, content(base64)}]`
+    returns `201` and the note with its attachments.
+  - `POST issues/{id}/files` with the same `files` list returns `201` and
+    an empty body.
+  - The bytes round-trip exactly.
+  - `max_file_size` (5 MB on wh) and `disallowed_files` (`svg`) come from
+    `/config`. A blocked type is `400 "File 'x.svg' type not allowed"`.
+  - A body over PHP's `post_max_size` (8 MB on wh) is answered `200` with
+    an HTML warning and **nothing is attached**. Check sizes before
+    sending, and treat anything but `201` as failure.
+  - `POST issues` takes the same `files` list and attaches them to the
+    new issue (checked with throwaway #37, deleted).
+  - A note with `text: ""` and files is accepted: `201`, and it shows as
+    an empty note with its attachment (throwaway #38, deleted).
 
 ## Parallelization
 

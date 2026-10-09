@@ -11,6 +11,7 @@ import (
 type confirmModal struct {
 	prompt string
 	onYes  func() tea.Cmd
+	onNo   func() tea.Cmd // optional
 }
 
 func (c *confirmModal) update(msg tea.KeyPressMsg) (tea.Cmd, bool) {
@@ -18,6 +19,9 @@ func (c *confirmModal) update(msg tea.KeyPressMsg) (tea.Cmd, bool) {
 	case "y", "Y":
 		return c.onYes(), true
 	case "n", "N", "esc", "q":
+		if c.onNo != nil {
+			return c.onNo(), true
+		}
 		return nil, true
 	}
 	return nil, false

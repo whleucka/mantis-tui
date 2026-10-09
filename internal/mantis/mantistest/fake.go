@@ -254,7 +254,8 @@ func (f *Fake) CreateIssue(_ context.Context, in mantis.NewIssue) (*mantis.Issue
 	is := mantis.Issue{
 		ID: 999 + f.nextID, Summary: in.Summary, Description: in.Description,
 		Project: in.Project, Category: in.Category,
-		Status: mantis.EnumValue{ID: 10, Name: "new", Label: "new"},
+		Status:      mantis.EnumValue{ID: 10, Name: "new", Label: "new"},
+		Attachments: f.store(in.Files),
 	}
 	if f.Issues == nil {
 		f.Issues = map[int]mantis.Issue{}
@@ -328,6 +329,21 @@ func (f *Fake) DeleteIssue(_ context.Context, id int) error {
 	return nil
 }
 
+// store keeps uploaded files as attachments, with ids from 9000 up, so
+// GetFile serves them back. The caller holds f.mu.
+func (f *Fake) store(files []mantis.FileUpload) []mantis.Attachment {
+	var out []mantis.Attachment
+	for _, u := range files {
+		if f.FileContent == nil {
+			f.FileContent = map[int][]byte{}
+		}
+		id := 9000 + len(f.FileContent)
+		f.FileContent[id] = u.Content
+		out = append(out, mantis.Attachment{ID: id, Filename: u.Name, Size: int64(len(u.Content))})
+	}
+	return out
+}
+
 // AddNote implements mantis.API.
 func (f *Fake) AddNote(_ context.Context, issueID int, n mantis.NewNote) (*mantis.Note, error) {
 	if err := f.enterID("AddNote", issueID); err != nil {
@@ -336,7 +352,7 @@ func (f *Fake) AddNote(_ context.Context, issueID int, n mantis.NewNote) (*manti
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.NotesAdded = append(f.NotesAdded, NoteCall{IssueID: issueID, Note: n})
-	note := mantis.Note{ID: 5000 + len(f.NotesAdded), Text: n.Text, CreatedAt: f.bump()}
+	note := mantis.Note{ID: 5000 + len(f.NotesAdded), Text: n.Text, CreatedAt: f.bump(), Attachments: f.store(n.Files)}
 	if is, ok := f.Issues[issueID]; ok {
 		if !note.CreatedAt.IsZero() {
 			is.UpdatedAt = note.CreatedAt

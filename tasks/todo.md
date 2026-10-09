@@ -651,3 +651,43 @@ and delete the images on exit.
 **Verification:** `make race && make lint`, plus a herdr check
 **Dependencies:** 35
 **Scope:** M
+
+### Task 37: Upload API, server limits and the clipboard
+**Description:** `Files` on `NewNote` and `NewIssue`, sent base64 as
+Mantis expects. `meta` reads `max_file_size`, `allowed_files` and
+`disallowed_files`. `service` loads files, checks them against the limits
+and reads the clipboard image. The fake and the dev server store uploads
+(the dev server enforces size and type like wh) so they can be downloaded
+and drawn again.
+**Acceptance criteria:**
+- [ ] The request body carries `files: [{name, content}]` with base64 content
+- [ ] Fewer attachments back than files sent is an error
+- [ ] Oversized, disallowed or not-allowed files are refused locally, naming the file and limit
+- [ ] The clipboard reader prefers PNG, falls back to xclip, and treats "no image" as no error
+- [ ] The dev server accepts empty-text notes with files and serves the uploaded bytes back
+**Verification:** `make race && make lint`
+**Dependencies:** None
+**Scope:** M
+
+### Task 38: CLI `--file` and `--clipboard` on `note` and `create`
+**Acceptance criteria:**
+- [ ] `note <id> --file a --file b` sends a note with no text and no editor
+- [ ] `--clipboard` with no image in the clipboard is a usage error
+- [ ] Limits are checked before the editor opens
+- [ ] `--json` reports the file count; the leak test covers the new flags
+**Verification:** `make race && make lint`; a live run against the dev server
+**Dependencies:** 37
+**Scope:** S
+
+### Task 39: TUI attachments section in the note and create forms
+**Acceptance criteria:**
+- [ ] The note form offers a clipboard image, checked, with a thumbnail when inline images are on
+- [ ] Paths complete with tab and are checked when added
+- [ ] Empty text with attachments asks before sending; without them it discards
+- [ ] The create form's Attachments row opens the same section in a modal
+- [ ] A limit error or server error keeps the note text
+- [ ] Live: a clipboard screenshot posted from the TUI shows as a thumbnail on the dev server
+**Verification:** `make race && make lint`, plus a herdr check with the dev server
+**Dependencies:** 37
+**Scope:** L
+
