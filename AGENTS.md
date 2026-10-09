@@ -38,5 +38,3 @@ asking.
 - Never put real ticket data (names, hosts, IDs, query output) in tests or
   fixtures. Use made-up data. `scripts/record-fixtures.sh` scrubs recorded
   fixtures.
-- Compatibility doesn't matter: the project has one user and no releases, so
-  change keys, config and flags freely.
