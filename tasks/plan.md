@@ -118,8 +118,12 @@ The full task details are in `tasks/todo.md`.
 - [x] Task 32: Go to a related issue, with a back trail
 
 ### Phase 11: Attachments and images (v1.6)
-- [ ] Task 33: Download attachments: API, service, CLI `files` and `download`
-- [ ] Task 34: Open attachments in the TUI, images with kitten icat
+- [x] Task 33: Download attachments: API, service, CLI `files` and `download`
+- [x] Task 34: Open attachments in the TUI, images with kitten icat
+
+### Phase 12: Inline images (v1.7)
+- [x] Task 35: `internal/graphics`: fit, scale, kitty transmit and placeholder text
+- [x] Task 36: Thumbnails in the issue view: detection, background loading, cleanup
 
 ## Findings During Build
 

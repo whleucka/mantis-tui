@@ -522,8 +522,41 @@ in base64 (checked read-only on chainlogic, 2.28.4).
   issue attachments show their id and size.
 
 ### Out of scope
-Uploading attachments, and drawing images inline in the issue view (kitty's
-Unicode placeholders might allow it later, if herdr passes them through).
+Uploading attachments. Inline images came in v1.7.
+
+## v1.7: Inline images
+
+The issue view draws image attachments as thumbnails under the note (or
+issue) they belong to, using kitty's Unicode placeholders. The image is
+sent to the terminal once and drawn by kitty wherever placeholder
+characters appear. To Bubble Tea those are ordinary text, so thumbnails
+scroll, clip and redraw with the rest of the view. herdr passes them
+through (checked by hand with `kitten icat --unicode-placeholder`).
+
+- **Detection.** At startup the TUI asks the terminal whether it supports
+  kitty graphics (a 1×1 query with image id 31) and how big a cell is in
+  pixels (`CSI 16 t`, falling back to `CSI 14 t` divided by the window
+  size, then 10×20). Thumbnails are drawn only after an `OK` reply, so
+  other terminals see no change.
+- **Loading.** When an issue opens or refreshes, each image attachment
+  (same types as v1.6, except WebP and BMP, which the standard library
+  can't decode) is downloaded into the v1.6 cache in the background, with
+  no spinner. It is decoded, scaled down (never up) to fit 12 rows by
+  `min(80, width-4)` columns, padded to whole cells and sent with
+  `a=T,U=1,q=2` as a PNG in 4 KB chunks. Images over 40 megapixels are
+  refused before decoding.
+- **Drawing.** Each thumbnail is a block of `U+10EEEE` cells with row and
+  column diacritics, coloured `38;5;<id>`. Image ids run 16–255 so the
+  colour survives as an indexed colour, and they are reused oldest-first
+  after that. A thumbnail appears only once the terminal has the image, so
+  there's never a block of unknown cells. One that fails to load is left
+  out silently, and the attachment line stays.
+- Only the issue view shows thumbnails, not the list's preview pane.
+  `g a` still opens an image full size.
+- After the full-size viewer returns, the placements are put again, in case
+  `icat --clear` removed them. On exit the TUI deletes every image it sent.
+- Thumbnails keep the size they were made at. A terminal narrower than a
+  thumbnail crops it.
 
 ## API Client Contract (`internal/mantis`)
 

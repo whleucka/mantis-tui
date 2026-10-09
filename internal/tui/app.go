@@ -10,9 +10,11 @@ import (
 	"charm.land/bubbles/v2/spinner"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
+	uv "github.com/charmbracelet/ultraviolet"
 
 	"github.com/whleucka/mantis-tui/internal/config"
 	"github.com/whleucka/mantis-tui/internal/editor"
+	"github.com/whleucka/mantis-tui/internal/graphics"
 )
 
 // Options configure the TUI.
@@ -34,6 +36,9 @@ type Options struct {
 	OpenFile func(path string) error
 	// ShowImage shows an image in the terminal; nil when it can't.
 	ShowImage ImageShower
+	// InlineImages asks the terminal at startup whether it can draw
+	// thumbnails in the issue view.
+	InlineImages bool
 }
 
 // screen is what fills the main area for the current host.
@@ -156,6 +161,7 @@ type Model struct {
 	seen         *config.Seen
 	now          func() time.Time // clock for double clicks
 	clipboard    func(string) tea.Cmd
+	img          inlineImages // thumbnails in the issue view
 }
 
 // Messages. Anything tied to a host carries its name so responses that
@@ -189,16 +195,21 @@ func New(opts Options) *Model {
 		previewDelay: previewDelay,
 		now:          time.Now,
 		clipboard:    tea.SetClipboard,
+		img:          newInlineImages(),
 	}
 }
 
 // Init implements tea.Model.
 func (m *Model) Init() tea.Cmd {
+	var query tea.Cmd
+	if m.opts.InlineImages {
+		query = tea.Raw(graphics.Query())
+	}
 	if m.opts.Initial != nil {
-		return m.selectHost(m.opts.Initial.Name)
+		return tea.Batch(query, m.selectHost(m.opts.Initial.Name))
 	}
 	m.modal = m.hostPicker()
-	return nil
+	return query
 }
 
 // Update implements tea.Model.
@@ -261,6 +272,15 @@ func (m *Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, m.onFileReady(msg)
 	case imageShownMsg:
 		return m, m.onImageShown(msg)
+	case thumbReadyMsg:
+		return m, m.onThumbReady(msg)
+	case tea.RawMsg:
+		if s, ok := msg.Msg.(thumbSent); ok {
+			m.onThumbSent(s)
+		}
+		return m, nil
+	case uv.KittyGraphicsEvent, uv.CellSizeEvent, uv.PixelSizeEvent:
+		return m, m.onTerminalReply(msg)
 
 	case batchProgressMsg:
 		if msg.batch != m.batchID || !m.isCurrent(msg.host) {

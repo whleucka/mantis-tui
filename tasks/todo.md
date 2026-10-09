@@ -615,7 +615,39 @@ through a `tea.ExecCommand` that runs `kitten icat`, other files through
 - [x] Images go to the viewer with refreshes paused; without graphics they fall back to the opener
 - [x] PDFs open; a `.sh` is only saved
 - [x] A cached file opens again without a request
-- [ ] Live: an image shows in kitty through herdr
+- [x] Live: an image shows in kitty through herdr (confirmed by the user on chainlogic #19112, PDF and screenshots)
 **Verification:** `make race && make lint`, plus a herdr check with the dev server
 **Dependencies:** 33
+**Scope:** M
+
+### Task 35: `internal/graphics`: fit, scale, kitty transmit and placeholder text
+**Description:** A pure package with no TUI imports. It decodes PNG, JPEG
+and GIF, refuses huge images, fits them to a cell box without scaling up,
+scales down with a box filter, and produces the kitty escape sequences:
+the support query, transmit-and-place, put, delete and the placeholder
+block.
+**Acceptance criteria:**
+- [x] Fit never scales up and stays inside the box
+- [x] The placeholder block is exactly cols×rows cells wide for Bubble Tea's width maths
+- [x] Transmission is chunked at 4 KB with `m=1`/`m=0` and carries `U=1,q=2`
+- [x] A 50000×50000 PNG header is refused without decoding the pixels
+**Verification:** `make race && make lint`
+**Dependencies:** None
+**Scope:** S
+
+### Task 36: Thumbnails in the issue view: detection, background loading, cleanup
+**Description:** Query support at startup, then load the open issue's
+images in the background and draw them under their note once the
+terminal has them. Put the placements again after the full-size viewer,
+and delete the images on exit.
+**Acceptance criteria:**
+- [x] Nothing is drawn or fetched until the terminal answers `OK`
+- [x] A note image appears under its attachment line only after its transmit was written
+- [x] The list's preview pane draws no thumbnails
+- [x] A broken image leaves just the attachment line
+- [x] Image ids stay in 16–255 and are reused oldest-first
+- [x] Live: a thumbnail shows in herdr (dev server #33, confirmed by the user)
+- [x] Live: the thumbnail survives `ga` and back; chainlogic #19112's screenshots show (confirmed by the user)
+**Verification:** `make race && make lint`, plus a herdr check
+**Dependencies:** 35
 **Scope:** M

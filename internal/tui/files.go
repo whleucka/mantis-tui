@@ -64,13 +64,18 @@ func (m *Model) fetchFile(issueID int, f service.FileRef) tea.Cmd {
 	if m.opts.FilesDir == "" {
 		return errCmd(host, errors.New("no directory to save attachments in"))
 	}
-	dir := filepath.Join(m.opts.FilesDir, service.SafeName(host), strconv.Itoa(issueID))
+	dir := m.filesDir(host, issueID)
 	return m.call(func(ctx context.Context) tea.Msg {
 		ctx, cancel := context.WithTimeout(ctx, fileTimeout)
 		defer cancel()
 		path, err := service.Download(ctx, api, issueID, f.Attachment, dir, true)
 		return fileReadyMsg{host: host, file: f, path: path, err: err}
 	})
+}
+
+// filesDir is where an issue's attachments are cached.
+func (m *Model) filesDir(host string, issueID int) string {
+	return filepath.Join(m.opts.FilesDir, service.SafeName(host), strconv.Itoa(issueID))
 }
 
 // onFileReady shows an image in the terminal when it can, and otherwise

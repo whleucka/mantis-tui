@@ -41,13 +41,14 @@ func (o *globalOpts) runTUI(cmd *cobra.Command) error {
 		NewSession: func(h config.Host) *tui.Session {
 			return tui.NewSession(h, mantis.NewClient(h.URL, h.Token))
 		},
-		OpenURL:   o.deps.openURL,
-		Seen:      config.LoadSeen(config.DefaultSeenPath(os.Getenv)),
-		Notify:    notifierFor(cfg.UI.Notify, os.Getenv, exec.LookPath),
-		RunInPane: paneRunnerFor(os.Getenv, exec.LookPath, cwd, execRun),
-		FilesDir:  config.DefaultFilesDir(os.Getenv),
-		OpenFile:  service.OpenFile,
-		ShowImage: imageShowerFor(exec.LookPath),
+		OpenURL:      o.deps.openURL,
+		Seen:         config.LoadSeen(config.DefaultSeenPath(os.Getenv)),
+		Notify:       notifierFor(cfg.UI.Notify, os.Getenv, exec.LookPath),
+		RunInPane:    paneRunnerFor(os.Getenv, exec.LookPath, cwd, execRun),
+		FilesDir:     config.DefaultFilesDir(os.Getenv),
+		OpenFile:     service.OpenFile,
+		ShowImage:    imageShowerFor(exec.LookPath),
+		InlineImages: true,
 		SaveLastHost: func(name string) error {
 			st, _ := config.LoadState(statePath)
 			st.LastHost = name
@@ -55,6 +56,7 @@ func (o *globalOpts) runTUI(cmd *cobra.Command) error {
 		},
 	})
 	_, err = tea.NewProgram(model, tea.WithContext(cmd.Context())).Run()
+	_, _ = os.Stdout.WriteString(model.ImageCleanup()) // free the thumbnails in the terminal
 	return err
 }
 

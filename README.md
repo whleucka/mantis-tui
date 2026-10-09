@@ -201,6 +201,13 @@ images when graphics aren't available, open with `xdg-open`, but only PDFs,
 images, text, Markdown, JSON, CSV and logs. Anything else, such as a script,
 is only saved, and the status bar shows where.
 
+**Inline images.** In a terminal that supports kitty graphics, the issue
+view also draws each PNG, JPEG or GIF attachment as a thumbnail (up to 12
+rows tall) under its note. Thumbnails load in the background, use kitty's
+Unicode placeholders (so they work inside herdr and scroll with the text),
+and are deleted from the terminal when you quit. The list's preview pane
+doesn't draw them, and `ga` still opens an image full size.
+
 **Mouse.** Click a row to move to it and click it again to open it. The
 wheel scrolls the list, the preview, the issue view, help and pickers.
 Clicking a picker option or a palette command chooses it, and clicking

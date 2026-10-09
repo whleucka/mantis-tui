@@ -115,7 +115,7 @@ func (iv *issueModel) handleMsg(m *Model, msg issueLoadedMsg) tea.Cmd {
 	offset := iv.vp.YOffset()
 	iv.render(m)
 	iv.vp.SetYOffset(offset) // keep the reading position across refreshes
-	return m.markSeen(iv.sess.Host.Name, *iv.issue)
+	return tea.Batch(m.markSeen(iv.sess.Host.Name, *iv.issue), m.loadThumbs(iv))
 }
 
 func (iv *issueModel) handleAction(m *Model, a action) tea.Cmd {
@@ -172,6 +172,7 @@ func (iv *issueModel) context() string {
 // render rebuilds the viewport content for the current size and tab.
 func (iv *issueModel) render(m *Model) {
 	iv.look = m.look(iv.sess.Host.Name)
+	iv.look.images = m.thumbLines(iv.sess.Host.Name, iv.issue)
 	w, h := max(m.width, 20), max(m.height-1, 1)
 	iv.width = w
 	iv.vp.SetWidth(w)
@@ -197,6 +198,7 @@ func (iv *issueModel) content(w int) string {
 type issueLook struct {
 	now    time.Time
 	colors map[string]string // status name → hex, from the server
+	images map[int][]string  // attachment id → thumbnail text; issue view only
 }
 
 // look gathers the clock and the host's status colours.
@@ -273,6 +275,12 @@ func renderIssueTabs(is *mantis.Issue, tab, w int, lk issueLook) (string, int) {
 		}
 	}
 
+	for _, a := range is.Attachments {
+		if lines := lk.images[a.ID]; len(lines) > 0 {
+			b.WriteString("\n" + styleMuted.Render(a.Filename) + "\n" + strings.Join(lines, "\n") + "\n")
+		}
+	}
+
 	notes := fmt.Sprintf("Notes (%d)", len(is.Notes))
 	history := fmt.Sprintf("History (%d)", len(is.History))
 	tabLine := strings.Count(b.String(), "\n") + 1 // the bar follows a blank line
@@ -302,6 +310,9 @@ func renderIssueTabs(is *mantis.Issue, tab, w int, lk issueLook) (string, int) {
 			b.WriteString(text.Render(n.Text) + "\n")
 			for _, a := range n.Attachments {
 				b.WriteString(styleMuted.Render("attachment: "+a.Filename+" · "+service.HumanSize(a.Size)) + "\n")
+				for _, l := range lk.images[a.ID] {
+					b.WriteString(l + "\n")
+				}
 			}
 			b.WriteString("\n")
 		}

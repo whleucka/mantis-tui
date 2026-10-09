@@ -5,9 +5,12 @@ import (
 	"fmt"
 	"io"
 	"os/exec"
+	"strconv"
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/charmbracelet/x/ansi"
+
+	"github.com/whleucka/mantis-tui/internal/graphics"
 )
 
 // ErrNoGraphics means the terminal can't show images, so the caller opens
@@ -26,6 +29,9 @@ func KittyImages(kitten string) ImageShower {
 		return tea.Exec(v, func(err error) tea.Msg { return done(err) })
 	}
 }
+
+// viewerImageID is the full-size viewer's image, apart from the thumbnails'.
+const viewerImageID = 4000
 
 // icatView is a tea.ExecCommand: it checks for graphics support, then shows
 // one image below a title line on the alternate screen until enter or
@@ -60,8 +66,8 @@ func (v *icatView) Run() error {
 	title := ansi.Truncate(clean(v.title)+" · enter or esc to go back", cols-2, "…")
 	// Alternate screen, cleared, with the title on the first line.
 	fmt.Fprintf(v.stdout, "\x1b[?1049h\x1b[2J\x1b[H\x1b[7m %s \x1b[0m", title)
-	err := v.icat("--hold", "--place", fmt.Sprintf("%dx%d@0x1", cols, rows-1), v.path).Run()
-	_ = v.icat("--clear").Run()
-	fmt.Fprint(v.stdout, "\x1b[?1049l")
+	err := v.icat("--hold", "--image-id", strconv.Itoa(viewerImageID), "--place", fmt.Sprintf("%dx%d@0x1", cols, rows-1), v.path).Run()
+	// Delete just this image: --clear would take the thumbnails with it.
+	fmt.Fprint(v.stdout, graphics.Delete(viewerImageID)+"\x1b[?1049l")
 	return err
 }
