@@ -21,6 +21,7 @@ preview_layout = "auto"       # auto | right | bottom
 [issue]
 auto_refresh = "120s"
 ask = "claude 'Use the mantis agent to look up issue #{id} on host {host} ({url}).'"
+code_theme = "auto"           # <pre> highlighting: auto | none | a chroma style (monokai, dracula, …)
 
 [ui]
 mouse = true                  # hold shift to select text with the mouse
@@ -222,6 +223,13 @@ selection, so hold `shift` to select text, or set `ui.mouse = false`.
 | `u` | mark unread and go back to the list |
 | `q`/`esc`/`h` | back to the issue you came from with `gr`, else to the list |
 | `H`, `1`–`9`, `:`/`ctrl+p`, `?` | same as in the list |
+
+Text wrapped in `<pre>…</pre>` in a description or note shows as a code block:
+the tags are hidden, spacing is kept, and the block is syntax-highlighted.
+The language comes from the tag's class (`<pre class="sql">`), or is guessed;
+MySQL/MariaDB console output gets its prompt and table borders dimmed. The
+`issue.code_theme` setting picks the colours; `auto` follows the terminal's
+background.
 
 ### Notes and the create form
 

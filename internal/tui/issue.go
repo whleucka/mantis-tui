@@ -9,6 +9,7 @@ import (
 	"charm.land/bubbles/v2/viewport"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
+	"github.com/alecthomas/chroma/v2"
 
 	"github.com/whleucka/mantis-tui/internal/mantis"
 	"github.com/whleucka/mantis-tui/internal/service"
@@ -205,11 +206,12 @@ type issueLook struct {
 	now    time.Time
 	colors map[string]string // status name → hex, from the server
 	images map[int][]string  // attachment id → thumbnail text; issue view only
+	code   *chroma.Style     // highlighting for <pre> blocks; nil for none
 }
 
 // look gathers the clock and the host's status colours.
 func (m *Model) look(host string) issueLook {
-	lk := issueLook{now: m.now()}
+	lk := issueLook{now: m.now(), code: m.code}
 	if hv := m.hosts[host]; hv != nil {
 		lk.colors = hv.list.colors
 	}
@@ -226,7 +228,6 @@ func renderIssue(is *mantis.Issue, tab, w int, lk issueLook) string {
 // renderIssueTabs is renderIssue that also returns the line holding the tab
 // labels, for mouse clicks.
 func renderIssueTabs(is *mantis.Issue, tab, w int, lk issueLook) (string, int) {
-	text := lipgloss.NewStyle().Width(max(w-2, 10))
 	var b strings.Builder
 
 	b.WriteString(styleTitle.Render(fmt.Sprintf("#%d %s", is.ID, is.Summary)) + "\n\n")
@@ -277,7 +278,7 @@ func renderIssueTabs(is *mantis.Issue, tab, w int, lk issueLook) (string, int) {
 		{"Additional information", is.AdditionalInformation},
 	} {
 		if strings.TrimSpace(sec[1]) != "" {
-			b.WriteString("\n" + styleHeader.Render(sec[0]) + "\n" + text.Render(sec[1]) + "\n")
+			b.WriteString("\n" + styleHeader.Render(sec[0]) + "\n" + renderBody(sec[1], w, lk.code) + "\n")
 		}
 	}
 
@@ -313,7 +314,7 @@ func renderIssueTabs(is *mantis.Issue, tab, w int, lk issueLook) (string, int) {
 			}
 			meta = append(meta, fmt.Sprintf("note %d", n.ID))
 			b.WriteString(styleGroup.Render("── "+strings.Join(meta, " · ")) + "\n")
-			b.WriteString(text.Render(n.Text) + "\n")
+			b.WriteString(renderBody(n.Text, w, lk.code) + "\n")
 			for _, a := range n.Attachments {
 				b.WriteString(styleMuted.Render("attachment: "+a.Filename+" · "+service.HumanSize(a.Size)) + "\n")
 				for _, l := range lk.images[a.ID] {

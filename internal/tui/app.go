@@ -10,6 +10,7 @@ import (
 	"charm.land/bubbles/v2/spinner"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
+	"github.com/alecthomas/chroma/v2"
 	uv "github.com/charmbracelet/ultraviolet"
 
 	"github.com/whleucka/mantis-tui/internal/config"
@@ -181,7 +182,8 @@ type Model struct {
 	seen         *config.Seen
 	now          func() time.Time // clock for double clicks
 	clipboard    func(string) tea.Cmd
-	img          inlineImages // thumbnails in the issue view
+	img          inlineImages  // thumbnails in the issue view
+	code         *chroma.Style // <pre> highlighting; follows the background on "auto"
 }
 
 // Messages. Anything tied to a host carries its name so responses that
@@ -205,7 +207,7 @@ func New(opts Options) *Model {
 	if seen == nil {
 		seen = config.NewSeen("")
 	}
-	return &Model{
+	m := &Model{
 		seen:         seen,
 		opts:         opts,
 		keys:         defaultKeymap(),
@@ -217,6 +219,16 @@ func New(opts Options) *Model {
 		clipboard:    tea.SetClipboard,
 		img:          newInlineImages(),
 	}
+	m.code = codeStyle(m.codeTheme(), false)
+	return m
+}
+
+// codeTheme is the configured code_theme.
+func (m *Model) codeTheme() string {
+	if m.opts.Config == nil {
+		return "auto"
+	}
+	return m.opts.Config.Issue.CodeTheme
 }
 
 // Init implements tea.Model.
@@ -224,6 +236,9 @@ func (m *Model) Init() tea.Cmd {
 	var query tea.Cmd
 	if m.opts.InlineImages {
 		query = tea.Raw(graphics.Query())
+	}
+	if t := m.codeTheme(); t == "" || t == "auto" {
+		query = tea.Batch(query, tea.RequestBackgroundColor)
 	}
 	if m.opts.Initial != nil {
 		cmd := m.selectHost(m.opts.Initial.Name)
@@ -253,6 +268,15 @@ func (m *Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.width, m.height = msg.Width, msg.Height
 		if m.cur != nil && m.cur.issue != nil {
 			m.cur.issue.render(m)
+		}
+		return m, nil
+
+	case tea.BackgroundColorMsg:
+		if t := m.codeTheme(); t == "" || t == "auto" {
+			m.code = codeStyle(t, !msg.IsDark())
+			if m.cur != nil && m.cur.issue != nil {
+				m.cur.issue.render(m)
+			}
 		}
 		return m, nil
 

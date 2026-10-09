@@ -93,6 +93,7 @@ func TestLoadRejectsInvalidValues(t *testing.T) {
 		"bad sort":        "[list]\nsort = \"colour\"\n" + twoHosts,
 		"bad notify":      "[ui]\nnotify = \"pager\"\n" + twoHosts,
 		"bad layout":      "[list]\npreview_layout = \"left\"\n" + twoHosts,
+		"bad code theme":  "[issue]\ncode_theme = \"neon\"\n" + twoHosts,
 		"bad duration":    "[list]\nauto_refresh = \"soon\"\n" + twoHosts,
 		"missing url":     "[[hosts]]\nname = \"x\"\nenv = \"MANTIS_X\"\n",
 		"non-http url":    "[[hosts]]\nname = \"x\"\nurl = \"ftp://x\"\nenv = \"MANTIS_X\"\n",

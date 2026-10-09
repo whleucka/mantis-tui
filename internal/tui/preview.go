@@ -9,6 +9,7 @@ import (
 	"charm.land/bubbles/v2/viewport"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
+	"github.com/alecthomas/chroma/v2"
 
 	"github.com/whleucka/mantis-tui/internal/mantis"
 )
@@ -41,6 +42,7 @@ type preview struct {
 	shownID     int
 	shownWidth  int
 	shownColors bool // status colours had arrived
+	shownCode   *chroma.Style
 }
 
 type (
@@ -143,7 +145,7 @@ func (l *listModel) syncPreview(m *Model) tea.Cmd {
 // the size changed.
 func (p *preview) show(is *mantis.Issue, w, h int, lk issueLook) {
 	p.vp.SetHeight(h)
-	if is == p.shown && w == p.shownWidth && (lk.colors != nil) == p.shownColors {
+	if is == p.shown && w == p.shownWidth && (lk.colors != nil) == p.shownColors && lk.code == p.shownCode {
 		return
 	}
 	p.vp.SetWidth(w)
@@ -154,7 +156,7 @@ func (p *preview) show(is *mantis.Issue, w, h int, lk issueLook) {
 	} else {
 		p.vp.GotoTop()
 	}
-	p.shown, p.shownID, p.shownWidth, p.shownColors = is, is.ID, w, lk.colors != nil
+	p.shown, p.shownID, p.shownWidth, p.shownColors, p.shownCode = is, is.ID, w, lk.colors != nil, lk.code
 }
 
 // onPreviewTick fetches the issue if the cursor is still resting on it.

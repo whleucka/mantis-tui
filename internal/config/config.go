@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/BurntSushi/toml"
+	"github.com/alecthomas/chroma/v2/styles"
 )
 
 // ErrNoConfig is returned by Load when the default config file does not exist.
@@ -63,6 +64,9 @@ type IssueConfig struct {
 	// Ask is the shell command the ask key runs in a new herdr pane, with
 	// {id}, {host} and {url} filled in. Empty disables the key.
 	Ask string `toml:"ask"`
+	// CodeTheme colours <pre> blocks: a chroma style name, "auto" to follow
+	// the terminal background, or "none".
+	CodeTheme string `toml:"code_theme"`
 }
 
 // DefaultAsk starts Claude Code on the issue.
@@ -122,7 +126,7 @@ func Defaults() *Config {
 			Preview:       true,
 			PreviewLayout: "auto",
 		},
-		Issue: IssueConfig{AutoRefresh: Duration{120 * time.Second}, Ask: DefaultAsk},
+		Issue: IssueConfig{AutoRefresh: Duration{120 * time.Second}, Ask: DefaultAsk, CodeTheme: "auto"},
 		UI:    UIConfig{Mouse: true, Notify: "auto"},
 		Icons: Icons{
 			Immediate: "🔥",
@@ -190,6 +194,9 @@ func (c *Config) validate() error {
 	}
 	if !slices.Contains(NotifyModes, c.UI.Notify) {
 		return fmt.Errorf("ui.notify %q must be one of %s", c.UI.Notify, strings.Join(NotifyModes, ", "))
+	}
+	if t := c.Issue.CodeTheme; t != "auto" && t != "none" && styles.Registry[t] == nil {
+		return fmt.Errorf("issue.code_theme %q must be auto, none or a chroma style (e.g. monokai, dracula, github)", t)
 	}
 	if c.List.MaxIssues < 1 {
 		return fmt.Errorf("list.max_issues must be at least 1, got %d", c.List.MaxIssues)

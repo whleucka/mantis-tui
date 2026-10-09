@@ -201,7 +201,12 @@ func (m *Model) pickNoteToDelete(is *mantis.Issue) tea.Cmd {
 	}
 	opts := make([]pickerOption, len(is.Notes))
 	for i, n := range is.Notes {
-		first, _, _ := strings.Cut(n.Text, "\n")
+		var first string
+		for line := range strings.SplitSeq(n.Text, "\n") {
+			if first = stripPre(line); first != "" {
+				break
+			}
+		}
 		opts[i] = pickerOption{label: fmt.Sprintf("note %d · %s", n.ID, n.Reporter.Display()), detail: first, value: n.ID}
 	}
 	api, issueID := m.cur.sess.API, is.ID
