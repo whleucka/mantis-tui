@@ -124,9 +124,15 @@ func (iv *issueModel) handleAction(m *Model, a action) tea.Cmd {
 		if n := len(iv.trail); n > 0 {
 			return m.openIssueTrail(iv.trail[n-1], iv.trail[:n-1:n-1])
 		}
+		if m.opts.Issue > 0 {
+			return tea.Quit // a pane of its own has no list to go back to
+		}
 		m.cur.screen = screenList
 		m.cur.issue = nil
 	case actMarkUnreadBack:
+		if m.opts.Issue > 0 {
+			return tea.Quit // its read state is the opener's, not this pane's
+		}
 		m.cur.screen = screenList
 		m.cur.issue = nil
 		if m.seen.MarkUnread(iv.sess.Host.Name, iv.id) {

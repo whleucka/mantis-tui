@@ -3,9 +3,12 @@ package tui
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 	"testing"
+	"time"
 
+	"github.com/whleucka/mantis-tui/internal/config"
 	"github.com/whleucka/mantis-tui/internal/mantis"
 	"github.com/whleucka/mantis-tui/internal/mantis/mantistest"
 )
@@ -186,7 +189,7 @@ func TestAskRunsTheTemplateInAPane(t *testing.T) {
 	h := actionsHarness(t)
 	var got string
 	var gotRight bool
-	h.m.opts.RunInPane = func(_ context.Context, command string, right bool) error {
+	h.m.opts.RunInPane = func(_ context.Context, command, _ string, right bool) error {
 		got, gotRight = command, right
 		return nil
 	}
@@ -212,12 +215,12 @@ func TestAskRunsTheTemplateInAPane(t *testing.T) {
 func TestAskReportsWhyItCannot(t *testing.T) {
 	for _, tt := range []struct {
 		name, template string
-		run            func(context.Context, string, bool) error
+		run            func(context.Context, string, string, bool) error
 		want           string
 	}{
 		{"outside herdr", "claude", nil, "needs herdr"},
-		{"disabled", "", func(context.Context, string, bool) error { return nil }, "issue.ask is empty"},
-		{"pane failed", "claude", func(context.Context, string, bool) error { return errors.New("split broke") }, "split broke"},
+		{"disabled", "", func(context.Context, string, string, bool) error { return nil }, "issue.ask is empty"},
+		{"pane failed", "claude", func(context.Context, string, string, bool) error { return errors.New("split broke") }, "split broke"},
 	} {
 		h := actionsHarness(t)
 		h.m.opts.RunInPane = tt.run
@@ -226,5 +229,56 @@ func TestAskReportsWhyItCannot(t *testing.T) {
 		if !strings.Contains(h.view(), tt.want) {
 			t.Errorf("%s: status should say %q:\n%s", tt.name, tt.want, h.view())
 		}
+	}
+}
+
+func TestOpenInPaneRunsTheIssueCommand(t *testing.T) {
+	h := actionsHarness(t)
+	var got, label string
+	h.m.opts.RunInPane = func(_ context.Context, command, l string, _ bool) error {
+		got, label = command, l
+		return nil
+	}
+	h.m.opts.IssueCommand = func(host string, id int) string { return fmt.Sprintf("open %d on %s", id, host) }
+	is := h.m.currentIssue()
+	h.m.seen.MarkUnread("alpha", is.ID)
+	h.keys("O")
+	if want := "open 5 on alpha"; got != want {
+		t.Errorf("command = %q, want %q", got, want)
+	}
+	if want := "Issue 0000005"; label != want {
+		t.Errorf("pane label = %q, want %q", label, want)
+	}
+	if !strings.Contains(h.view(), "opened #5 in a new pane") {
+		t.Errorf("status should confirm:\n%s", h.view())
+	}
+	if h.m.seen.Unread("alpha", is.ID, is.UpdatedAt) {
+		t.Error("the opener should mark the issue read")
+	}
+}
+
+func TestOpenInPaneNeedsHerdr(t *testing.T) {
+	h := actionsHarness(t)
+	h.m.opts.IssueCommand = func(string, int) string { return "x" }
+	h.keys("O")
+	if !strings.Contains(h.view(), "needs herdr") {
+		t.Errorf("status should say why:\n%s", h.view())
+	}
+}
+
+func TestIssueOptionOpensOnlyThatIssue(t *testing.T) {
+	hosts := testHosts()
+	h := newHarnessOpts(t, &hosts[0], seed(5),
+		func(c *config.Config) { c.List.AutoRefresh.Duration = time.Minute },
+		func(o *Options) { o.Issue = 3 })
+	if h.m.cur.screen != screenIssue || h.m.cur.issue.id != 3 {
+		t.Fatalf("should start on issue #3:\n%s", h.view())
+	}
+	if _, ok := h.m.hosts["beta"]; ok {
+		t.Error("a single-issue instance should not watch other hosts")
+	}
+	h.keys("h")
+	if !h.quit {
+		t.Error("backing out of the issue should quit")
 	}
 }

@@ -28,9 +28,17 @@ type Options struct {
 	OpenURL      func(url string) error
 	Seen         *config.Seen // read state; nil keeps it in memory only
 	Notify       Notifier
-	// RunInPane runs a shell command in a new terminal pane, to the right
-	// or below; nil when there is no multiplexer to split.
-	RunInPane func(ctx context.Context, command string, right bool) error
+	// RunInPane runs a shell command in a new terminal pane named label
+	// ("" leaves it unnamed), to the right or below; nil when there is no
+	// multiplexer to split.
+	RunInPane func(ctx context.Context, command, label string, right bool) error
+	// IssueCommand is the shell command that runs mantis-tui on one issue,
+	// for opening it in a new pane; nil when there is none.
+	IssueCommand func(host string, id int) string
+	// Issue, when set, opens that issue on the Initial host at start, for an
+	// instance in a pane of its own: it leaves the other hosts alone and
+	// quits when backing out of the issue.
+	Issue int
 	// FilesDir caches downloaded attachments; OpenFile hands one to the
 	// desktop's default application.
 	FilesDir string
@@ -218,7 +226,11 @@ func (m *Model) Init() tea.Cmd {
 		query = tea.Raw(graphics.Query())
 	}
 	if m.opts.Initial != nil {
-		return tea.Batch(query, m.selectHost(m.opts.Initial.Name))
+		cmd := m.selectHost(m.opts.Initial.Name)
+		if m.opts.Issue > 0 && m.cur != nil {
+			cmd = tea.Batch(cmd, m.openIssue(m.opts.Issue))
+		}
+		return tea.Batch(query, cmd)
 	}
 	m.modal = m.hostPicker()
 	return query
@@ -536,7 +548,7 @@ func (m *Model) ensureHost(host config.Host, background bool) (*hostView, tea.Cm
 // watchAll loads every other host in the background, so their new issues
 // are noticed too. It needs auto-refresh to be on.
 func (m *Model) watchAll() tea.Cmd {
-	if m.opts.Config.List.AutoRefresh.Duration <= 0 {
+	if m.opts.Config.List.AutoRefresh.Duration <= 0 || m.opts.Issue > 0 {
 		return nil
 	}
 	var cmds []tea.Cmd

@@ -125,6 +125,7 @@ name their target ("Status for 3 issues").
 | `r` | add a note (reply) |
 | `m` | toggle monitoring (👁️ marks monitored issues) |
 | `o` | open in browser |
+| `O` | open the issue in a new herdr pane |
 | `A` | ask Claude about the issue in a new herdr pane |
 | `y` | copy the issue URL (OSC 52, works over SSH) |
 | `C` | create issue |
@@ -174,6 +175,15 @@ Issues you reported or just created don't count, and neither does the first
 load or a filter change. The window title shows the unread count across all
 hosts, e.g. `(3) mantis-tui`. Setting `list.auto_refresh = "0"` turns all of
 this off.
+
+**Open in a pane.** Inside [herdr](https://herdr.dev), `O` splits a new
+pane off mantis-tui (to the right on a wide terminal, below on a tall one)
+named after the issue (`Issue 0019112`) and runs
+`mantis-tui --host <host> --issue <id>` in it: a second mantis-tui
+that shows only that issue, so you can keep it open beside the list. Backing
+out of the issue (`h`, `q`, `esc`) quits it and the pane closes. It leaves
+the other hosts, new-issue alerts and read marks to the mantis-tui that
+opened it, which marks the issue read. `--issue` also works by hand.
 
 **Ask Claude.** Inside [herdr](https://herdr.dev), `A` splits a new pane
 off mantis-tui (to the right on a wide terminal, below on a tall one) and
@@ -227,7 +237,7 @@ selection, so hold `shift` to select text, or set `ui.mouse = false`.
 | `dn` | delete a note |
 | `gr` | go to a related or mentioned issue |
 | `ga` | open an attachment (images in the terminal) |
-| `s` `p` `v` `c` `a` `e` `m` `o` `y` `A` | same as in the list, for this issue |
+| `s` `p` `v` `c` `a` `e` `m` `o` `O` `y` `A` | same as in the list, for this issue |
 | `R` | refresh |
 | `u` | mark unread and go back to the list |
 | `q`/`esc`/`h` | back to the issue you came from with `gr`, else to the list |

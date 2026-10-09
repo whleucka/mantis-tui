@@ -43,6 +43,12 @@ func winSize(w, h int) tea.WindowSizeMsg { return tea.WindowSizeMsg{Width: w, He
 
 func newHarnessWith(t *testing.T, initial *config.Host, setup func(host string, f *mantistest.Fake), tweak func(*config.Config)) *harness {
 	t.Helper()
+	return newHarnessOpts(t, initial, setup, tweak, nil)
+}
+
+// newHarnessOpts is newHarnessWith with a last say over the Options.
+func newHarnessOpts(t *testing.T, initial *config.Host, setup func(host string, f *mantistest.Fake), tweak func(*config.Config), opts func(*Options)) *harness {
+	t.Helper()
 	h := &harness{t: t, fakes: map[string]*mantistest.Fake{}}
 	for _, host := range testHosts() {
 		f := &mantistest.Fake{
@@ -62,7 +68,7 @@ func newHarnessWith(t *testing.T, initial *config.Host, setup func(host string, 
 	if tweak != nil {
 		tweak(cfg)
 	}
-	m := New(Options{
+	o := Options{
 		Config:  cfg,
 		Hosts:   testHosts(),
 		Initial: initial,
@@ -75,7 +81,11 @@ func newHarnessWith(t *testing.T, initial *config.Host, setup func(host string, 
 			h.saved = append(h.saved, name)
 			return nil
 		},
-	})
+	}
+	if opts != nil {
+		opts(&o)
+	}
+	m := New(o)
 	h.m = m
 	m.now = func() time.Time { return testNow } // relative times must not depend on the day the tests run
 	h.send(tea.WindowSizeMsg{Width: 120, Height: 40})

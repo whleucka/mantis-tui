@@ -20,6 +20,7 @@ type globalOpts struct {
 	configPath string
 	json       bool
 	timeout    time.Duration
+	issue      int // the TUI opens this issue alone, as in a pane of its own
 
 	deps deps
 }
@@ -68,6 +69,7 @@ func newRootCmd(d deps) *cobra.Command {
 	flags.StringVar(&opts.configPath, "config", "", "path to config.toml (default $XDG_CONFIG_HOME/mantis-tui/config.toml)")
 	flags.BoolVar(&opts.json, "json", false, "print raw API JSON instead of a table")
 	flags.DurationVar(&opts.timeout, "timeout", 30*time.Second, "timeout for each API request")
+	root.Flags().IntVar(&opts.issue, "issue", 0, "open only this issue; backing out of it quits")
 
 	root.SetIn(d.stdin)
 	root.SetFlagErrorFunc(func(_ *cobra.Command, err error) error { return asUsage(err) })

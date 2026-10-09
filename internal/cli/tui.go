@@ -2,8 +2,11 @@ package cli
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
+	"strings"
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/spf13/cobra"
@@ -26,15 +29,17 @@ func (o *globalOpts) runTUI(cmd *cobra.Command) error {
 	switch {
 	case err == nil:
 		initial = &host
-	case errors.Is(err, config.ErrNeedPicker):
+	case errors.Is(err, config.ErrNeedPicker) && o.issue == 0:
 		// leave initial nil: the TUI asks
+	case errors.Is(err, config.ErrNeedPicker):
+		return usageErrorf("--issue needs a host: pass --host")
 	default:
 		return err
 	}
 
 	statePath := config.DefaultStatePath(os.Getenv)
 	cwd, _ := os.Getwd()
-	model := tui.New(tui.Options{
+	opts := tui.Options{
 		Config:  cfg,
 		Hosts:   res.Hosts,
 		Initial: initial,
@@ -45,6 +50,7 @@ func (o *globalOpts) runTUI(cmd *cobra.Command) error {
 		Seen:         config.LoadSeen(config.DefaultSeenPath(os.Getenv)),
 		Notify:       notifierFor(cfg.UI.Notify, os.Getenv, exec.LookPath),
 		RunInPane:    paneRunnerFor(os.Getenv, exec.LookPath, cwd, execRun),
+		IssueCommand: o.issueCommand(),
 		FilesDir:     config.DefaultFilesDir(os.Getenv),
 		OpenFile:     service.OpenFile,
 		ShowImage:    imageShowerFor(exec.LookPath),
@@ -55,7 +61,14 @@ func (o *globalOpts) runTUI(cmd *cobra.Command) error {
 			st.LastHost = name
 			return config.SaveState(statePath, st)
 		},
-	})
+	}
+	if o.issue > 0 {
+		// The instance that opened this pane owns the shared state: read
+		// marks, the last host and new-issue alerts.
+		opts.Issue = o.issue
+		opts.Seen, opts.Notify, opts.SaveLastHost = nil, tui.Notifier{}, nil
+	}
+	model := tui.New(opts)
 	_, err = tea.NewProgram(model, tea.WithContext(cmd.Context())).Run()
 	_, _ = os.Stdout.WriteString(model.ImageCleanup()) // free the thumbnails in the terminal
 	return err
@@ -68,4 +81,32 @@ func imageShowerFor(lookPath func(string) (string, error)) tui.ImageShower {
 		return tui.KittyImages(path)
 	}
 	return nil
+}
+
+// issueCommand is the shell command that runs this mantis-tui on one issue
+// with the same config file. exec lets the pane close when it quits.
+func (o *globalOpts) issueCommand() func(host string, id int) string {
+	self, err := os.Executable()
+	if err != nil {
+		return nil
+	}
+	return issueCommandFor(self, o.configPath)
+}
+
+func issueCommandFor(self, configPath string) func(host string, id int) string {
+	prefix := "exec " + shellQuote(self)
+	if configPath != "" {
+		if abs, err := filepath.Abs(configPath); err == nil {
+			configPath = abs
+		}
+		prefix += " --config " + shellQuote(configPath)
+	}
+	return func(host string, id int) string {
+		return fmt.Sprintf("%s --host %s --issue %d", prefix, shellQuote(host), id)
+	}
+}
+
+// shellQuote quotes s as one POSIX shell word.
+func shellQuote(s string) string {
+	return "'" + strings.ReplaceAll(s, "'", `'\''`) + "'"
 }

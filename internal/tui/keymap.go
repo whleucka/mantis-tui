@@ -48,6 +48,7 @@ const (
 	actToggleRead     action = "toggle-read"
 	actMarkUnreadBack action = "mark-unread-back"
 	actAsk            action = "ask"
+	actOpenPane       action = "open-pane"
 	actEditField      action = "edit-field"
 	actRelated        action = "related"
 	actFiles          action = "files"
@@ -102,6 +103,7 @@ func defaultKeymap() keymap {
 		{actEditField, []string{"e"}, "edit summary, description, steps or info"},
 		{actMonitor, []string{"m"}, "toggle monitoring"},
 		{actAsk, []string{"A"}, "ask Claude in a new pane"},
+		{actOpenPane, []string{"O"}, "open in a new pane"},
 	}
 	list := append(append([]binding{}, common...),
 		binding{actQuit, []string{"q"}, "quit"},
