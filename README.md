@@ -15,6 +15,7 @@ A fast terminal UI and scriptable CLI for the [MantisBT](https://mantisbt.org) b
 - Write notes and descriptions in `$EDITOR`
 - Attach files or a clipboard screenshot to notes and new issues
 - Inline image thumbnails in kitty, Ghostty and WezTerm
+- `<pre>` blocks in descriptions and notes shown as syntax-highlighted code, with tidy MySQL console output
 - Unread markers for issues that changed since you last looked
 - Desktop notifications for new issues on every host
 - Command palette with jump to any issue by number
@@ -71,7 +72,7 @@ make build   # bin/mantis-tui
 
 Press `?` in the TUI for the keys on the current screen.
 
-All options (filters, sorting, preview layout, notifications, icons) are in [docs/usage.md](docs/usage.md#configuration).
+All options (filters, sorting, preview layout, code theme, notifications, icons) are in [docs/usage.md](docs/usage.md#configuration).
 
 ## CLI
 

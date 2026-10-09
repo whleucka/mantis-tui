@@ -69,24 +69,24 @@ func TestHelpFitsSmallTerminalsByScrolling(t *testing.T) {
 	}
 }
 
-// The README's key tables must cover every binding.
-func TestReadmeDocumentsEveryKey(t *testing.T) {
-	readme, err := os.ReadFile(filepath.Join("..", "..", "README.md"))
+// The usage guide's key tables must cover every binding.
+func TestUsageDocumentsEveryKey(t *testing.T) {
+	usage, err := os.ReadFile(filepath.Join("..", "..", "docs", "usage.md"))
 	if err != nil {
 		t.Fatal(err)
 	}
 	km := defaultKeymap()
 	for _, b := range append(km.list, km.issue...) {
 		if keyLabel(b.keys) == "1-9" {
-			if !strings.Contains(string(readme), "`1`–`9`") {
-				t.Errorf("README does not document `1`–`9` (%s)", b.help)
+			if !strings.Contains(string(usage), "`1`–`9`") {
+				t.Errorf("docs/usage.md does not document `1`–`9` (%s)", b.help)
 			}
 			continue
 		}
 		for _, k := range b.keys {
 			label := "`" + keyLabel([]string{k}) + "`"
-			if !strings.Contains(string(readme), label) {
-				t.Errorf("README does not document %s (%s)", label, b.help)
+			if !strings.Contains(string(usage), label) {
+				t.Errorf("docs/usage.md does not document %s (%s)", label, b.help)
 			}
 		}
 	}

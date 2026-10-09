@@ -105,8 +105,8 @@ name their target ("Status for 3 issues").
 | `e` | edit the summary, description, steps to reproduce or additional information |
 | `r` | add a note (reply) |
 | `m` | toggle monitoring (👁️ marks monitored issues) |
-| `o` | open in browser |
-| `O` | open the issue in a new herdr pane |
+| `o` | open the issue in a new herdr pane |
+| `O` | open in browser |
 | `A` | ask Claude about the issue in a new herdr pane |
 | `y` | copy the issue URL (OSC 52, works over SSH) |
 | `C` | create issue |
@@ -157,7 +157,7 @@ load or a filter change. The window title shows the unread count across all
 hosts, e.g. `(3) mantis-tui`. Setting `list.auto_refresh = "0"` turns all of
 this off.
 
-**Open in a pane.** Inside [herdr](https://herdr.dev), `O` splits a new
+**Open in a pane.** Inside [herdr](https://herdr.dev), `o` splits a new
 pane off mantis-tui (to the right on a wide terminal, below on a tall one)
 named after the issue (`Issue 0019112`) and runs
 `mantis-tui --host <host> --issue <id>` in it: a second mantis-tui

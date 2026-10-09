@@ -92,7 +92,7 @@ func defaultKeymap() keymap {
 		{actRefresh, []string{"R"}, "refresh"},
 		{actUp, []string{"k", "up"}, "up"},
 		{actDown, []string{"j", "down"}, "down"},
-		{actBrowser, []string{"o"}, "open in browser"},
+		{actBrowser, []string{"O"}, "open in browser"},
 		{actCopyURL, []string{"y"}, "copy issue URL"},
 		{actAddNote, []string{"r"}, "add note (reply)"},
 		{actStatus, []string{"s"}, "change status"},
@@ -103,7 +103,7 @@ func defaultKeymap() keymap {
 		{actEditField, []string{"e"}, "edit summary, description, steps or info"},
 		{actMonitor, []string{"m"}, "toggle monitoring"},
 		{actAsk, []string{"A"}, "ask Claude in a new pane"},
-		{actOpenPane, []string{"O"}, "open in a new pane"},
+		{actOpenPane, []string{"o"}, "open in a new pane"},
 	}
 	list := append(append([]binding{}, common...),
 		binding{actQuit, []string{"q"}, "quit"},

@@ -128,7 +128,7 @@ func TestOpenInBrowser(t *testing.T) {
 	h := actionsHarness(t)
 	var opened string
 	h.m.opts.OpenURL = func(u string) error { opened = u; return nil }
-	h.keys("o")
+	h.keys("O")
 	if opened != "https://alpha.example.test/view.php?id=5" {
 		t.Errorf("opened %q", opened)
 	}
@@ -242,7 +242,7 @@ func TestOpenInPaneRunsTheIssueCommand(t *testing.T) {
 	h.m.opts.IssueCommand = func(host string, id int) string { return fmt.Sprintf("open %d on %s", id, host) }
 	is := h.m.currentIssue()
 	h.m.seen.MarkUnread("alpha", is.ID)
-	h.keys("O")
+	h.keys("o")
 	if want := "open 5 on alpha"; got != want {
 		t.Errorf("command = %q, want %q", got, want)
 	}
@@ -260,7 +260,7 @@ func TestOpenInPaneRunsTheIssueCommand(t *testing.T) {
 func TestOpenInPaneNeedsHerdr(t *testing.T) {
 	h := actionsHarness(t)
 	h.m.opts.IssueCommand = func(string, int) string { return "x" }
-	h.keys("O")
+	h.keys("o")
 	if !strings.Contains(h.view(), "needs herdr") {
 		t.Errorf("status should say why:\n%s", h.view())
 	}
