@@ -51,6 +51,9 @@ type Options struct {
 	// InlineImages asks the terminal at startup whether it can draw
 	// thumbnails in the issue view.
 	InlineImages bool
+	// Lists keeps each host's last list, shown at once on the next start
+	// while the real load runs; nil keeps nothing.
+	Lists *config.Lists
 }
 
 // screen is what fills the main area for the current host.
@@ -561,6 +564,7 @@ func (m *Model) ensureHost(host config.Host, background bool) (*hostView, tea.Cm
 	sess := m.opts.NewSession(host)
 	hv := &hostView{sess: sess, list: newListModel(m.opts.Config, sess, m.seen)}
 	hv.list.now = func() time.Time { return m.now() }
+	hv.list.lists = m.opts.Lists
 	m.hosts[host.Name] = hv
 	cmds := []tea.Cmd{hv.list.init(m, background)}
 	if m.seen.Begin(host.Name, time.Now()) {

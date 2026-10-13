@@ -110,8 +110,9 @@ func (f *Fake) Me(context.Context) (*mantis.User, error) {
 	return &u, nil
 }
 
-// ListIssues implements mantis.API: issues ordered by id descending, paged
-// by Page/PageSize (filters are recorded but not applied).
+// ListIssues implements mantis.API: issues in Mantis's order (sticky ones
+// first, then the most recently updated, then the highest id), paged by
+// Page/PageSize (filters are recorded but not applied).
 func (f *Fake) ListIssues(_ context.Context, opts mantis.ListOptions) (*mantis.IssueList, error) {
 	if err := f.enter("ListIssues"); err != nil {
 		return nil, err
@@ -123,7 +124,16 @@ func (f *Fake) ListIssues(_ context.Context, opts mantis.ListOptions) (*mantis.I
 	for _, is := range f.Issues {
 		all = append(all, is)
 	}
-	sort.Slice(all, func(i, j int) bool { return all[i].ID > all[j].ID })
+	sort.Slice(all, func(i, j int) bool {
+		a, b := all[i], all[j]
+		if a.Sticky != b.Sticky {
+			return a.Sticky
+		}
+		if !a.UpdatedAt.Equal(b.UpdatedAt) {
+			return a.UpdatedAt.After(b.UpdatedAt)
+		}
+		return a.ID > b.ID
+	})
 	out := all
 	if opts.PageSize > 0 {
 		page := max(opts.Page, 1)
@@ -256,6 +266,9 @@ func (f *Fake) CreateIssue(_ context.Context, in mantis.NewIssue) (*mantis.Issue
 		Project: in.Project, Category: in.Category,
 		Status:      mantis.EnumValue{ID: 10, Name: "new", Label: "new"},
 		Attachments: f.store(in.Files),
+	}
+	if t := f.bump(); !t.IsZero() {
+		is.CreatedAt, is.UpdatedAt = t, t
 	}
 	if f.Issues == nil {
 		f.Issues = map[int]mantis.Issue{}
