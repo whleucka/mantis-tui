@@ -55,6 +55,7 @@ func (s listSort) arrow() string {
 // sortIssues orders l.issues by the current sort. Ties go to the most
 // recently updated, then the highest id, whatever the direction.
 func (l *listModel) sortIssues() {
+	defer l.touch()
 	f := sortFields[l.sort.field]
 	slices.SortStableFunc(l.issues, func(a, b mantis.Issue) int {
 		c := f.compare(a, b)

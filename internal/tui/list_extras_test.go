@@ -151,3 +151,18 @@ func equalInts(a, b []int) bool {
 	}
 	return true
 }
+
+func TestSearchSeesAnIssuePatchedInPlace(t *testing.T) {
+	h := listHarness(t, 3, nil)
+	l := h.m.cur.list
+	l.setSearch(h.m, "renamed")
+	if n := len(l.rows()); n != 0 {
+		t.Fatalf("no issue matches yet, got %d rows", n)
+	}
+	fresh := l.issues[1]
+	fresh.Summary = "Renamed issue"
+	l.applyPatched(h.m, patchedMsg{host: "alpha", updated: map[int]*mantis.Issue{fresh.ID: &fresh}})
+	if rs := l.rows(); len(rs) != 1 || l.issues[rs[0].idx].ID != fresh.ID {
+		t.Errorf("the search must see the patched summary, got %d rows", len(rs))
+	}
+}
