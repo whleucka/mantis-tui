@@ -18,8 +18,38 @@ type row struct {
 	count  int
 }
 
-// rows applies the search and grouping to the loaded page.
+// rowsMemo caches rows(), which the list asks for several times per key
+// and per frame. It is valid while the issues, search and grouping are the
+// ones it was built from.
+type rowsMemo struct {
+	gen     int
+	first   *mantis.Issue // a reassigned l.issues is a different slice
+	n       int
+	search  string
+	grouped bool
+	rows    []row
+}
+
+// touch invalidates rows() after l.issues changed in place.
+func (l *listModel) touch() { l.gen++ }
+
+// rows applies the search and grouping to the loaded issues. Callers must
+// not modify the result.
 func (l *listModel) rows() []row {
+	var first *mantis.Issue
+	if len(l.issues) > 0 {
+		first = &l.issues[0]
+	}
+	key := rowsMemo{gen: l.gen, first: first, n: len(l.issues), search: l.search, grouped: l.grouped}
+	if c := l.rowsCache; c != nil && c.gen == key.gen && c.first == key.first && c.n == key.n && c.search == key.search && c.grouped == key.grouped {
+		return c.rows
+	}
+	key.rows = l.buildRows()
+	l.rowsCache = &key
+	return key.rows
+}
+
+func (l *listModel) buildRows() []row {
 	var idxs []int
 	terms := strings.Fields(strings.ToLower(l.search))
 	for i, is := range l.issues {

@@ -35,6 +35,9 @@ type listModel struct {
 	sort     listSort
 	search   string
 	selected map[int]mantis.Issue // by id; survives refreshes
+
+	gen       int // bumped when l.issues changes in place
+	rowsCache *rowsMemo
 	loaded   bool
 	loadErr  error // why the first load failed; shown until a load succeeds
 	req      int   // latest load; responses for older loads are ignored
@@ -440,6 +443,7 @@ func (l *listModel) applyPatched(m *Model, msg patchedMsg) tea.Cmd {
 			l.issues[i] = *fresh
 		}
 	}
+	l.touch()
 	l.resort(m) // a changed field can move the row
 	text, err := summarize(msg.label, msg.results)
 	if err != nil {
@@ -477,6 +481,7 @@ func (l *listModel) removeDeleted(m *Model, msg deletedMsg) tea.Cmd {
 		}
 	}
 	l.issues = kept
+	l.touch()
 	l.cursorTo(m, next)
 
 	text, err := summarize("deleted", msg.results)
