@@ -1,5 +1,8 @@
 # Implementation Plan: mantis-tui
 
+> `SPEC.md` was removed in `27bfd8b`. Read it with `git show 27bfd8b^:SPEC.md`.
+> What comes next is in [`roadmap.md`](roadmap.md).
+
 ## Overview
 
 This builds the Go and Bubble Tea MantisBT client described in `SPEC.md`: a
@@ -126,9 +129,9 @@ The full task details are in `tasks/todo.md`.
 - [x] Task 36: Thumbnails in the issue view: detection, background loading, cleanup
 
 ### Phase 13: Uploading attachments (v1.8)
-- [ ] Task 37: Upload API, server limits and the clipboard (mantis, meta, service, fake, dev server)
-- [ ] Task 38: CLI `--file` and `--clipboard` on `note` and `create`
-- [ ] Task 39: TUI attachments section in the note and create forms
+- [x] Task 37: Upload API, server limits and the clipboard (mantis, meta, service, fake, dev server)
+- [x] Task 38: CLI `--file` and `--clipboard` on `note` and `create`
+- [x] Task 39: TUI attachments section in the note and create forms
 
 ## Findings During Build
 

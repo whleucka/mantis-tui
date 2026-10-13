@@ -6,6 +6,8 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/charmbracelet/x/ansi"
+
+	"github.com/whleucka/mantis-tui/internal/version"
 )
 
 // helpModal lists the bindings of the current screen, generated from the
@@ -72,7 +74,7 @@ func (h *helpModal) view(width, height int) string {
 	for _, e := range h.entries[start:min(start+rows, len(h.entries))] {
 		b.WriteString(styleGroup.Render(fmt.Sprintf("%-*s", keyW, e[0])) + "  " + e[1] + "\n")
 	}
-	footer := "? or esc to close"
+	footer := "mantis-tui " + version.String() + " · ? or esc to close"
 	if len(h.entries) > rows {
 		footer = fmt.Sprintf("j/k scroll (%d-%d of %d) · %s", start+1, min(start+rows, len(h.entries)), len(h.entries), footer)
 	}

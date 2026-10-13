@@ -1,10 +1,12 @@
 BIN := bin/mantis-tui
-GOLANGCI_LINT := go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.13.2
+VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
+LDFLAGS := -X github.com/whleucka/mantis-tui/internal/version.stamped=$(VERSION)
+GOLANGCI_LINT := go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.14.0
 
 .PHONY: build test race lint fmt it
 
 build:
-	go build -o $(BIN) ./cmd/mantis-tui
+	go build -ldflags "$(LDFLAGS)" -o $(BIN) ./cmd/mantis-tui
 
 test:
 	go test ./...
