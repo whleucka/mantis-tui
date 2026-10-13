@@ -56,6 +56,7 @@ func (o *globalOpts) runTUI(cmd *cobra.Command) error {
 		ShowImage:    imageShowerFor(exec.LookPath),
 		Clipboard:    service.Clipboard,
 		InlineImages: true,
+		Lists:        config.NewLists(config.DefaultListsDir(os.Getenv)),
 		SaveLastHost: func(name string) error {
 			st, _ := config.LoadState(statePath)
 			st.LastHost = name
@@ -66,7 +67,7 @@ func (o *globalOpts) runTUI(cmd *cobra.Command) error {
 		// The instance that opened this pane owns the shared state: read
 		// marks, the last host and new-issue alerts.
 		opts.Issue = o.issue
-		opts.Seen, opts.Notify, opts.SaveLastHost = nil, tui.Notifier{}, nil
+		opts.Seen, opts.Notify, opts.SaveLastHost, opts.Lists = nil, tui.Notifier{}, nil, nil
 	}
 	model := tui.New(opts)
 	_, err = tea.NewProgram(model, tea.WithContext(cmd.Context())).Run()

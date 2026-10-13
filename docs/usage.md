@@ -79,6 +79,17 @@ current screen.
 The list holds every issue the filter matches (up to `list.max_issues`). The
 first chunk shows at once and the rest loads in the background; refreshes
 swap the list in only when they finish, so it never shrinks mid-refresh.
+
+- **Auto-refresh fetches only what changed.** Mantis lists the most recently
+  updated issues first, so a refresh reads pages until it reaches issues
+  older than the ones it holds, usually one request. Every 10 minutes, and
+  whenever you press `R` or change the filter, it reloads the whole filter
+  instead. That's what drops issues that were deleted or left the filter.
+- **The last list is kept for the next start.** Each complete load is saved to
+  `$XDG_CACHE_HOME/mantis-tui/lists/` (private). On the next start, or when
+  you switch to a filter you've used before, that list shows at once,
+  marked "saved list, refreshing…", until the real load replaces it. If the
+  server can't be reached, it stays, marked with its age.
 Times within the last week show as relative ("3h ago"). On a wide list a
 HANDLER column appears.
 
@@ -114,7 +125,7 @@ name their target ("Status for 3 issues").
 | `P` | toggle the preview pane |
 | `J` / `K` | scroll the preview |
 | `ctrl+g` | group by project |
-| `R` | refresh |
+| `R` | reload the whole filter |
 | `H` | switch host |
 | `1`–`9` | switch to the Nth host in the config |
 | `:` / `ctrl+p` | command palette |

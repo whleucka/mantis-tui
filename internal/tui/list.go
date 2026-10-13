@@ -19,6 +19,11 @@ import (
 
 const requestTimeout = 30 * time.Second
 
+// fullSweepEvery is how often an auto-refresh reloads the whole filter. The
+// refreshes in between fetch only what changed since the last one, which
+// can't see issues that left the filter or were deleted.
+const fullSweepEvery = 10 * time.Minute
+
 // listModel is the issue list for one host.
 type listModel struct {
 	sess      *Session
@@ -38,12 +43,12 @@ type listModel struct {
 
 	gen       int // bumped when l.issues changes in place
 	rowsCache *rowsMemo
-	loaded   bool
-	loadErr  error // why the first load failed; shown until a load succeeds
-	req      int   // latest load; responses for older loads are ignored
-	chain    loadChain
-	capped   bool // the last load stopped at maxIssues
-	spinning bool // the running load shows the spinner
+	loaded    bool
+	loadErr   error // why the first load failed; shown until a load succeeds
+	req       int   // latest load; responses for older loads are ignored
+	chain     loadChain
+	capped    bool // the last load stopped at maxIssues
+	spinning  bool // the running load shows the spinner
 
 	meID   int
 	colors map[string]string
@@ -62,6 +67,13 @@ type listModel struct {
 
 	known     map[int]bool // every issue id this list has shown, for new-issue alerts
 	baselined bool         // a complete load has happened since the filter was set
+
+	watermark time.Time // newest updated_at held, for incremental refreshes
+	lastFull  time.Time // when the last load of the whole filter finished
+
+	lists     *config.Lists // the last list of each filter, kept across runs
+	fromSaved bool          // the list shown is a saved one, until a load replaces it
+	savedAt   time.Time     // when that list was saved
 }
 
 // loadChain is one load of the whole filter, a chunk at a time.
@@ -71,6 +83,10 @@ type loadChain struct {
 	applied     bool // the list already shows part of this load
 	acc         []mantis.Issue
 	ids         map[int]bool
+	// since, when set, makes this an incremental refresh: it stops at the
+	// first page that reaches issues older than since, and merges what it
+	// fetched into the list instead of replacing it.
+	since time.Time
 }
 
 type (
@@ -80,6 +96,12 @@ type (
 		page   int
 		issues []mantis.Issue
 		err    error
+	}
+	// savedListMsg is the list a previous run saved for filter.
+	savedListMsg struct {
+		host   string
+		filter string
+		list   config.SavedList
 	}
 	listMetaMsg struct {
 		host   string
@@ -91,6 +113,7 @@ type (
 
 func (msg issuesLoadedMsg) hostName() string { return msg.host }
 func (msg listMetaMsg) hostName() string     { return msg.host }
+func (msg savedListMsg) hostName() string    { return msg.host }
 
 // refreshTickMsg fires an auto-refresh for target ("list" or "issue").
 type refreshTickMsg struct {
@@ -122,7 +145,47 @@ func newListModel(cfg *config.Config, sess *Session, seen *config.Seen) *listMod
 
 // init starts the first load; a background host's load is silent.
 func (l *listModel) init(m *Model, background bool) tea.Cmd {
-	return tea.Batch(l.load(m, 0, true, background), l.loadMeta(), l.scheduleRefresh())
+	return tea.Batch(l.load(m, 0, true, background), l.loadSaved(), l.loadMeta(), l.scheduleRefresh())
+}
+
+// loadSaved reads the list a previous run saved for the current filter.
+func (l *listModel) loadSaved() tea.Cmd {
+	if l.lists == nil {
+		return nil
+	}
+	lists, host, filter := l.lists, l.sess.Host, l.filter
+	return func() tea.Msg {
+		saved, ok := lists.Load(host, filter)
+		if !ok {
+			return nil
+		}
+		return savedListMsg{host: host.Name, filter: filter, list: saved}
+	}
+}
+
+// onSaved shows a saved list until the real load completes, unless that
+// load already showed some of its own.
+func (l *listModel) onSaved(m *Model, msg savedListMsg) {
+	if msg.filter != l.filter || l.chain.applied {
+		return
+	}
+	l.setIssues(m, msg.list.Issues, 0)
+	l.fromSaved, l.savedAt = true, msg.list.SavedAt
+	l.chain.progressive = false // swap the real list in whole, so it never shrinks
+}
+
+// saveList keeps the list for the next run.
+func (l *listModel) saveList() tea.Cmd {
+	l.fromSaved = false
+	if l.lists == nil {
+		return nil
+	}
+	lists, host, filter, now := l.lists, l.sess.Host, l.filter, l.now()
+	issues := append([]mantis.Issue(nil), l.issues...)
+	return func() tea.Msg {
+		_ = lists.Save(host, filter, issues, now) // only a cache: a failed write costs a slower start
+		return nil
+	}
 }
 
 func (l *listModel) host() string { return l.sess.Host.Name }
@@ -143,6 +206,19 @@ func (l *listModel) load(m *Model, keepID int, progressive, silent bool) tea.Cmd
 		spin = m.startLoading()
 	}
 	return tea.Batch(spin, l.fetchChunk(1))
+}
+
+// refreshChanged fetches only the issues updated since the last load,
+// newest first, as Mantis lists them, and merges them in.
+func (l *listModel) refreshChanged(m *Model) tea.Cmd {
+	cmd := l.load(m, 0, false, true)
+	l.chain.since = l.watermark
+	return cmd
+}
+
+// incremental reports whether an auto-refresh can fetch just the changes.
+func (l *listModel) incremental() bool {
+	return l.baselined && !l.watermark.IsZero() && l.now().Sub(l.lastFull) < fullSweepEvery
 }
 
 func (l *listModel) endLoad(m *Model) {
@@ -193,6 +269,23 @@ func (l *listModel) onChunk(m *Model, msg issuesLoadedMsg) tea.Cmd {
 		c.acc = c.acc[:l.maxIssues]
 	}
 	done := capped || len(msg.issues) < l.pageSize
+	if !c.since.IsZero() {
+		if !done && !reaches(msg.issues, c.since) {
+			return l.fetchChunk(msg.page + 1)
+		}
+		l.endLoad(m)
+		if capped { // everything changed: it was a full load after all
+			l.capped, l.lastFull = true, l.now()
+			l.setIssues(m, c.acc, l.currentID())
+			return tea.Batch(l.announce(c.acc), l.saveList())
+		}
+		merged, changed := l.merge(c.acc)
+		if !changed {
+			return l.announce(l.issues)
+		}
+		l.setIssues(m, merged, l.currentID())
+		return tea.Batch(l.announce(l.issues), l.saveList())
+	}
 	if c.progressive || done {
 		keep := l.currentID()
 		if !c.applied && c.keepID != 0 {
@@ -204,14 +297,74 @@ func (l *listModel) onChunk(m *Model, msg issuesLoadedMsg) tea.Cmd {
 	if !done {
 		return l.fetchChunk(msg.page + 1)
 	}
-	l.capped = capped
+	l.capped, l.lastFull = capped, l.now()
 	l.endLoad(m)
-	return l.announce(c.acc)
+	return tea.Batch(l.announce(c.acc), l.saveList())
+}
+
+// savedAge says how old a saved list is: "saved 3h ago".
+func savedAge(at, now time.Time) string {
+	switch d := dateOf(at, now); d {
+	case "":
+		return "saved"
+	case "now":
+		return "saved just now"
+	default:
+		return "saved " + d
+	}
+}
+
+// reaches reports whether a page got to issues older than since. Sticky
+// issues come first whatever their age, so they don't count.
+func reaches(page []mantis.Issue, since time.Time) bool {
+	for _, is := range page {
+		if !is.Sticky && is.UpdatedAt.Before(since) {
+			return true
+		}
+	}
+	return false
+}
+
+// merge lays fresh issues over the list. It reports whether anything
+// differs from what is shown; the result is capped at maxIssues, keeping
+// the most recently updated, as a full load would.
+func (l *listModel) merge(fresh []mantis.Issue) ([]mantis.Issue, bool) {
+	held := make(map[int]mantis.Issue, len(l.issues))
+	for _, is := range l.issues {
+		held[is.ID] = is
+	}
+	changed := false
+	inFresh := make(map[int]bool, len(fresh))
+	for _, is := range fresh {
+		inFresh[is.ID] = true
+		if old, ok := held[is.ID]; !ok || !old.UpdatedAt.Equal(is.UpdatedAt) {
+			changed = true
+		}
+	}
+	if !changed {
+		return nil, false
+	}
+	merged := append([]mantis.Issue(nil), fresh...)
+	for _, is := range l.issues {
+		if !inFresh[is.ID] {
+			merged = append(merged, is)
+		}
+	}
+	if len(merged) > l.maxIssues {
+		sort.SliceStable(merged, func(i, j int) bool { return merged[i].UpdatedAt.After(merged[j].UpdatedAt) })
+		merged, l.capped = merged[:l.maxIssues], true
+	}
+	return merged, true
 }
 
 // setIssues shows issues, keeping the cursor on keepID when it is there.
 func (l *listModel) setIssues(m *Model, issues []mantis.Issue, keepID int) {
 	l.issues = append([]mantis.Issue(nil), issues...)
+	for _, is := range l.issues {
+		if !is.Sticky && is.UpdatedAt.After(l.watermark) {
+			l.watermark = is.UpdatedAt
+		}
+	}
 	l.sortIssues()
 	l.loaded, l.loadErr = true, nil
 	for _, is := range l.issues { // keep selection snapshots fresh
@@ -244,6 +397,9 @@ func (l *listModel) onTick(m *Model, msg refreshTickMsg) tea.Cmd {
 	if l.inFlight || m.editing || (m.cur == hv && hv.screen == screenList && m.modal != nil) {
 		return next
 	}
+	if l.incremental() {
+		return tea.Batch(next, l.refreshChanged(m))
+	}
 	return tea.Batch(next, l.load(m, 0, false, true))
 }
 
@@ -266,6 +422,10 @@ func (l *listModel) context() string {
 	if l.loaded {
 		s += fmt.Sprintf(" · %d issues", len(l.issues))
 		switch {
+		case l.fromSaved && l.inFlight:
+			s += " (saved list, refreshing…)"
+		case l.fromSaved:
+			s += " (" + savedAge(l.savedAt, l.now()) + ")"
 		case l.inFlight && l.chain.progressive:
 			s += " (loading…)"
 		case l.capped:
@@ -296,6 +456,8 @@ func (l *listModel) handleMsg(m *Model, msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case issuesLoadedMsg:
 		return l.onChunk(m, msg)
+	case savedListMsg:
+		l.onSaved(m, msg)
 	case listMetaMsg:
 		if msg.err != nil {
 			return errCmd(l.host(), msg.err)
@@ -512,7 +674,9 @@ func (msg filterChosenMsg) hostName() string { return msg.host }
 func (l *listModel) setFilter(m *Model, f string) tea.Cmd {
 	l.filter = f
 	l.baselined = false // the new filter's first load is not "new issues"
-	return l.load(m, 0, true, false)
+	l.watermark = time.Time{}
+	l.fromSaved = false
+	return tea.Batch(l.load(m, 0, true, false), l.loadSaved())
 }
 
 // move steps the cursor over issue rows, skipping group headers.
