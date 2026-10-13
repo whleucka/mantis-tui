@@ -12,6 +12,7 @@ import (
 
 	"github.com/whleucka/mantis-tui/internal/mantis"
 	"github.com/whleucka/mantis-tui/internal/service"
+	"github.com/whleucka/mantis-tui/internal/version"
 )
 
 // globalOpts holds the flags shared by every subcommand.
@@ -51,6 +52,7 @@ func newRootCmd(d deps) *cobra.Command {
 	root := &cobra.Command{
 		Use:           "mantis-tui",
 		Short:         "A terminal UI and CLI for the MantisBT bug tracker",
+		Version:       version.String(),
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		Args: func(_ *cobra.Command, args []string) error {
