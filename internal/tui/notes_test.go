@@ -158,6 +158,36 @@ func TestAddNoteFromIssueViewReloadsIt(t *testing.T) {
 	}
 }
 
+func TestAddedNoteIsScrolledTo(t *testing.T) {
+	t.Setenv("TMPDIR", t.TempDir())
+	hosts := testHosts()
+	h := newHarnessWith(t, &hosts[0], func(name string, f *mantistest.Fake) {
+		seed(3)(name, f)
+		is := f.Issues[3]
+		for i := range 30 { // taller than the window
+			is.Notes = append(is.Notes, mantis.Note{ID: 60 + i, Text: "older note", Reporter: mantis.User{Name: "jane"}})
+		}
+		f.Issues[3] = is
+	}, nil)
+	stubEditor(h, "The newest one.\n")
+	h.keys("enter", "tab") // #3, on the history tab
+	h.keys("r", "enter")
+	iv := h.m.cur.issue
+	id := h.fakes["alpha"].Issues[3].Notes[30].ID
+	if iv.tab != tabNotes {
+		t.Error("adding a note should switch to the notes tab")
+	}
+	if line, ok := iv.noteLines[id]; !ok || iv.vp.YOffset() != min(line, iv.vp.TotalLineCount()-iv.vp.Height()) {
+		t.Errorf("offset = %d, want note %d's line %d", iv.vp.YOffset(), id, line)
+	}
+	if !strings.Contains(h.view(), "The newest one.") {
+		t.Errorf("new note not in view:\n%s", h.view())
+	}
+	if iv.focusNote != 0 {
+		t.Error("focus should be used up by the reload")
+	}
+}
+
 func TestDeleteNoteFromIssueView(t *testing.T) {
 	h := notesHarness(t, false)
 	h.keys("enter", "d", "n")

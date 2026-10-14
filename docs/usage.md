@@ -249,7 +249,8 @@ background.
   `$VISUAL`/`$EDITOR` (falling back to `vi`). Lines starting with `# ` that
   mantis-tui inserted are removed. Saving an empty file cancels the note. If
   sending fails, your text is kept in a temp file and the status bar shows
-  its path.
+  its path. If the issue is open in the issue view, it reloads on the notes
+  tab, scrolled to the new note.
 - **Attachments:** the note form also attaches files.
   - If the clipboard holds an image (`wl-paste` on Wayland, `xclip` on X11),
     it's offered as "clipboard image" with its size, ticked, and drawn as a

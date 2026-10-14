@@ -168,6 +168,9 @@ func (m *Model) onNoteAdded(msg noteAddedMsg) tea.Cmd {
 	if msg.err != nil { // added, but not all of its files
 		status = errCmd(msg.host, msg.err)
 	}
+	if hv := m.hosts[msg.host]; hv != nil && hv.issue != nil && hv.issue.id == msg.issueID {
+		hv.issue.tab, hv.issue.focusNote = tabNotes, msg.note.ID // show it once reloaded
+	}
 	return tea.Batch(status, m.markSeenFromServer(msg.host, msg.issueID), m.reloadIssue(msg.host, msg.issueID))
 }
 

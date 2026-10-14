@@ -34,8 +34,10 @@ type issueModel struct {
 	req    int
 	loaded bool
 
-	tabLine int       // content line of the Notes/History labels; -1 before load
-	look    issueLook // clock and colours for the last render
+	tabLine   int         // content line of the Notes/History labels; -1 before load
+	noteLines map[int]int // note id → content line of its header, notes tab only
+	focusNote int         // note to scroll to on the next load, e.g. one just added
+	look      issueLook   // clock and colours for the last render
 
 	interval time.Duration
 	tickGen  int
@@ -113,9 +115,13 @@ func (iv *issueModel) handleMsg(m *Model, msg issueLoadedMsg) tea.Cmd {
 		return errCmd(iv.sess.Host.Name, msg.err)
 	}
 	iv.issue, iv.err, iv.loaded = msg.issue, nil, true
-	offset := iv.vp.YOffset()
+	offset := iv.vp.YOffset() // keep the reading position across refreshes
 	iv.render(m)
-	iv.vp.SetYOffset(offset) // keep the reading position across refreshes
+	if line, ok := iv.noteLines[iv.focusNote]; ok {
+		offset = line
+	}
+	iv.focusNote = 0
+	iv.vp.SetYOffset(offset)
 	return tea.Batch(m.markSeen(iv.sess.Host.Name, *iv.issue), m.loadThumbs(iv))
 }
 
@@ -196,8 +202,8 @@ func (iv *issueModel) content(w int) string {
 		}
 		return styleMuted.Render(fmt.Sprintf("Loading issue #%d…", iv.id))
 	}
-	s, line := renderIssueTabs(iv.issue, iv.tab, w, iv.look)
-	iv.tabLine = line
+	s, lines := renderIssueTabs(iv.issue, iv.tab, w, iv.look)
+	iv.tabLine, iv.noteLines = lines.tab, lines.notes
 	return s
 }
 
@@ -225,9 +231,15 @@ func renderIssue(is *mantis.Issue, tab, w int, lk issueLook) string {
 	return s
 }
 
-// renderIssueTabs is renderIssue that also returns the line holding the tab
-// labels, for mouse clicks.
-func renderIssueTabs(is *mantis.Issue, tab, w int, lk issueLook) (string, int) {
+// issueLines are content lines of a rendered issue.
+type issueLines struct {
+	tab   int         // the tab labels, for mouse clicks
+	notes map[int]int // note id → its header line, for scrolling to a note
+}
+
+// renderIssueTabs is renderIssue that also returns where the tab labels and
+// notes are.
+func renderIssueTabs(is *mantis.Issue, tab, w int, lk issueLook) (string, issueLines) {
 	var b strings.Builder
 
 	b.WriteString(styleTitle.Render(fmt.Sprintf("#%d %s", is.ID, is.Summary)) + "\n\n")
@@ -290,7 +302,7 @@ func renderIssueTabs(is *mantis.Issue, tab, w int, lk issueLook) (string, int) {
 
 	notes := fmt.Sprintf("Notes (%d)", len(is.Notes))
 	history := fmt.Sprintf("History (%d)", len(is.History))
-	tabLine := strings.Count(b.String(), "\n") + 1 // the bar follows a blank line
+	lines := issueLines{tab: strings.Count(b.String(), "\n") + 1} // the bar follows a blank line
 	switch tab {
 	case tabPreview:
 		b.WriteString("\n" + styleHeader.Render(notes) + "\n\n")
@@ -301,6 +313,7 @@ func renderIssueTabs(is *mantis.Issue, tab, w int, lk issueLook) (string, int) {
 	}
 
 	if tab != tabHistory {
+		lines.notes = make(map[int]int, len(is.Notes))
 		if len(is.Notes) == 0 {
 			b.WriteString(styleMuted.Render("No notes. "+keyOf(actAddNote)+" adds one.") + "\n")
 		}
@@ -313,6 +326,7 @@ func renderIssueTabs(is *mantis.Issue, tab, w int, lk issueLook) (string, int) {
 				meta = append(meta, n.TimeTracking.Duration)
 			}
 			meta = append(meta, fmt.Sprintf("note %d", n.ID))
+			lines.notes[n.ID] = strings.Count(b.String(), "\n")
 			b.WriteString(styleGroup.Render("── "+strings.Join(meta, " · ")) + "\n")
 			b.WriteString(renderBody(n.Text, w, lk.code) + "\n")
 			for _, a := range n.Attachments {
@@ -335,5 +349,5 @@ func renderIssueTabs(is *mantis.Issue, tab, w int, lk issueLook) (string, int) {
 			b.WriteString(styleMuted.Render(stamp(h.CreatedAt)+"  "+fmt.Sprintf("%-12s", h.User.Name)) + " " + line + "\n")
 		}
 	}
-	return strings.TrimRight(b.String(), "\n"), tabLine
+	return strings.TrimRight(b.String(), "\n"), lines
 }

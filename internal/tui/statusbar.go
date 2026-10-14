@@ -4,9 +4,12 @@ import (
 	"strings"
 
 	"charm.land/lipgloss/v2"
+
+	"github.com/whleucka/mantis-tui/internal/version"
 )
 
-// status is the bottom line: host, context, spinner and the last message.
+// status is the bottom line: host, context, spinner, the last message and
+// the version.
 type status struct {
 	msg   string
 	isErr bool
@@ -37,7 +40,12 @@ func (m *Model) statusView() string {
 	if m.status.isErr {
 		style = styleBar.Foreground(colorError)
 	}
-	room := m.width - lipgloss.Width(l) - 1
+	// The version gives way first when the bar is narrow.
+	ver := styleBar.Foreground(colorMuted).Render(" " + version.String() + " ")
+	if m.width-lipgloss.Width(l)-lipgloss.Width(ver) < 20 {
+		ver = ""
+	}
+	room := m.width - lipgloss.Width(l) - lipgloss.Width(ver) - 1
 	if room < 0 {
 		room = 0
 	}
@@ -49,5 +57,5 @@ func (m *Model) statusView() string {
 		}
 	}
 	right := style.Width(room + 1).Align(lipgloss.Right).Render(msg + " ")
-	return l + right
+	return l + right + ver
 }
