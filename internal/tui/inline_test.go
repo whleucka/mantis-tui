@@ -205,8 +205,8 @@ func TestCellSizeFromTheTerminal(t *testing.T) {
 func TestClickThumbnailOpensTheImage(t *testing.T) {
 	h := thumbHarness(t, nil)
 	var shownPath string
-	h.m.opts.ShowImage = func(path, _ string, _, _ int, done func(error) tea.Msg) tea.Cmd {
-		shownPath = path
+	h.m.opts.ShowImage = func(imgs []ViewerImage, start, _, _ int, done func(error) tea.Msg) tea.Cmd {
+		shownPath, _ = imgs[start].Fetch()
 		return func() tea.Msg { return done(nil) }
 	}
 	h.send(graphicsOK)

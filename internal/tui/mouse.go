@@ -2,10 +2,17 @@ package tui
 
 import (
 	"fmt"
+	"regexp"
+	"slices"
+	"strconv"
+	"strings"
 	"time"
+	"unicode"
+	"unicode/utf8"
 
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
+	"github.com/charmbracelet/x/ansi"
 
 	"github.com/whleucka/mantis-tui/internal/service"
 )
@@ -157,8 +164,9 @@ func (iv *issueModel) wheel(delta int) {
 	}
 }
 
-// click opens the attachment whose name or thumbnail was clicked, or
-// switches tabs when the click lands on a tab label.
+// click opens the attachment whose name or thumbnail was clicked, the
+// issue or URL under the pointer, or switches tabs when the click lands on
+// a tab label. An issue opened this way is left with back, like g r.
 func (iv *issueModel) click(m *Model, x, y int) tea.Cmd {
 	if iv.issue == nil {
 		return nil
@@ -173,8 +181,47 @@ func (iv *issueModel) click(m *Model, x, y int) tea.Cmd {
 	}
 	if line == iv.tabLine {
 		iv.clickTabs(m, x)
+		return nil
+	}
+	if lines := strings.Split(iv.vp.GetContent(), "\n"); line < len(lines) {
+		switch id, url := linkAt(lines[line], x+iv.vp.XOffset()); {
+		case id > 0 && id != iv.id:
+			return m.openIssueTrail(id, append(slices.Clone(iv.trail), iv.id))
+		case url != "":
+			return m.openURL(url)
+		}
 	}
 	return nil
+}
+
+// urlRe finds http and https links in plain text.
+var urlRe = regexp.MustCompile("https?://[^\\s<>\"'`]+")
+
+// linkAt finds the issue mention ("#123") or URL at column x of a rendered
+// line.
+func linkAt(line string, x int) (id int, url string) {
+	plain := ansi.Strip(line)
+	at := len(ansi.Truncate(plain, x, "")) // the byte under column x
+	if x < 0 || at >= len(plain) {
+		return 0, ""
+	}
+	for _, loc := range urlRe.FindAllStringIndex(plain, -1) {
+		end := loc[0] + len(strings.TrimRight(plain[loc[0]:loc[1]], ".,;:!?)]}'\""))
+		if at >= loc[0] && at < end {
+			return 0, plain[loc[0]:end]
+		}
+	}
+	for _, loc := range mentionRe.FindAllStringSubmatchIndex(plain, -1) {
+		if at < loc[2]-1 || at >= loc[3] { // from the # to the last digit
+			continue
+		}
+		if r, _ := utf8.DecodeRuneInString(plain[loc[3]:]); unicode.IsLetter(r) {
+			return 0, ""
+		}
+		id, _ = strconv.Atoi(plain[loc[2]:loc[3]])
+		return id, ""
+	}
+	return 0, ""
 }
 
 // clickTabs switches to the tab whose label is at column x.

@@ -5,6 +5,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/charmbracelet/x/ansi"
+
 	"github.com/whleucka/mantis-tui/internal/mantis"
 	"github.com/whleucka/mantis-tui/internal/mantis/mantistest"
 )
@@ -124,5 +126,69 @@ func TestGoRelatedWithNoTargets(t *testing.T) {
 	}
 	if !strings.Contains(lastLine(h.view()), "#3 has no related or mentioned issues") {
 		t.Errorf("status = %q", lastLine(h.view()))
+	}
+}
+
+func TestLinkAt(t *testing.T) {
+	line := styleMuted.Render("see") + " #12, (https://example.test/a?b=1). #3x é#7"
+	for _, c := range []struct {
+		x    int
+		id   int
+		url  string
+		desc string
+	}{
+		{4, 12, "", "the #"},
+		{6, 12, "", "the last digit"},
+		{7, 0, "", "the comma after"},
+		{9, 0, "", "the bracket before"},
+		{10, 0, "https://example.test/a?b=1", "the scheme"},
+		{35, 0, "https://example.test/a?b=1", "the URL's last character"},
+		{36, 0, "", "the closing bracket"},
+		{39, 0, "", "#3x is a word"},
+		{44, 0, "", "glued to a letter"},
+		{90, 0, "", "past the end"},
+	} {
+		id, url := linkAt(line, c.x)
+		if id != c.id || url != c.url {
+			t.Errorf("%s: linkAt(x=%d) = %d, %q; want %d, %q", c.desc, c.x, id, url, c.id, c.url)
+		}
+	}
+}
+
+// contentRow is the screen row of the first issue view line containing s.
+func contentRow(t *testing.T, h *harness, s string) (x, y int) {
+	t.Helper()
+	for i, l := range strings.Split(h.view(), "\n") {
+		if at := strings.Index(ansi.Strip(l), s); at >= 0 {
+			return ansi.StringWidth(ansi.Strip(l)[:at]), i
+		}
+	}
+	t.Fatalf("%q not on screen:\n%s", s, h.view())
+	return 0, 0
+}
+
+func TestClickMentionOpensItAndBackReturns(t *testing.T) {
+	h := relatedHarness(t, "Same cause as #2, see https://example.test/log.")
+	var opened string
+	h.m.opts.OpenURL = func(u string) error { opened = u; return nil }
+	h.keys("enter")
+	x, y := contentRow(t, h, "https://")
+	h.send(click(x+3, y))
+	if opened != "https://example.test/log" || h.shownIssue() != 3 {
+		t.Fatalf("clicking the URL should open it in the browser, opened %q", opened)
+	}
+	x, y = contentRow(t, h, "#2")
+	h.send(click(x+1, y))
+	if got := h.shownIssue(); got != 2 {
+		t.Fatalf("clicking #2 should open it, shown %d", got)
+	}
+	h.keys("h")
+	if got := h.shownIssue(); got != 3 {
+		t.Errorf("back should return to #3, shown %d", got)
+	}
+	x, y = contentRow(t, h, "#3")
+	h.send(click(x, y))
+	if got := h.shownIssue(); got != 3 || len(h.m.cur.issue.trail) != 0 {
+		t.Errorf("clicking the issue's own number does nothing, shown %d", got)
 	}
 }

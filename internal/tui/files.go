@@ -19,10 +19,11 @@ const fileTimeout = 2 * time.Minute
 type (
 	// fileReadyMsg reports a downloaded (or cached) attachment.
 	fileReadyMsg struct {
-		host string
-		file service.FileRef
-		path string
-		err  error
+		host    string
+		issueID int
+		file    service.FileRef
+		path    string
+		err     error
 	}
 	// imageShownMsg arrives when the image viewer gives the terminal back.
 	imageShownMsg struct {
@@ -69,7 +70,7 @@ func (m *Model) fetchFile(issueID int, f service.FileRef) tea.Cmd {
 		ctx, cancel := context.WithTimeout(ctx, fileTimeout)
 		defer cancel()
 		path, err := service.Download(ctx, api, issueID, f.Attachment, dir, true)
-		return fileReadyMsg{host: host, file: f, path: path, err: err}
+		return fileReadyMsg{host: host, issueID: issueID, file: f, path: path, err: err}
 	})
 }
 
@@ -86,12 +87,49 @@ func (m *Model) onFileReady(msg fileReadyMsg) tea.Cmd {
 	}
 	if service.IsImage(msg.file.Attachment) && m.opts.ShowImage != nil {
 		m.editing = true // pauses refreshes while the viewer owns the terminal
-		title := fmt.Sprintf("%s · %s", msg.file.Filename, msg.file.Where())
-		return m.opts.ShowImage(msg.path, title, m.width, m.height, func(err error) tea.Msg {
+		images, start := m.viewerImages(msg)
+		return m.opts.ShowImage(images, start, m.width, m.height, func(err error) tea.Msg {
 			return imageShownMsg{host: msg.host, file: msg.file, path: msg.path, err: err}
 		})
 	}
 	return m.openFile(msg.host, msg.file, msg.path)
+}
+
+// viewerImages is every image on the issue msg's file belongs to, for the
+// viewer to step through, and the index of msg's. The others download when
+// the viewer reaches them.
+func (m *Model) viewerImages(msg fileReadyMsg) ([]ViewerImage, int) {
+	title := func(f service.FileRef) string { return fmt.Sprintf("%s · %s", f.Filename, f.Where()) }
+	shown := ViewerImage{Title: title(msg.file), Fetch: func() (string, error) { return msg.path, nil }}
+	if m.cur == nil || m.cur.sess.Host.Name != msg.host {
+		return []ViewerImage{shown}, 0
+	}
+	iv := m.cur.issue
+	if iv == nil || iv.id != msg.issueID || iv.issue == nil {
+		return []ViewerImage{shown}, 0
+	}
+	api, dir := iv.sess.API, m.filesDir(msg.host, msg.issueID)
+	var images []ViewerImage
+	start := 0
+	for _, f := range service.Files(iv.issue) {
+		switch {
+		case !service.IsImage(f.Attachment):
+			continue
+		case f.ID == msg.file.ID:
+			start = len(images)
+			images = append(images, shown)
+			continue
+		}
+		images = append(images, ViewerImage{Title: title(f), Fetch: func() (string, error) {
+			ctx, cancel := context.WithTimeout(context.Background(), fileTimeout)
+			defer cancel()
+			return service.Download(ctx, api, msg.issueID, f.Attachment, dir, true)
+		}})
+	}
+	if len(images) == 0 { // the file left the issue meanwhile
+		return []ViewerImage{shown}, 0
+	}
+	return images, start
 }
 
 func (m *Model) onImageShown(msg imageShownMsg) tea.Cmd {

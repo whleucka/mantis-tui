@@ -322,8 +322,12 @@ func (m *Model) toggleMonitor(is mantis.Issue) tea.Cmd {
 }
 
 func (m *Model) openInBrowser(id int) tea.Cmd {
+	return m.openURL(service.IssueURL(m.cur.sess.Host.URL, id))
+}
+
+// openURL opens url in the browser.
+func (m *Model) openURL(url string) tea.Cmd {
 	host := m.cur.sess.Host.Name
-	url := service.IssueURL(m.cur.sess.Host.URL, id)
 	open := m.opts.OpenURL
 	return func() tea.Msg {
 		if open == nil {

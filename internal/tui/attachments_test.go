@@ -16,7 +16,8 @@ import (
 type shown struct {
 	path, title string
 	cols, rows  int
-	editing     bool // was refreshing paused when the viewer started?
+	editing     bool     // was refreshing paused when the viewer started?
+	titles      []string // every image the viewer can step to
 }
 
 // attachHarness opens #3, which has a PDF on the issue and two images on a
@@ -41,8 +42,16 @@ func attachHarness(t *testing.T) (*harness, *[]string, *[]shown) {
 	opened, images := &[]string{}, &[]shown{}
 	h.m.opts.FilesDir = t.TempDir()
 	h.m.opts.OpenFile = func(path string) error { *opened = append(*opened, path); return nil }
-	h.m.opts.ShowImage = func(path, title string, cols, rows int, done func(error) tea.Msg) tea.Cmd {
-		*images = append(*images, shown{path, title, cols, rows, h.m.editing})
+	h.m.opts.ShowImage = func(imgs []ViewerImage, start, cols, rows int, done func(error) tea.Msg) tea.Cmd {
+		path, err := imgs[start].Fetch()
+		if err != nil {
+			t.Fatal(err)
+		}
+		titles := make([]string, len(imgs))
+		for i, img := range imgs {
+			titles[i] = img.Title
+		}
+		*images = append(*images, shown{path, imgs[start].Title, cols, rows, h.m.editing, titles})
 		return func() tea.Msg { return done(nil) }
 	}
 	return h, opened, images
@@ -70,6 +79,9 @@ func TestOpenImageShowsItInTheTerminal(t *testing.T) {
 	if img.path != want || img.title != "image.png · note 41 by bob" || img.cols != 120 || img.rows != 40 || !img.editing {
 		t.Errorf("shown = %+v, want path %s", img, want)
 	}
+	if got := strings.Join(img.titles, ", "); got != "image.png · note 41 by bob, image-2.png · note 41 by bob" {
+		t.Errorf("the viewer should step through the issue's images only, got %s", got)
+	}
 	if b, err := os.ReadFile(want); err != nil || string(b) != "\x89PNG" {
 		t.Errorf("cached file = %q, %v", b, err)
 	}
@@ -94,7 +106,7 @@ func TestOpenPDFUsesTheDesktopOpener(t *testing.T) {
 
 func TestImageFallsBackToOpenerWithoutGraphics(t *testing.T) {
 	h, opened, _ := attachHarness(t)
-	h.m.opts.ShowImage = func(_, _ string, _, _ int, done func(error) tea.Msg) tea.Cmd {
+	h.m.opts.ShowImage = func(_ []ViewerImage, _, _, _ int, done func(error) tea.Msg) tea.Cmd {
 		return func() tea.Msg { return done(ErrNoGraphics) }
 	}
 	h.keys("enter", "g", "a", "down", "enter")
