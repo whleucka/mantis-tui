@@ -137,3 +137,35 @@ func TestNoAttachments(t *testing.T) {
 		t.Errorf("status = %q", lastLine(h.view()))
 	}
 }
+
+// fileLine is the screen row showing attachment id in the issue view.
+func fileLine(t *testing.T, h *harness, id int) int {
+	t.Helper()
+	iv := h.m.cur.issue
+	for line, a := range iv.fileLines {
+		if a == id {
+			if y := line - iv.vp.YOffset(); y >= 0 && y < iv.vp.Height() {
+				return y
+			}
+		}
+	}
+	t.Fatalf("attachment %d not on screen: %v", id, iv.fileLines)
+	return 0
+}
+
+func TestClickAttachmentOpensIt(t *testing.T) {
+	h, opened, images := attachHarness(t)
+	h.keys("enter")
+	y := fileLine(t, h, 1)
+	if !strings.Contains(strings.Split(h.view(), "\n")[y], "guide.pdf") {
+		t.Fatalf("row %d does not show guide.pdf:\n%s", y, h.view())
+	}
+	h.send(click(20, y))
+	if len(*opened) != 1 || filepath.Base((*opened)[0]) != "1-guide.pdf" {
+		t.Fatalf("clicking the PDF should open it, opened = %v", *opened)
+	}
+	h.send(click(20, fileLine(t, h, 3)))
+	if len(*images) != 1 || filepath.Base((*images)[0].path) != "3-image-2.png" {
+		t.Errorf("clicking a note's image should show it, images = %+v", *images)
+	}
+}

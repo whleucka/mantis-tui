@@ -36,6 +36,7 @@ type issueModel struct {
 
 	tabLine   int         // content line of the Notes/History labels; -1 before load
 	noteLines map[int]int // note id → content line of its header, notes tab only
+	fileLines map[int]int // content line → attachment id, for mouse clicks
 	focusNote int         // note to scroll to on the next load, e.g. one just added
 	look      issueLook   // clock and colours for the last render
 
@@ -203,7 +204,7 @@ func (iv *issueModel) content(w int) string {
 		return styleMuted.Render(fmt.Sprintf("Loading issue #%d…", iv.id))
 	}
 	s, lines := renderIssueTabs(iv.issue, iv.tab, w, iv.look)
-	iv.tabLine, iv.noteLines = lines.tab, lines.notes
+	iv.tabLine, iv.noteLines, iv.fileLines = lines.tab, lines.notes, lines.files
 	return s
 }
 
@@ -235,12 +236,21 @@ func renderIssue(is *mantis.Issue, tab, w int, lk issueLook) string {
 type issueLines struct {
 	tab   int         // the tab labels, for mouse clicks
 	notes map[int]int // note id → its header line, for scrolling to a note
+	files map[int]int // line → attachment id, for its name and thumbnail
 }
 
 // renderIssueTabs is renderIssue that also returns where the tab labels and
 // notes are.
 func renderIssueTabs(is *mantis.Issue, tab, w int, lk issueLook) (string, issueLines) {
 	var b strings.Builder
+	lines := issueLines{files: map[int]int{}}
+	// file marks the next n lines as showing attachment id.
+	file := func(id, n int) {
+		at := strings.Count(b.String(), "\n")
+		for i := range n {
+			lines.files[at+i] = id
+		}
+	}
 
 	b.WriteString(styleTitle.Render(fmt.Sprintf("#%d %s", is.ID, is.Summary)) + "\n\n")
 
@@ -272,14 +282,18 @@ func renderIssueTabs(is *mantis.Issue, tab, w int, lk issueLook) (string, issueL
 	for _, r := range is.Relationships {
 		pairs = append(pairs, [2]string{"Related", fmt.Sprintf("%s #%d %s", r.Type.Label, r.Issue.ID, r.Issue.Summary)})
 	}
+	attStart := len(pairs)
 	for _, a := range is.Attachments {
 		pairs = append(pairs, [2]string{"Attachment", a.Filename + styleMuted.Render(" · "+service.HumanSize(a.Size))})
 	}
 	for _, cf := range is.CustomFields {
 		pairs = append(pairs, [2]string{cf.Field.Name, cf.Value})
 	}
-	for _, p := range pairs {
+	for i, p := range pairs {
 		if p[1] != "" {
+			if i >= attStart && i < attStart+len(is.Attachments) {
+				file(is.Attachments[i-attStart].ID, 1)
+			}
 			b.WriteString(styleMuted.Render(fmt.Sprintf("%-16s", p[0])) + p[1] + "\n")
 		}
 	}
@@ -295,14 +309,16 @@ func renderIssueTabs(is *mantis.Issue, tab, w int, lk issueLook) (string, issueL
 	}
 
 	for _, a := range is.Attachments {
-		if lines := lk.images[a.ID]; len(lines) > 0 {
-			b.WriteString("\n" + styleMuted.Render(a.Filename) + "\n" + strings.Join(lines, "\n") + "\n")
+		if thumb := lk.images[a.ID]; len(thumb) > 0 {
+			b.WriteString("\n")
+			file(a.ID, 1+len(thumb))
+			b.WriteString(styleMuted.Render(a.Filename) + "\n" + strings.Join(thumb, "\n") + "\n")
 		}
 	}
 
 	notes := fmt.Sprintf("Notes (%d)", len(is.Notes))
 	history := fmt.Sprintf("History (%d)", len(is.History))
-	lines := issueLines{tab: strings.Count(b.String(), "\n") + 1} // the bar follows a blank line
+	lines.tab = strings.Count(b.String(), "\n") + 1 // the bar follows a blank line
 	switch tab {
 	case tabPreview:
 		b.WriteString("\n" + styleHeader.Render(notes) + "\n\n")
@@ -330,6 +346,7 @@ func renderIssueTabs(is *mantis.Issue, tab, w int, lk issueLook) (string, issueL
 			b.WriteString(styleGroup.Render("── "+strings.Join(meta, " · ")) + "\n")
 			b.WriteString(renderBody(n.Text, w, lk.code) + "\n")
 			for _, a := range n.Attachments {
+				file(a.ID, 1+len(lk.images[a.ID]))
 				b.WriteString(styleMuted.Render("attachment: "+a.Filename+" · "+service.HumanSize(a.Size)) + "\n")
 				for _, l := range lk.images[a.ID] {
 					b.WriteString(l + "\n")

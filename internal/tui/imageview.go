@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"io"
@@ -9,6 +10,7 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/charmbracelet/x/ansi"
+	"github.com/charmbracelet/x/term"
 
 	"github.com/whleucka/mantis-tui/internal/graphics"
 )
@@ -34,7 +36,7 @@ func KittyImages(kitten string) ImageShower {
 const viewerImageID = 4000
 
 // icatView is a tea.ExecCommand: it checks for graphics support, then shows
-// one image below a title line on the alternate screen until enter or
+// one image below a title line on the alternate screen until q, enter or
 // esc is pressed.
 type icatView struct {
 	kitten      string
@@ -63,11 +65,57 @@ func (v *icatView) Run() error {
 	}
 
 	cols, rows := max(v.cols, 10), max(v.rows, 3)
-	title := ansi.Truncate(clean(v.title)+" · enter or esc to go back", cols-2, "…")
+	title := ansi.Truncate(clean(v.title)+" · q, enter or esc to go back", cols-2, "…")
 	// Alternate screen, cleared, with the title on the first line.
 	fmt.Fprintf(v.stdout, "\x1b[?1049h\x1b[2J\x1b[H\x1b[7m %s \x1b[0m", title)
-	err := v.icat("--hold", "--image-id", strconv.Itoa(viewerImageID), "--place", fmt.Sprintf("%dx%d@0x1", cols, rows-1), v.path).Run()
+	args := []string{"--image-id", strconv.Itoa(viewerImageID), "--place", fmt.Sprintf("%dx%d@0x1", cols, rows-1), v.path}
+	// icat's own --hold only knows enter and esc, so wait here when we can
+	// read keys ourselves.
+	tty, ok := v.stdin.(interface{ Fd() uintptr })
+	if !ok || !term.IsTerminal(tty.Fd()) {
+		args = append([]string{"--hold"}, args...)
+	}
+	err := v.icat(args...).Run()
+	if err == nil && ok && term.IsTerminal(tty.Fd()) {
+		err = v.waitForClose(tty.Fd())
+	}
 	// Delete just this image: --clear would take the thumbnails with it.
 	fmt.Fprint(v.stdout, graphics.Delete(viewerImageID)+"\x1b[?1049l")
 	return err
+}
+
+// waitForClose reads keys in raw mode until one closes the viewer.
+func (v *icatView) waitForClose(fd uintptr) error {
+	state, err := term.MakeRaw(fd)
+	if err != nil {
+		return err
+	}
+	defer term.Restore(fd, state) //nolint:errcheck // best effort; Bubble Tea takes the terminal back next
+	buf := make([]byte, 64)
+	for {
+		n, err := v.stdin.Read(buf)
+		if err != nil {
+			return err
+		}
+		if closesViewer(buf[:n]) {
+			return nil
+		}
+	}
+}
+
+// closesViewer reports whether one read of input holds q, enter, esc or
+// ctrl+c, plain or in the kitty keyboard protocol's CSI u form.
+func closesViewer(b []byte) bool {
+	if len(b) == 1 && b[0] == 0x1b {
+		return true // a lone esc; longer reads starting with esc are sequences
+	}
+	if len(b) > 0 && b[0] == 0x1b {
+		for _, code := range []string{"27", "13", "113", "81"} {
+			if bytes.HasPrefix(b, []byte("\x1b["+code+"u")) || bytes.HasPrefix(b, []byte("\x1b["+code+";")) {
+				return true
+			}
+		}
+		return false
+	}
+	return bytes.ContainsAny(b, "qQ\r\n\x03")
 }

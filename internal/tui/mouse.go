@@ -6,6 +6,8 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
+
+	"github.com/whleucka/mantis-tui/internal/service"
 )
 
 const (
@@ -54,7 +56,7 @@ func (m *Model) onMouse(msg tea.MouseMsg) tea.Cmd {
 		if wheel {
 			iv.wheel(wheelDelta(mouse.Button))
 		} else if click {
-			iv.clickTabs(m, mouse.X, mouse.Y)
+			return iv.click(m, mouse.X, mouse.Y)
 		}
 	case m.cur.screen == screenList:
 		l := m.cur.list
@@ -155,11 +157,28 @@ func (iv *issueModel) wheel(delta int) {
 	}
 }
 
-// clickTabs switches tabs when the click lands on a tab label.
-func (iv *issueModel) clickTabs(m *Model, x, y int) {
-	if iv.issue == nil || iv.tabLine < 0 || y+iv.vp.YOffset() != iv.tabLine {
-		return
+// click opens the attachment whose name or thumbnail was clicked, or
+// switches tabs when the click lands on a tab label.
+func (iv *issueModel) click(m *Model, x, y int) tea.Cmd {
+	if iv.issue == nil {
+		return nil
 	}
+	line := y + iv.vp.YOffset()
+	if id, ok := iv.fileLines[line]; ok {
+		for _, f := range service.Files(iv.issue) {
+			if f.ID == id {
+				return m.fetchFile(iv.id, f)
+			}
+		}
+	}
+	if line == iv.tabLine {
+		iv.clickTabs(m, x)
+	}
+	return nil
+}
+
+// clickTabs switches to the tab whose label is at column x.
+func (iv *issueModel) clickTabs(m *Model, x int) {
 	notesW := len(fmt.Sprintf(" Notes (%d) ", len(iv.issue.Notes)))
 	historyW := len(fmt.Sprintf(" History (%d) ", len(iv.issue.History)))
 	tab := -1

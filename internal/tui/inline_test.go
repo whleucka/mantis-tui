@@ -201,3 +201,27 @@ func TestCellSizeFromTheTerminal(t *testing.T) {
 		t.Errorf("a reported cell size wins: %+v", h.m.img.cell)
 	}
 }
+
+func TestClickThumbnailOpensTheImage(t *testing.T) {
+	h := thumbHarness(t, nil)
+	var shownPath string
+	h.m.opts.ShowImage = func(path, _ string, _, _ int, done func(error) tea.Msg) tea.Cmd {
+		shownPath = path
+		return func() tea.Msg { return done(nil) }
+	}
+	h.send(graphicsOK)
+	h.keys("enter")
+	y := -1
+	for i, l := range strings.Split(h.view(), "\n") {
+		if strings.Contains(l, placeholder) {
+			y = i
+		}
+	}
+	if y < 0 {
+		t.Fatalf("no thumbnail on screen:\n%s", h.view())
+	}
+	h.send(click(2, y))
+	if !strings.HasSuffix(shownPath, "2-image.png") {
+		t.Errorf("clicking the thumbnail should show image.png, shown %q", shownPath)
+	}
+}

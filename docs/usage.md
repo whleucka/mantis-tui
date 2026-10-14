@@ -198,7 +198,7 @@ on its notes (pasted screenshots usually live on notes). The chosen file is
 downloaded to `$XDG_CACHE_HOME/mantis-tui/files/<host>/<issue>/` (private,
 and reused next time). Images are shown full screen with `kitten icat` when
 kitty is installed and the terminal supports its graphics protocol (kitty,
-Ghostty, WezTerm, and herdr inside them); `enter` or `esc` returns. Other files, and
+Ghostty, WezTerm, and herdr inside them); `q`, `enter` or `esc` returns. Other files, and
 images when graphics aren't available, open with `xdg-open`, but only PDFs,
 images, text, Markdown, JSON, CSV and logs. Anything else, such as a script,
 is only saved, and the status bar shows where.
@@ -212,6 +212,8 @@ doesn't draw them, and `ga` still opens an image full size.
 
 **Mouse.** Click a row to move to it and click it again to open it. The
 wheel scrolls the list, the preview, the issue view, help and pickers.
+In the issue view, clicking an attachment's name or its thumbnail opens it
+as `ga` would.
 Clicking a picker option or a palette command chooses it, and clicking
 Notes/History switches tabs. Mouse reporting stops the terminal's own text
 selection, so hold `shift` to select text, or set `ui.mouse = false`.
