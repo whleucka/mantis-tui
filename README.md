@@ -21,7 +21,7 @@ A fast terminal UI and scriptable CLI for the [MantisBT](https://mantisbt.org) b
 - Command palette with jump to any issue by number
 - Related and mentioned issues, one key away
 - Mouse support
-- [herdr](https://herdr.dev) integration: open an issue or ask Claude about it in a new pane
+- Open an issue or ask Claude about it in a new [herdr](https://herdr.dev) pane or kitty window
 
 **CLI**
 - Every TUI action as a one-shot command
@@ -101,7 +101,7 @@ The CLI is designed to be driven by coding agents such as [Claude Code](https://
 
 [docs/mantis-agent.md](docs/mantis-agent.md) is a ready-made Claude Code agent. Copy it to `~/.claude/agents/mantis.md` and ask Claude things like "what's on my plate in Mantis?" or "post a note on #1234 with the fix". It reads freely and confirms every write with you first.
 
-In the TUI, `A` opens Claude Code on the current issue in a new herdr pane. The command is configurable with `issue.ask`.
+In the TUI, `A` opens Claude Code on the current issue in a new herdr pane or kitty window. The command is configurable with `issue.ask`.
 
 ## Contributing
 

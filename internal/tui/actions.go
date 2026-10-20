@@ -351,7 +351,7 @@ func (m *Model) ask(id int) tea.Cmd {
 		return errCmd(host, errors.New("issue.ask is empty in the config"))
 	}
 	if m.opts.RunInPane == nil {
-		return errCmd(host, errors.New("asking needs herdr to open a pane"))
+		return errCmd(host, errors.New("asking needs herdr or kitty remote control to open a pane"))
 	}
 	command := strings.NewReplacer(
 		"{id}", strconv.Itoa(id),
@@ -366,7 +366,7 @@ func (m *Model) ask(id int) tea.Cmd {
 func (m *Model) openInPane(is mantis.Issue) tea.Cmd {
 	host := m.cur.sess.Host.Name
 	if m.opts.RunInPane == nil || m.opts.IssueCommand == nil {
-		return errCmd(host, errors.New("opening a pane needs herdr"))
+		return errCmd(host, errors.New("opening a pane needs herdr or kitty remote control"))
 	}
 	return tea.Batch(
 		m.inPane(m.opts.IssueCommand(host, is.ID), fmt.Sprintf("Issue %07d", is.ID), fmt.Sprintf("opened #%d in a new pane", is.ID)),

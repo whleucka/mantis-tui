@@ -218,7 +218,7 @@ func TestAskReportsWhyItCannot(t *testing.T) {
 		run            func(context.Context, string, string, bool) error
 		want           string
 	}{
-		{"outside herdr", "claude", nil, "needs herdr"},
+		{"no pane runner", "claude", nil, "needs herdr or kitty"},
 		{"disabled", "", func(context.Context, string, string, bool) error { return nil }, "issue.ask is empty"},
 		{"pane failed", "claude", func(context.Context, string, string, bool) error { return errors.New("split broke") }, "split broke"},
 	} {
@@ -257,11 +257,11 @@ func TestOpenInPaneRunsTheIssueCommand(t *testing.T) {
 	}
 }
 
-func TestOpenInPaneNeedsHerdr(t *testing.T) {
+func TestOpenInPaneNeedsAPaneRunner(t *testing.T) {
 	h := actionsHarness(t)
 	h.m.opts.IssueCommand = func(string, int) string { return "x" }
 	h.keys("o")
-	if !strings.Contains(h.view(), "needs herdr") {
+	if !strings.Contains(h.view(), "needs herdr or kitty") {
 		t.Errorf("status should say why:\n%s", h.view())
 	}
 }

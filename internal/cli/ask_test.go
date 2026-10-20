@@ -21,7 +21,7 @@ func TestPaneRunnerFor(t *testing.T) {
 	}
 
 	if paneRunnerFor(func(string) string { return "" }, found, "/w", run) != nil {
-		t.Error("outside herdr there is no pane runner")
+		t.Error("outside herdr and kitty there is no pane runner")
 	}
 	if paneRunnerFor(inHerdr, func(string) (string, error) { return "", errors.New("no") }, "/w", run) != nil {
 		t.Error("without a herdr binary there is no pane runner")
@@ -50,6 +50,77 @@ func TestPaneRunnerFor(t *testing.T) {
 	}
 	if strings.Join(calls, "\n") != strings.Join(want, "\n") {
 		t.Errorf("calls:\n%s\nwant:\n%s", strings.Join(calls, "\n"), strings.Join(want, "\n"))
+	}
+}
+
+func TestPaneRunnerForKitty(t *testing.T) {
+	env := map[string]string{"KITTY_LISTEN_ON": "unix:/run/k", "SHELL": "/bin/zsh"}
+	getenv := func(k string) string { return env[k] }
+	kitten := func(name string) (string, error) {
+		if name == "kitten" {
+			return "/usr/bin/kitten", nil
+		}
+		return "", errors.New("not found")
+	}
+	var calls []string
+	run := func(_ context.Context, name string, args ...string) ([]byte, error) {
+		calls = append(calls, name+" "+strings.Join(args, "|"))
+		return []byte("12"), nil
+	}
+
+	if paneRunnerFor(getenv, func(string) (string, error) { return "", errors.New("no") }, "/w", run) != nil {
+		t.Error("without kitten there is no pane runner")
+	}
+	if paneRunnerFor(func(k string) string { return map[string]string{"KITTY_PID": "3"}[k] }, kitten, "/w", run) != nil {
+		t.Error("without kitty listening on a socket there is no pane runner")
+	}
+
+	runIn := paneRunnerFor(getenv, kitten, "/w", run)
+	if err := runIn(context.Background(), "claude 'hi #5'", "Issue 0000005", true); err != nil {
+		t.Fatal(err)
+	}
+	if err := runIn(context.Background(), "claude", "", false); err != nil {
+		t.Fatal(err)
+	}
+	want := []string{
+		"/usr/bin/kitten @|--to|unix:/run/k|launch|--type|os-window|--cwd|/w|--os-window-title|Issue 0000005|/bin/zsh|-c|claude 'hi #5'",
+		"/usr/bin/kitten @|--to|unix:/run/k|launch|--type|os-window|--cwd|/w|/bin/zsh|-c|claude",
+	}
+	if strings.Join(calls, "\n") != strings.Join(want, "\n") {
+		t.Errorf("calls:\n%s\nwant:\n%s", strings.Join(calls, "\n"), strings.Join(want, "\n"))
+	}
+
+	calls = nil
+	delete(env, "SHELL")
+	_ = paneRunnerFor(getenv, kitten, "", run)(context.Background(), "x", "", false)
+	if want := "/usr/bin/kitten @|--to|unix:/run/k|launch|--type|os-window|/bin/sh|-c|x"; len(calls) != 1 || calls[0] != want {
+		t.Errorf("calls = %q, want %q", calls, want)
+	}
+}
+
+func TestHerdrWinsInsideKitty(t *testing.T) {
+	env := map[string]string{"HERDR_ENV": "1", "KITTY_LISTEN_ON": "unix:/run/k"}
+	var bin string
+	run := func(_ context.Context, name string, _ ...string) ([]byte, error) {
+		bin = name
+		return []byte(`{"result":{"pane":{"pane_id":"w1:p7"}}}`), nil
+	}
+	found := func(name string) (string, error) { return "/usr/bin/" + name, nil }
+	if err := paneRunnerFor(func(k string) string { return env[k] }, found, "", run)(context.Background(), "x", "", false); err != nil {
+		t.Fatal(err)
+	}
+	if bin != "/usr/bin/herdr" {
+		t.Errorf("inside herdr in kitty, ran %s", bin)
+	}
+}
+
+func TestPaneRunnerReportsKittyFailures(t *testing.T) {
+	getenv := func(k string) string { return map[string]string{"KITTY_LISTEN_ON": "unix:/run/k"}[k] }
+	found := func(string) (string, error) { return "kitten", nil }
+	run := func(context.Context, string, ...string) ([]byte, error) { return nil, errors.New("exit status 1") }
+	err := paneRunnerFor(getenv, found, "", run)(context.Background(), "x", "", false)
+	if err == nil || err.Error() != "kitten @ launch: exit status 1" {
+		t.Errorf("err = %v", err)
 	}
 }
 

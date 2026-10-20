@@ -116,9 +116,9 @@ name their target ("Status for 3 issues").
 | `e` | edit the summary, description, steps to reproduce or additional information |
 | `r` | add a note (reply) |
 | `m` | toggle monitoring (👁️ marks monitored issues) |
-| `o` | open the issue in a new herdr pane |
+| `o` | open the issue in a new pane (herdr or kitty) |
 | `O` | open in browser |
-| `A` | ask Claude about the issue in a new herdr pane |
+| `A` | ask Claude about the issue in a new pane (herdr or kitty) |
 | `y` | copy the issue URL (OSC 52, works over SSH) |
 | `C` | create issue |
 | `D` | delete issue(s) |
@@ -168,8 +168,14 @@ load or a filter change. The window title shows the unread count across all
 hosts, e.g. `(3) mantis-tui`. Setting `list.auto_refresh = "0"` turns all of
 this off.
 
-**Open in a pane.** Inside [herdr](https://herdr.dev), `o` splits a new
-pane off mantis-tui (to the right on a wide terminal, below on a tall one)
+**Panes.** `o` and `A` open a new pane. Inside [herdr](https://herdr.dev)
+it's a herdr pane. Elsewhere in [kitty](https://sw.kovidgoyal.net/kitty/)
+it's a new kitty window (an OS window, not a split), through `kitten @ launch`,
+which needs `allow_remote_control` and `listen_on` in `kitty.conf`. The command runs under `$SHELL -c`,
+so host tokens must be exported where a non-interactive shell reads them
+(`~/.zshenv` for zsh). In any other terminal the keys only say what they need.
+
+**Open in a pane.** `o` opens a new pane (in herdr, to the right on a wide terminal, below on a tall one)
 named after the issue (`Issue 0019112`) and runs
 `mantis-tui --host <host> --issue <id>` in it: a second mantis-tui
 that shows only that issue, so you can keep it open beside the list. Backing
@@ -177,8 +183,7 @@ out of the issue (`h`, `q`, `esc`) quits it and the pane closes. It leaves
 the other hosts, new-issue alerts and read marks to the mantis-tui that
 opened it, which marks the issue read. `--issue` also works by hand.
 
-**Ask Claude.** Inside [herdr](https://herdr.dev), `A` splits a new pane
-off mantis-tui (to the right on a wide terminal, below on a tall one) and
+**Ask Claude.** `A` opens a new pane (placed as for `o`) and
 runs `issue.ask` in it, with `{id}`, `{host}` and `{url}` filled in. The
 default starts Claude Code on the issue. Any shell command works; set
 `ask = ""` to turn the key off.

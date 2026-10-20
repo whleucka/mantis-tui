@@ -30,8 +30,8 @@ type Options struct {
 	Seen         *config.Seen // read state; nil keeps it in memory only
 	Notify       Notifier
 	// RunInPane runs a shell command in a new terminal pane named label
-	// ("" leaves it unnamed), to the right or below; nil when there is no
-	// multiplexer to split.
+	// ("" leaves it unnamed): a herdr pane to the right or below, or a new
+	// kitty window. nil when neither is available.
 	RunInPane func(ctx context.Context, command, label string, right bool) error
 	// IssueCommand is the shell command that runs mantis-tui on one issue,
 	// for opening it in a new pane; nil when there is none.
