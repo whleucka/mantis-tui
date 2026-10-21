@@ -202,7 +202,7 @@ func TestCellSizeFromTheTerminal(t *testing.T) {
 	}
 }
 
-func TestClickThumbnailOpensTheImage(t *testing.T) {
+func TestClickThumbnailDoesNotOpenTheImage(t *testing.T) {
 	h := thumbHarness(t, nil)
 	var shownPath string
 	h.m.opts.ShowImage = func(imgs []ViewerImage, start, _, _ int, done func(error) tea.Msg) tea.Cmd {
@@ -221,7 +221,11 @@ func TestClickThumbnailOpensTheImage(t *testing.T) {
 		t.Fatalf("no thumbnail on screen:\n%s", h.view())
 	}
 	h.send(click(2, y))
+	if shownPath != "" {
+		t.Fatalf("a click on the thumbnail should do nothing, shown %q", shownPath)
+	}
+	h.send(click(len("attachment: ")+1, fileLine(t, h, 2)))
 	if !strings.HasSuffix(shownPath, "2-image.png") {
-		t.Errorf("clicking the thumbnail should show image.png, shown %q", shownPath)
+		t.Errorf("clicking the name above the thumbnail should show image.png, shown %q", shownPath)
 	}
 }

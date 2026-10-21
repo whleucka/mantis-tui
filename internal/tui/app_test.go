@@ -98,8 +98,16 @@ func TestQuitKey(t *testing.T) {
 	hosts := testHosts()
 	h := newHarness(t, &hosts[0], nil)
 	h.keys("q")
+	if h.quit || !strings.Contains(h.view(), "Quit mantis-tui?") {
+		t.Fatal("q should ask before quitting")
+	}
+	h.keys("n")
+	if h.quit || h.m.modal != nil {
+		t.Fatal("n should keep mantis-tui open")
+	}
+	h.keys("q", "y")
 	if !h.quit {
-		t.Error("q should quit from the list")
+		t.Error("y should quit")
 	}
 }
 

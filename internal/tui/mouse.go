@@ -164,17 +164,18 @@ func (iv *issueModel) wheel(delta int) {
 	}
 }
 
-// click opens the attachment whose name or thumbnail was clicked, the
-// issue or URL under the pointer, or switches tabs when the click lands on
-// a tab label. An issue opened this way is left with back, like g r.
+// click opens the attachment whose name was clicked, the issue or URL
+// under the pointer, or switches tabs when the click lands on a tab label.
+// An issue opened this way is left with back, like g r. Thumbnails aren't
+// links: they fill a lot of the screen, so a stray click would open one.
 func (iv *issueModel) click(m *Model, x, y int) tea.Cmd {
 	if iv.issue == nil {
 		return nil
 	}
 	line := y + iv.vp.YOffset()
-	if id, ok := iv.fileLines[line]; ok {
+	if sp, ok := iv.fileLines[line]; ok && x+iv.vp.XOffset() >= sp.from && x+iv.vp.XOffset() < sp.to {
 		for _, f := range service.Files(iv.issue) {
-			if f.ID == id {
+			if f.ID == sp.id {
 				return m.fetchFile(iv.id, f)
 			}
 		}

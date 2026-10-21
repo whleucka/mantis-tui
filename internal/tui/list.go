@@ -476,7 +476,7 @@ func (l *listModel) handleMsg(m *Model, msg tea.Msg) tea.Cmd {
 func (l *listModel) handleAction(m *Model, a action) tea.Cmd {
 	switch a {
 	case actQuit:
-		return tea.Quit
+		m.modal = &confirmModal{prompt: "Quit mantis-tui?", onYes: func() tea.Cmd { return tea.Quit }}
 	case actUp:
 		l.move(m, -1)
 	case actDown:

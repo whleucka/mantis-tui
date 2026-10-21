@@ -76,6 +76,9 @@ const DefaultAsk = `claude 'Use the mantis agent to look up issue #{id} on host 
 type UIConfig struct {
 	Mouse  bool   `toml:"mouse"`
 	Notify string `toml:"notify"`
+	// FileManager is the command that opens a folder, which is appended to
+	// it. Empty uses the desktop's default (xdg-open).
+	FileManager string `toml:"file_manager"`
 }
 
 // Icons are the glyphs shown for priorities and monitored issues.

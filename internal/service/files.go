@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"unicode"
@@ -135,6 +136,21 @@ var safeExts = map[string]bool{
 
 // SafeToOpen reports whether the file at path may be handed to xdg-open.
 func SafeToOpen(path string) bool { return safeExts[strings.ToLower(filepath.Ext(path))] }
+
+// OpenFolder opens dir with command, or with the desktop's default
+// application when command is empty, without waiting for it.
+func OpenFolder(dir, command string) error {
+	args := strings.Fields(command)
+	if len(args) == 0 {
+		return OpenFile(dir)
+	}
+	cmd := exec.Command(args[0], append(args[1:], dir)...)
+	if err := cmd.Start(); err != nil {
+		return fmt.Errorf("open %s: %w", dir, err)
+	}
+	go func() { _ = cmd.Wait() }() // reap the child
+	return nil
+}
 
 // OpenFile opens a local file with the desktop's default application
 // without waiting for it.

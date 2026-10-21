@@ -41,9 +41,11 @@ type Options struct {
 	// quits when backing out of the issue.
 	Issue int
 	// FilesDir caches downloaded attachments; OpenFile hands one to the
-	// desktop's default application.
-	FilesDir string
-	OpenFile func(path string) error
+	// desktop's default application and OpenFolder opens an issue's folder
+	// of them in the file manager.
+	FilesDir   string
+	OpenFile   func(path string) error
+	OpenFolder func(dir string) error
 	// ShowImage shows an image in the terminal; nil when it can't.
 	ShowImage ImageShower
 	// Clipboard returns the image in the clipboard, or nil.

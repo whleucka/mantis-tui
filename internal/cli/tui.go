@@ -53,6 +53,7 @@ func (o *globalOpts) runTUI(cmd *cobra.Command) error {
 		IssueCommand: o.issueCommand(),
 		FilesDir:     config.DefaultFilesDir(os.Getenv),
 		OpenFile:     service.OpenFile,
+		OpenFolder:   func(dir string) error { return service.OpenFolder(dir, cfg.UI.FileManager) },
 		ShowImage:    imageShowerFor(exec.LookPath),
 		Clipboard:    service.Clipboard,
 		InlineImages: true,

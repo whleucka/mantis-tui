@@ -26,6 +26,7 @@ code_theme = "auto"           # <pre> highlighting: auto | none | a chroma style
 [ui]
 mouse = true                  # hold shift to select text with the mouse
 notify = "auto"               # auto | herdr | terminal | off
+file_manager = ""             # opens the attachments folder (gf), e.g. "thunar"; "" uses xdg-open
 
 [icons]
 immediate = "🔥"
@@ -130,7 +131,7 @@ name their target ("Status for 3 issues").
 | `1`–`9` | switch to the Nth host in the config |
 | `:` / `ctrl+p` | command palette |
 | `?` | toggle help |
-| `q` | quit |
+| `q` | quit (asks first; `ctrl+c` quits at once) |
 
 If a change to several issues partly fails, only the issues that failed stay
 selected, so you can retry them.
@@ -208,7 +209,10 @@ step through the issue's other images, downloading each when it's reached,
 and `q`, `enter` or `esc` returns. Other files, and images when graphics
 aren't available, open with `xdg-open`, but only PDFs,
 images, text, Markdown, JSON, CSV and logs. Anything else, such as a script,
-is only saved, and the status bar shows where.
+is only saved, and the status bar shows where. `gA` downloads all of the
+issue's attachments to that folder, and `gf` opens the folder in your file
+manager: `ui.file_manager` if set, otherwise whatever `xdg-open` picks for a
+directory.
 
 **Inline images.** In a terminal that supports kitty graphics, the issue
 view also draws each PNG, JPEG or GIF attachment as a thumbnail (up to 12
@@ -220,8 +224,8 @@ doesn't draw them, and `ga` still opens an image full size.
 **Mouse.** Click a row to move to it and click it again to open it. The
 wheel scrolls the list, the preview, the issue view, help and pickers.
 Clicking a picker option or a palette command chooses it. In the issue
-view, clicking Notes/History switches tabs, an attachment's name or
-thumbnail opens it as `ga` would, a `#123` opens that issue (back returns,
+view, clicking Notes/History switches tabs, an attachment's name opens it
+as `ga` would (thumbnails don't, so a stray click can't open one), a `#123` opens that issue (back returns,
 as with `gr`), and a URL opens in the browser. Mouse reporting stops the terminal's own text
 selection, so hold `shift` to select text, or set `ui.mouse = false`.
 
@@ -238,6 +242,8 @@ selection, so hold `shift` to select text, or set `ui.mouse = false`.
 | `dn` | delete a note |
 | `gr` | go to a related or mentioned issue |
 | `ga` | open an attachment (images in the terminal) |
+| `gA` | download all attachments to the issue's folder |
+| `gf` | open the issue's attachments folder |
 | `s` `p` `v` `c` `a` `e` `m` `o` `O` `y` `A` | same as in the list, for this issue |
 | `R` | refresh |
 | `u` | mark unread and go back to the list |

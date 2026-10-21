@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strconv"
 	"time"
@@ -72,6 +73,52 @@ func (m *Model) fetchFile(issueID int, f service.FileRef) tea.Cmd {
 		path, err := service.Download(ctx, api, issueID, f.Attachment, dir, true)
 		return fileReadyMsg{host: host, issueID: issueID, file: f, path: path, err: err}
 	})
+}
+
+// downloadAll saves every attachment of the issue that isn't cached yet
+// into its folder.
+func (m *Model) downloadAll(iv *issueModel) tea.Cmd {
+	if iv.issue == nil {
+		return nil
+	}
+	host, api := iv.sess.Host.Name, iv.sess.API
+	files := service.Files(iv.issue)
+	switch {
+	case len(files) == 0:
+		return infoCmd(host, fmt.Sprintf("#%d has no attachments", iv.id))
+	case m.opts.FilesDir == "":
+		return errCmd(host, errors.New("no directory to save attachments in"))
+	}
+	id, dir := iv.id, m.filesDir(host, iv.id)
+	return m.call(func(ctx context.Context) tea.Msg {
+		var errs []error
+		for _, f := range files {
+			ctx, cancel := context.WithTimeout(ctx, fileTimeout)
+			if _, err := service.Download(ctx, api, id, f.Attachment, dir, true); err != nil {
+				errs = append(errs, err)
+			}
+			cancel()
+		}
+		if err := errors.Join(errs...); err != nil {
+			return errMsg{host: host, err: err}
+		}
+		return infoMsg{host: host, text: fmt.Sprintf("saved %d attachments to %s", len(files), dir)}
+	})
+}
+
+// openFolder opens the issue's attachments folder in the file manager.
+func (m *Model) openFolder(iv *issueModel) tea.Cmd {
+	host, dir := iv.sess.Host.Name, m.filesDir(iv.sess.Host.Name, iv.id)
+	switch st, err := os.Stat(dir); {
+	case m.opts.FilesDir == "" || err != nil || !st.IsDir():
+		return infoCmd(host, fmt.Sprintf("nothing saved for #%d yet; %s downloads it all", iv.id, keyOf(actDownloadAll)))
+	case m.opts.OpenFolder == nil:
+		return infoCmd(host, dir)
+	}
+	if err := m.opts.OpenFolder(dir); err != nil {
+		return errCmd(host, err)
+	}
+	return infoCmd(host, "opened "+dir)
 }
 
 // filesDir is where an issue's attachments are cached.

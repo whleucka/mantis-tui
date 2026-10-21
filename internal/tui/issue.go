@@ -34,11 +34,11 @@ type issueModel struct {
 	req    int
 	loaded bool
 
-	tabLine   int         // content line of the Notes/History labels; -1 before load
-	noteLines map[int]int // note id → content line of its header, notes tab only
-	fileLines map[int]int // content line → attachment id, for mouse clicks
-	focusNote int         // note to scroll to on the next load, e.g. one just added
-	look      issueLook   // clock and colours for the last render
+	tabLine   int              // content line of the Notes/History labels; -1 before load
+	noteLines map[int]int      // note id → content line of its header, notes tab only
+	fileLines map[int]fileSpan // content line → the attachment name on it, for mouse clicks
+	focusNote int              // note to scroll to on the next load, e.g. one just added
+	look      issueLook        // clock and colours for the last render
 
 	interval time.Duration
 	tickGen  int
@@ -173,6 +173,10 @@ func (iv *issueModel) handleAction(m *Model, a action) tea.Cmd {
 		return m.goRelated(iv)
 	case actFiles:
 		return m.pickFile(iv)
+	case actDownloadAll:
+		return m.downloadAll(iv)
+	case actFolder:
+		return m.openFolder(iv)
 	default:
 		return m.issueAction(a)
 	}
@@ -234,22 +238,24 @@ func renderIssue(is *mantis.Issue, tab, w int, lk issueLook) string {
 
 // issueLines are content lines of a rendered issue.
 type issueLines struct {
-	tab   int         // the tab labels, for mouse clicks
-	notes map[int]int // note id → its header line, for scrolling to a note
-	files map[int]int // line → attachment id, for its name and thumbnail
+	tab   int              // the tab labels, for mouse clicks
+	notes map[int]int      // note id → its header line, for scrolling to a note
+	files map[int]fileSpan // line → the attachment name on it
 }
+
+// fileSpan is where an attachment's name sits on a line: columns from up
+// to, not including, to.
+type fileSpan struct{ id, from, to int }
 
 // renderIssueTabs is renderIssue that also returns where the tab labels and
 // notes are.
 func renderIssueTabs(is *mantis.Issue, tab, w int, lk issueLook) (string, issueLines) {
 	var b strings.Builder
-	lines := issueLines{files: map[int]int{}}
-	// file marks the next n lines as showing attachment id.
-	file := func(id, n int) {
+	lines := issueLines{files: map[int]fileSpan{}}
+	// file marks a's name, from column col of the next line, as a link.
+	file := func(a mantis.Attachment, col int) {
 		at := strings.Count(b.String(), "\n")
-		for i := range n {
-			lines.files[at+i] = id
-		}
+		lines.files[at] = fileSpan{a.ID, col, col + lipgloss.Width(a.Filename)}
 	}
 
 	b.WriteString(styleTitle.Render(fmt.Sprintf("#%d %s", is.ID, is.Summary)) + "\n\n")
@@ -292,7 +298,7 @@ func renderIssueTabs(is *mantis.Issue, tab, w int, lk issueLook) (string, issueL
 	for i, p := range pairs {
 		if p[1] != "" {
 			if i >= attStart && i < attStart+len(is.Attachments) {
-				file(is.Attachments[i-attStart].ID, 1)
+				file(is.Attachments[i-attStart], 16) // after the label
 			}
 			b.WriteString(styleMuted.Render(fmt.Sprintf("%-16s", p[0])) + p[1] + "\n")
 		}
@@ -311,7 +317,7 @@ func renderIssueTabs(is *mantis.Issue, tab, w int, lk issueLook) (string, issueL
 	for _, a := range is.Attachments {
 		if thumb := lk.images[a.ID]; len(thumb) > 0 {
 			b.WriteString("\n")
-			file(a.ID, 1+len(thumb))
+			file(a, 0)
 			b.WriteString(styleMuted.Render(a.Filename) + "\n" + strings.Join(thumb, "\n") + "\n")
 		}
 	}
@@ -346,8 +352,9 @@ func renderIssueTabs(is *mantis.Issue, tab, w int, lk issueLook) (string, issueL
 			b.WriteString(styleGroup.Render("── "+strings.Join(meta, " · ")) + "\n")
 			b.WriteString(renderBody(n.Text, w, lk.code) + "\n")
 			for _, a := range n.Attachments {
-				file(a.ID, 1+len(lk.images[a.ID]))
-				b.WriteString(styleMuted.Render("attachment: "+a.Filename+" · "+service.HumanSize(a.Size)) + "\n")
+				const prefix = "attachment: "
+				file(a, len(prefix))
+				b.WriteString(styleMuted.Render(prefix+a.Filename+" · "+service.HumanSize(a.Size)) + "\n")
 				for _, l := range lk.images[a.ID] {
 					b.WriteString(l + "\n")
 				}

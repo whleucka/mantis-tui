@@ -123,3 +123,12 @@ func TestHumanSize(t *testing.T) {
 		}
 	}
 }
+
+func TestOpenFolderRunsTheCommand(t *testing.T) {
+	if err := OpenFolder(t.TempDir(), "true --flag"); err != nil {
+		t.Errorf("OpenFolder with a working command: %v", err)
+	}
+	if err := OpenFolder(t.TempDir(), "no-such-file-manager-here"); err == nil {
+		t.Error("OpenFolder should report a command that can't start")
+	}
+}
