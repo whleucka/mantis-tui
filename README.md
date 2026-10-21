@@ -14,6 +14,7 @@ A fast terminal UI and scriptable CLI for the [MantisBT](https://mantisbt.org) b
 - Batch edit a selection of issues
 - Write notes and descriptions in `$EDITOR`
 - Attach files or a clipboard screenshot to notes and new issues
+- Download all of an issue's attachments and open their folder
 - Inline image thumbnails in kitty, Ghostty and WezTerm
 - `<pre>` blocks in descriptions and notes shown as syntax-highlighted code, with tidy MySQL console output
 - Unread markers for issues that changed since you last looked
