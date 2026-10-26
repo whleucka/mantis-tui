@@ -172,9 +172,9 @@ this off.
 **Panes.** `o` and `A` open a new pane. Inside [herdr](https://herdr.dev)
 it's a herdr pane. Elsewhere in [kitty](https://sw.kovidgoyal.net/kitty/)
 it's a new kitty window (an OS window, not a split), through `kitten @ launch`,
-which needs `allow_remote_control` and `listen_on` in `kitty.conf`. The command runs under `$SHELL -ic`,
-an interactive shell, so it gets the PATH and host tokens your shell startup
-files (`~/.zshrc`, `~/.bashrc`) export. In any other terminal the keys only say what they need.
+which needs `allow_remote_control` and `listen_on` in `kitty.conf`. The window gets
+mantis-tui's own environment (PATH and host tokens) and runs the command under
+`$SHELL -c`. In any other terminal the keys only say what they need.
 
 **Open in a pane.** `o` opens a new pane (in herdr, to the right on a wide terminal, below on a tall one)
 named after the issue (`Issue 0019112`) and runs

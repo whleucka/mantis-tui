@@ -83,8 +83,8 @@ func TestPaneRunnerForKitty(t *testing.T) {
 		t.Fatal(err)
 	}
 	want := []string{
-		"/usr/bin/kitten @|--to|unix:/run/k|launch|--type|os-window|--cwd|/w|--os-window-title|Issue 0000005|/bin/zsh|-ic|claude 'hi #5'",
-		"/usr/bin/kitten @|--to|unix:/run/k|launch|--type|os-window|--cwd|/w|/bin/zsh|-ic|claude",
+		"/usr/bin/kitten @|--to|unix:/run/k|launch|--type|os-window|--copy-env|--cwd|/w|--os-window-title|Issue 0000005|/bin/zsh|-c|claude 'hi #5'",
+		"/usr/bin/kitten @|--to|unix:/run/k|launch|--type|os-window|--copy-env|--cwd|/w|/bin/zsh|-c|claude",
 	}
 	if strings.Join(calls, "\n") != strings.Join(want, "\n") {
 		t.Errorf("calls:\n%s\nwant:\n%s", strings.Join(calls, "\n"), strings.Join(want, "\n"))
@@ -93,7 +93,7 @@ func TestPaneRunnerForKitty(t *testing.T) {
 	calls = nil
 	delete(env, "SHELL")
 	_ = paneRunnerFor(getenv, kitten, "", run)(context.Background(), "x", "", false)
-	if want := "/usr/bin/kitten @|--to|unix:/run/k|launch|--type|os-window|/bin/sh|-ic|x"; len(calls) != 1 || calls[0] != want {
+	if want := "/usr/bin/kitten @|--to|unix:/run/k|launch|--type|os-window|--copy-env|/bin/sh|-c|x"; len(calls) != 1 || calls[0] != want {
 		t.Errorf("calls = %q, want %q", calls, want)
 	}
 }

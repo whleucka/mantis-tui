@@ -81,25 +81,25 @@ func herdrPaneRunner(bin, cwd string, run runFunc) paneRunner {
 }
 
 // kittyPaneRunner opens a new kitty OS window through the remote control
-// socket at to; right doesn't apply. kitty starts it with its own
-// environment, not this process's, so the command runs under an interactive
-// $SHELL, which reads the user's shell startup files (where PATH and host
-// tokens are usually exported) as a herdr pane would. A plain -c shell skips
-// ~/.zshrc and ~/.bashrc.
+// socket at to; right doesn't apply. kitty would start it with its own
+// environment, so --copy-env passes this process's (PATH and host tokens)
+// instead. The shell is a plain -c one: an interactive shell's startup files
+// can leave background jobs (powerlevel10k's gitstatus watcher) that keep the
+// window open for seconds after the command exits.
 func kittyPaneRunner(bin, to string, getenv func(string) string, cwd string, run runFunc) paneRunner {
 	shell := getenv("SHELL")
 	if shell == "" {
 		shell = "/bin/sh"
 	}
 	return func(ctx context.Context, command, label string, _ bool) error {
-		args := []string{"@", "--to", to, "launch", "--type", "os-window"}
+		args := []string{"@", "--to", to, "launch", "--type", "os-window", "--copy-env"}
 		if cwd != "" {
 			args = append(args, "--cwd", cwd)
 		}
 		if label != "" {
 			args = append(args, "--os-window-title", label)
 		}
-		args = append(args, shell, "-ic", command)
+		args = append(args, shell, "-c", command)
 		if _, err := run(ctx, bin, args...); err != nil {
 			return fmt.Errorf("kitten @ launch: %w", err)
 		}
