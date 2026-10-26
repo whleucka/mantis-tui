@@ -82,9 +82,10 @@ func herdrPaneRunner(bin, cwd string, run runFunc) paneRunner {
 
 // kittyPaneRunner opens a new kitty OS window through the remote control
 // socket at to; right doesn't apply. kitty starts it with its own
-// environment, not this process's, so the command runs under $SHELL, which
-// reads the user's shell startup files (where host tokens are usually
-// exported) as a herdr pane would.
+// environment, not this process's, so the command runs under an interactive
+// $SHELL, which reads the user's shell startup files (where PATH and host
+// tokens are usually exported) as a herdr pane would. A plain -c shell skips
+// ~/.zshrc and ~/.bashrc.
 func kittyPaneRunner(bin, to string, getenv func(string) string, cwd string, run runFunc) paneRunner {
 	shell := getenv("SHELL")
 	if shell == "" {
@@ -98,7 +99,7 @@ func kittyPaneRunner(bin, to string, getenv func(string) string, cwd string, run
 		if label != "" {
 			args = append(args, "--os-window-title", label)
 		}
-		args = append(args, shell, "-c", command)
+		args = append(args, shell, "-ic", command)
 		if _, err := run(ctx, bin, args...); err != nil {
 			return fmt.Errorf("kitten @ launch: %w", err)
 		}
